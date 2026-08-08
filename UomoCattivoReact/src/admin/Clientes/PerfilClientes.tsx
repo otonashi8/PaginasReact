@@ -23,7 +23,7 @@ type Props = {
 export const PerfilClientes = ({ cliente }: Props) => {
     if (!cliente) {
         return (
-            <section className="rounded-none border border-zinc-200 bg-white p-6">
+            <section className="rounded-none border border-zinc-200 bg-bone p-6">
                 <p className="text-zinc-500">Seleccione un cliente para ver el perfil.</p>
             </section>
         );
@@ -45,7 +45,7 @@ export const PerfilClientes = ({ cliente }: Props) => {
 
     return (
         <div className="space-y-6">
-            <section className="rounded-none border border-zinc-200 bg-white p-6">
+            <section className="rounded-none border border-zinc-200 bg-bone p-6">
                 <div>
                     <h2 className="text-xl font-semibold">Perfil de {cliente.nombres} {cliente.apellidos}</h2>
                     <p className="text-sm text-zinc-500">Resumen del cliente y sus últimas interacciones.</p>

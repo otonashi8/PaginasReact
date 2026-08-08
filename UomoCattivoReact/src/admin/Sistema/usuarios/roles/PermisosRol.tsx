@@ -67,7 +67,7 @@ export const PermisosRol = ({
                                                 className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                                                     tieneAcceso(modulo)
                                                         ? "border-green-600 bg-green-50 text-green-700"
-                                                        : "border-zinc-300 bg-white text-zinc-700"
+                                                        : "border-zinc-300 bg-bone text-zinc-700"
                                                 }`}
                                             >
                                                 {tieneAcceso(modulo) ? "Con acceso" : "Sin acceso"}

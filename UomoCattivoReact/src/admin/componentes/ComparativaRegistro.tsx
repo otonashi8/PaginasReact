@@ -6,7 +6,7 @@ type Props = {
 
 export const ComparativaRegistroPanel = ({ comparativa }: Props) => {
     return (
-        <section className="rounded-none border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-none border border-zinc-200 bg-bone p-6 shadow-sm">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-lg font-semibold text-zinc-900">Registrados vs Guest</h2>

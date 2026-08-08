@@ -132,7 +132,7 @@ export const ClasificacionesAdministrativas = ({
     };
 
     return (
-        <section className="rounded-none border border-zinc-200 bg-white shadow-sm">
+        <section className="rounded-none border border-zinc-200 bg-bone shadow-sm">
             <div className="flex flex-col gap-4 border-b border-zinc-200 bg-zinc-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h3 className="text-base font-semibold text-zinc-950">Clasificaciones de inventario</h3>
@@ -141,7 +141,7 @@ export const ClasificacionesAdministrativas = ({
                 <button
                     type="button"
                     onClick={toggleExpandido}
-                    className="self-start sm:self-auto rounded-none border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-950 transition hover:bg-zinc-100"
+                    className="self-start sm:self-auto rounded-none border border-zinc-300 bg-bone px-4 py-2 text-sm font-medium text-zinc-950 transition hover:bg-zinc-100"
                 >
                     {expandido ? '⋀' : '⋁'}
                 </button>
@@ -159,7 +159,7 @@ export const ClasificacionesAdministrativas = ({
                                 <button
                                     type="button"
                                     onClick={toggleCategoriasExpandido}
-                                    className="rounded-none border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
+                                    className="rounded-none border border-zinc-300 bg-bone px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
                                 >
                                     {categoriasExpandido ? 'Ocultar' : 'Mostrar'}
                                 </button>
@@ -173,7 +173,7 @@ export const ClasificacionesAdministrativas = ({
                                             value={categoriaNueva}
                                             onChange={(event) => setCategoriaNueva(event.target.value)}
                                             placeholder="Nueva categoría"
-                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                            className="w-full rounded-none border border-zinc-300 bg-bone px-3 py-2 outline-none transition focus:border-zinc-900"
                                         />
                                         <button
                                             type="button"
@@ -184,7 +184,7 @@ export const ClasificacionesAdministrativas = ({
 
                                     <div className="mt-4 grid max-h-80 gap-2 overflow-y-auto pr-1">
                                         {Object.entries(clasificaciones.categorias).map(([categoria, subcategorias]) => (
-                                            <div key={categoria} className="rounded-none border border-zinc-200 bg-white p-3">
+                                            <div key={categoria} className="rounded-none border border-zinc-200 bg-bone p-3">
                                                 <div className="flex items-start justify-between gap-3">
                                                     <p className="font-medium text-zinc-900">{categoria}</p>
                                                     <button
@@ -225,7 +225,7 @@ export const ClasificacionesAdministrativas = ({
                                 <button
                                     type="button"
                                     onClick={toggleSubcategoriasExpandido}
-                                    className="rounded-none border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
+                                    className="rounded-none border border-zinc-300 bg-bone px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
                                 >
                                     {subcategoriasExpandido ? 'Ocultar' : 'Mostrar'}
                                 </button>
@@ -239,7 +239,7 @@ export const ClasificacionesAdministrativas = ({
                                             <select
                                                 value={categoriaSeleccionada}
                                                 onChange={(event) => setCategoriaSeleccionada(event.target.value)}
-                                                className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                                className="w-full rounded-none border border-zinc-300 bg-bone px-3 py-2 outline-none transition focus:border-zinc-900"
                                             >
                                                 {Object.keys(clasificaciones.categorias).map((categoria) => (
                                                     <option key={categoria} value={categoria}>
@@ -261,7 +261,7 @@ export const ClasificacionesAdministrativas = ({
                                             value={subcategoriaNueva}
                                             onChange={(event) => setSubcategoriaNueva(event.target.value)}
                                             placeholder="Nueva subcategoría"
-                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                            className="w-full rounded-none border border-zinc-300 bg-bone px-3 py-2 outline-none transition focus:border-zinc-900"
                                         />
                                     </label>
                                 </>
@@ -279,7 +279,7 @@ export const ClasificacionesAdministrativas = ({
                                 <button
                                     type="button"
                                     onClick={toggleGenerosExpandido}
-                                    className="rounded-none border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
+                                    className="rounded-none border border-zinc-300 bg-bone px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
                                 >
                                     {generosExpandido ? 'Ocultar' : 'Mostrar'}
                                 </button>
@@ -293,7 +293,7 @@ export const ClasificacionesAdministrativas = ({
                                             value={generoNuevo}
                                             onChange={(event) => setGeneroNuevo(event.target.value)}
                                             placeholder="Nuevo género"
-                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                            className="w-full rounded-none border border-zinc-300 bg-bone px-3 py-2 outline-none transition focus:border-zinc-900"
                                         />
                                         <button
                                             type="button"
@@ -304,7 +304,7 @@ export const ClasificacionesAdministrativas = ({
 
                                     <div className="mt-4 flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-1">
                                         {clasificaciones.generosDisponibles.map((genero) => (
-                                            <div key={genero} className="flex items-center gap-2 rounded-none border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-700">
+                                            <div key={genero} className="flex items-center gap-2 rounded-none border border-zinc-200 bg-bone px-3 py-1 text-sm text-zinc-700">
                                                 <span>{genero}</span>
                                                 <button
                                                     type="button"
@@ -327,7 +327,7 @@ export const ClasificacionesAdministrativas = ({
                                 <button
                                     type="button"
                                     onClick={toggleTallasExpandido}
-                                    className="rounded-none border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
+                                    className="rounded-none border border-zinc-300 bg-bone px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
                                 >
                                     {tallasExpandido ? 'Ocultar' : 'Mostrar'}
                                 </button>
@@ -341,7 +341,7 @@ export const ClasificacionesAdministrativas = ({
                                             value={tallaNueva}
                                             onChange={(event) => setTallaNueva(event.target.value)}
                                             placeholder="Nueva talla"
-                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                            className="w-full rounded-none border border-zinc-300 bg-bone px-3 py-2 outline-none transition focus:border-zinc-900"
                                         />
                                         <button
                                             type="button"
@@ -352,7 +352,7 @@ export const ClasificacionesAdministrativas = ({
 
                                     <div className="mt-4 flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-1">
                                         {clasificaciones.tallasDisponibles.map((talla) => (
-                                            <div key={talla} className="flex items-center gap-2 rounded-none border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-700">
+                                            <div key={talla} className="flex items-center gap-2 rounded-none border border-zinc-200 bg-bone px-3 py-1 text-sm text-zinc-700">
                                                 <span>{talla}</span>
                                                 <button
                                                     type="button"

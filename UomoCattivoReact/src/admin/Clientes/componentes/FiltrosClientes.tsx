@@ -27,7 +27,7 @@ export const FiltrosClientes = ({
     onTipoChange,
 }: Props) => {
     return (
-            <div className="grid gap-4 rounded-none border border-zinc-200 bg-white p-5 lg:grid-cols-[1fr_120px_120px_120px_140px]">
+            <div className="grid gap-4 rounded-none border border-zinc-200 bg-bone p-5 lg:grid-cols-[1fr_120px_120px_120px_140px]">
             <div className="relative">
                 <Search
                     size={18}

@@ -25,7 +25,7 @@ export const SelectorCategorias = ({
 						actualizarCategoria(event.target.value);
 						actualizarSubcategoria('');
 					}}
-					className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+					className="w-full rounded-none border border-zinc-300 bg-bone px-3 py-2 outline-none transition focus:border-zinc-900"
 				>
 					<option value="">Seleccionar categoria</option>
 					{Object.keys(categorias).map((categoriaDisponible) => (
@@ -42,7 +42,7 @@ export const SelectorCategorias = ({
 					value={subcategoria}
 					onChange={(event) => actualizarSubcategoria(event.target.value)}
 					disabled={!categoria}
-					className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition disabled:cursor-not-allowed disabled:bg-zinc-100 focus:border-zinc-900"
+					className="w-full rounded-none border border-zinc-300 bg-bone px-3 py-2 outline-none transition disabled:cursor-not-allowed disabled:bg-zinc-100 focus:border-zinc-900"
 				>
 					<option value="">Seleccionar subcategoria</option>
 					{subcategoriasDisponibles.map((subcategoriaDisponible) => (

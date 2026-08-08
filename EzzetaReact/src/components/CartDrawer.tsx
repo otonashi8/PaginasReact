@@ -417,7 +417,7 @@ export const CartDrawer = () => {
                       <div className="space-y-4">
                         <div>
                           <span className="text-sm uppercase tracking-[0.2em] text-black/60">Precio</span>
-                          <PriceDisplay product={recommendedModalProduct} />
+                          <p><PriceDisplay product={recommendedModalProduct} /></p>
                         </div>
                         <label className="block">
                           <span className="text-sm uppercase tracking-[0.2em] text-black/60">Talla</span>

@@ -5,8 +5,12 @@ import { useHoldNumber } from '../hooks/useHoldNumber';
 import { Link, useNavigate } from 'react-router-dom';
 import { ImagePlaceholder } from '../components/ImagePlaceholder';
 import { ProductHoverImage } from '../components/ProductHoverImage';
+import { PermissionGate } from '../components/PermissionGate';
 import { useWishlist } from '../context/WishlistContext';
+import { PriceDisplay } from '../components/PriceDisplay';
 import { getBestSellers, getHomeCategories, getHomeSlides, getTopFeaturedProducts } from '../services/homeContentService';
+import { resolveProductPrice } from '../services/pricingService';
+import { PERMISSIONS } from '../utils/permissionCodes';
 
 const allowedCategoryNames = ['Polos', 'Shorts', 'Joggers', 'Pantalón'];
 
@@ -92,6 +96,11 @@ export const HomePage = () => {
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 w-full max-w-none">
           {featuredProducts.map((product) => {
             const isFavorite = favorites.includes(product.id);
+            const resultadoPrecio = resolveProductPrice(product);
+            const precioOriginal = resultadoPrecio.precioOriginal;
+            const precioFinal = resultadoPrecio.precioFinal;
+            const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
+            const etiquetaDescuento = resultadoPrecio.etiquetaDescuento;
 
             return (
               <motion.article
@@ -126,7 +135,13 @@ export const HomePage = () => {
                 <div className="mt-4 flex flex-1 flex-col">
                   <h3 className="text-lg font-semibold text-black">{product.name}</h3>
                   <div className="mt-auto flex items-center justify-between pt-4">
-                    <p className="text-base font-semibold text-red-600">€{product.price}</p>
+                  <p className="text-2xl font-semibold tracking-[-0.04em] text-black"> 
+                  <PriceDisplay product={product}/>
+                  {hayDescuento && etiquetaDescuento ? (
+                  <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
+                  {etiquetaDescuento}
+                  </span>
+                  ) : null}</p>
                     <button
                       type="button"
                       onClick={(event) => {
@@ -174,6 +189,11 @@ export const HomePage = () => {
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full max-w-none">
           {bestSellers.map((product) => {
             const isFavorite = favorites.includes(product.id);
+            const resultadoPrecio = resolveProductPrice(product);
+            const precioOriginal = resultadoPrecio.precioOriginal;
+            const precioFinal = resultadoPrecio.precioFinal;
+            const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
+            const etiquetaDescuento = resultadoPrecio.etiquetaDescuento;
 
             return (
               <motion.article
@@ -208,7 +228,13 @@ export const HomePage = () => {
                 <div className="mt-4 flex flex-1 flex-col">
                   <h3 className="text-base font-semibold text-black">{product.name}</h3>
                   <div className="mt-auto flex items-center justify-between pt-4">
-                    <p className="text-base font-semibold text-red-600">€{product.price}</p>
+                    <p className="text-2xl font-semibold tracking-[-0.04em] text-black"> 
+                    <PriceDisplay product={product}/>
+                    {hayDescuento && etiquetaDescuento ? (
+                    <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
+                    {etiquetaDescuento}
+                    </span>
+                    ) : null}</p>
                     <button
                       type="button"
                       onClick={(event) => {
@@ -257,7 +283,7 @@ export const HomePage = () => {
                     <p className="text-sm uppercase tracking-[0.25em] text-black/60">Compra rápida</p>
                     <h3 className="mt-2 text-xl font-semibold text-black">{selectedProduct.name}</h3>
                   </div>
-                  <p className="text-2xl font-semibold text-red-600">€{selectedProduct.price}</p>
+                  <p className="text-2xl font-semibold text-red-600">S/{resolveProductPrice(selectedProduct).precioFinal.toFixed(2)}</p>
                   <div>
                     <label className="text-sm font-medium text-black">Talla</label>
                     <select
@@ -303,6 +329,7 @@ export const HomePage = () => {
                     </div>
                   </div>
                   <div className="flex gap-3">
+                    <PermissionGate permission={PERMISSIONS.salesCreate}>
                     <button
                       type="button"
                       onClick={() => addToCart(selectedProduct.id, selectedSize, quantity)}
@@ -310,6 +337,8 @@ export const HomePage = () => {
                     >
                       Agregar al carrito
                     </button>
+                    </PermissionGate>
+                    <PermissionGate permission={PERMISSIONS.productUpdate}>
                     <button
                       type="button"
                       onClick={() => toggleFavorite(selectedProduct.id)}
@@ -317,6 +346,7 @@ export const HomePage = () => {
                     >
                       <Heart size={16} />
                     </button>
+                    </PermissionGate>
                   </div>
                 </div>
               </div>

@@ -8,6 +8,10 @@ import { TypewriterTitle } from '../components/TypewriterTitle';
 import { useWishlist } from '../context/WishlistContext';
 import { useHoldNumber } from '../hooks/useHoldNumber';
 import { getHomeProducts, getHomeSlides } from '../services/homeContentService';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { resolveProductPrice } from '../services/pricingService';
+import { PermissionGate } from '../components/PermissionGate';
+import { PriceDisplay } from '../components/PriceDisplay';
 
 type CollectionCategory = {
   label: string;
@@ -176,14 +180,6 @@ export const HomePage = () => {
     return groups[carouselIndex % groups.length] ?? [];
   }, [allProducts, carouselGroupCount, carouselIndex]);
 
-  const showPreviousCarouselGroup = () => {
-    setCarouselIndex((current) => (current - 1 + carouselGroupCount) % carouselGroupCount);
-  };
-
-  const showNextCarouselGroup = () => {
-    setCarouselIndex((current) => (current + 1) % carouselGroupCount);
-  };
-
   return (
     <section className="space-y-8 pb-8 pt-0">
       <div className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-white -mt-24">
@@ -278,9 +274,7 @@ export const HomePage = () => {
                   <span
                     aria-hidden="true"
                     className="inline-flex h-10 w-10 items-center justify-center border border-white/70 bg-black/70 text-lg transition-colors group-hover:border-red-600 group-hover:bg-red-600"
-                  >
-                    →
-                  </span>
+                  >→</span>
                 </div>
               </Link>
             </motion.div>
@@ -378,25 +372,6 @@ export const HomePage = () => {
           <p className="mt-2 text-sm text-black/70">¡VISITA NUESTRA TIENDA!</p>
         </div>
 
-        <div className="mb-5 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={showPreviousCarouselGroup}
-            className="inline-flex h-10 w-10 items-center justify-center border border-black/20 bg-white text-black transition hover:border-red-600 hover:bg-red-600 hover:text-white"
-            aria-label="Grupo anterior"
-          >
-            {'<'}
-          </button>
-          <button
-            type="button"
-            onClick={showNextCarouselGroup}
-            className="inline-flex h-10 w-10 items-center justify-center border border-black/20 bg-white text-black transition hover:border-red-600 hover:bg-red-600 hover:text-white"
-            aria-label="Siguiente grupo"
-          >
-            {'>'}
-          </button>
-        </div>
-
         <AnimatePresence mode="wait">
           <motion.div
             key={carouselIndex}
@@ -408,6 +383,11 @@ export const HomePage = () => {
           >
             {visibleCarouselProducts.map((product) => {
               const isFavorite = favorites.includes(product.id);
+              const resultadoPrecio = resolveProductPrice(product);
+              const precioOriginal = resultadoPrecio.precioOriginal;
+              const precioFinal = resultadoPrecio.precioFinal;
+              const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
+              const etiquetaDescuento = resultadoPrecio.etiquetaDescuento;
 
               return (
                 <motion.article
@@ -442,7 +422,13 @@ export const HomePage = () => {
                   <div className="mt-4 flex flex-1 flex-col">
                     <h3 className="text-base font-semibold text-black">{product.name}</h3>
                     <div className="mt-auto flex items-center justify-between pt-4">
-                      <p className="text-base font-semibold text-red-600">€{product.price}</p>
+                      <p className="text-2xl font-semibold tracking-[-0.04em] text-black"> 
+                      <PriceDisplay product={product}/>
+                      {hayDescuento && etiquetaDescuento ? (
+                      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
+                      {etiquetaDescuento}
+                      </span>
+                      ) : null}</p>
                       <button
                         type="button"
                         onClick={(event) => {
@@ -492,7 +478,7 @@ export const HomePage = () => {
                     <p className="text-sm uppercase tracking-[0.25em] text-black/60">Compra rápida</p>
                     <h3 className="mt-2 text-xl font-semibold text-black">{selectedProduct.name}</h3>
                   </div>
-                  <p className="text-2xl font-semibold text-red-600">€{selectedProduct.price}</p>
+                  <p className="text-2xl font-semibold text-red-600">S/{resolveProductPrice(selectedProduct).precioFinal.toFixed(2)}</p>
                   <div>
                     <label className="text-sm font-medium text-black">Talla</label>
                     <select
@@ -532,19 +518,20 @@ export const HomePage = () => {
                         onMouseDown={() => startQuantity(1)}
                         onTouchStart={() => startQuantity(1)}
                         className="rounded-full border border-black/10 px-3 py-2 text-lg"
-                      >
-                        +
+                      >+
                       </button>
                     </div>
                   </div>
                   <div className="flex gap-3">
+                    <PermissionGate permission={PERMISSIONS.salesCreate}>
                     <button
                       type="button"
                       onClick={() => addToCart(selectedProduct.id, selectedSize, quantity)}
                       className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-medium text-white transition hover:bg-red-600"
-                    >
-                      Agregar al carrito
+                    >Agregar al carrito
                     </button>
+                    </PermissionGate>
+                    <PermissionGate permission={PERMISSIONS.salesCreate}>
                     <button
                       type="button"
                       onClick={() => toggleFavorite(selectedProduct.id)}
@@ -552,6 +539,7 @@ export const HomePage = () => {
                     >
                       <Heart size={16} />
                     </button>
+                    </PermissionGate>
                   </div>
                 </div>
               </div>

@@ -222,12 +222,12 @@ export const GenericCrudPanel = ({ access }: GenericCrudPanelProps) => {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Buscar por nombre, estado o descripcion"
-          className="w-full rounded-none border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-zinc-800"
+          className="w-full rounded-none border border-zinc-300 bg-bone px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-zinc-800"
         />
       </div>
 
       {isFormOpen ? (
-        <div className="rounded-none border border-zinc-200 bg-white p-4">
+        <div className="rounded-none border border-zinc-200 bg-bone p-4">
           <h4 className="text-base font-semibold text-zinc-900">{editingId ? 'Editar registro' : 'Crear registro'}</h4>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             <label className="text-sm text-zinc-700">
@@ -273,7 +273,7 @@ export const GenericCrudPanel = ({ access }: GenericCrudPanelProps) => {
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-none border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-zinc-500"
+              className="rounded-none border border-zinc-300 bg-bone px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-zinc-500"
             >
               Cancelar
             </button>
@@ -282,7 +282,7 @@ export const GenericCrudPanel = ({ access }: GenericCrudPanelProps) => {
       ) : null}
 
       <div className="overflow-hidden rounded-none border border-zinc-200">
-        <table className="min-w-full divide-y divide-zinc-200 bg-white text-sm">
+        <table className="min-w-full divide-y divide-zinc-200 bg-bone text-sm">
           <thead className="bg-zinc-50 text-left text-xs uppercase tracking-[0.16em] text-zinc-500">
             <tr>
               <th className="px-3 py-2">Nombre</th>

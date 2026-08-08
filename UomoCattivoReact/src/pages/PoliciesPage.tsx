@@ -12,6 +12,9 @@ export const PoliciesPage = () => {
           <article key={policy.title} className="rounded-[1.5rem] bg-[#F7F3EC] p-6">
             <h2 className="text-lg font-semibold text-black">{policy.title}</h2>
             <p className="mt-3 text-sm text-black/70">{policy.text}</p>
+            {policy.text2 && <p className="mt-3 text-sm text-black/70">{policy.text2}</p>}
+            {policy.text3 && <p className="mt-3 text-sm text-black/70">{policy.text3}</p>}
+            {policy.text4 && <p className="mt-3 text-sm text-black/70">{policy.text4}</p>}
           </article>
         ))}
       </div>

@@ -5,11 +5,9 @@ import { PERMISSIONS } from '../utils/permissionCodes';
 import useCheckoutDraft from '../hooks/useCheckoutDraft';
 import { getPeruDepartments, getPeruDistricts, getPeruProvinces } from '../services/peruUbigeoService';
 import { validarStockDelCarrito } from '../utils/cartHelpers';
-
 import type { Product } from '../types';
 import type { PurchaseItem } from '../types/auth';
 import { getProducts } from '../services/contentService';
-
 import { createAndPersistOrder } from '../services/checkoutService';
 
 type CartProduct = Product & { quantity: number; size: string };

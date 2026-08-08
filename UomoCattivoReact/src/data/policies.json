@@ -1,14 +1,48 @@
 [
   {
-    "title": "Envíos",
-    "text": "Realizamos entregas rápidas a todo Perú."
+    "title":"1. Introducción",
+    "text":"Bienvenido a https://uomocattivo.com/ . Esta Política de Privacidad explica cómo recopilamos, utilizamos y protegemos tu información personal cuando realizas compras en línea de productos de moda con nosotros."
   },
   {
-    "title": "Devoluciones",
-    "text": "Puedes solicitar devolución dentro de los 14 días posteriores a la entrega."
+    "title":"2. Información que Recopilamos",
+    "text":"Información personal: Tu nombre, correo electrónico, número de teléfono, dirección de envío y facturación.",
+    "text2":"Detalles del pedido: Artículos que compras, historial de compras y solicitudes de devolución o cambio.",
+    "text3":"Información de pago: No almacenamos los datos de tu tarjeta. Todos los pagos se procesan de forma segura mediante pasarelas de terceros.",
+    "text4":"Datos técnicos: Dirección IP, tipo de navegador, detalles del dispositivo y comportamiento de navegación recopilados mediante cookies."
   },
   {
-    "title": "Atención al cliente",
-    "text": "Nuestro equipo responde consultas de estilo y pedidos en menos de 24 horas."
+    "title":"3. Cómo Utilizamos Tu Información",
+    "text":"Para procesar y entregar tus pedidos de manera rápida y precisa.",
+    "text2":"Para enviarte actualizaciones de pedidos, promociones y mensajes de atención al cliente.",
+    "text3":"Para analizar el comportamiento de los usuarios y mejorar tu experiencia de compra.",
+    "text4":"Para personalizar contenido y recomendaciones de productos."
+  },
+  {
+    "title":"4. Compartir Tu Información",
+    "text":"No vendemos ni alquilamos tus datos personales. Solo podemos compartir tu información con:",
+    "text2":"- Socios de entrega: Para enviar tus pedidos.",
+    "text3":"- Proveedores de pago: Para procesar las transacciones de forma segura.",
+    "text4":"- Autoridades legales: Cuando sea requerido por ley."
+  },
+  {
+    "title":"5. Cookies y Tecnologías de Seguimiento",
+    "text":"Usamos cookies para recordar tu carrito, recomendar productos y analizar el rendimiento del sitio web.",
+    "text2":"Nota: Puedes gestionar la configuración de cookies en tu navegador."
+  },
+  {
+    "title":"6. Seguridad de los Datos",
+    "text":"Implementamos medidas de seguridad estándar en la industria para proteger tu información:",
+    "text2":"- Cifrado SSL.",
+    "text3":"- Cortafuegos (Firewalls).",
+    "text4":"- Acceso limitado a los datos."
+  },
+  {
+    "title":"7. Enlaces de Terceros",
+    "text":"Nuestro sitio web puede contener enlaces a sitios web de terceros (por ejemplo, redes sociales o servicios de envío). No somos responsables de sus prácticas de privacidad ni de su contenido."
+  },
+  {
+    "title":"8. Información de Contacto",
+    "text":"Si tienes alguna pregunta sobre esta Política de Privacidad, comunícate con nosotros en:",
+    "text2":"Correo electrónico: contacto@uomocattivo.com"
   }
 ]

@@ -49,11 +49,11 @@ export const ClientesDashboard = ({ kpis, comparativa, rankings, planCounts }: P
                 </div>
 
                 <div className="w-full max-w-xs shrink-0">
-                    <div className="rounded-none border border-zinc-200 bg-white p-6 shadow-sm">
+                    <div className="rounded-none border border-zinc-200 bg-bone p-6 shadow-sm">
                         <h2 className="text-lg font-semibold text-zinc-900">Clientes x Plan</h2>
                         <p className="mt-1 text-sm text-zinc-500">Distribución de clientes por plan.</p>
                     </div>
-                    <div className="mt-4 rounded-none border border-zinc-200 bg-white p-6">
+                    <div className="mt-4 rounded-none border border-zinc-200 bg-bone p-6">
                         <div className="space-y-2 text-sm">
                             <div className="flex items-center justify-between">
                                 <div>Oro</div>
@@ -75,7 +75,7 @@ export const ClientesDashboard = ({ kpis, comparativa, rankings, planCounts }: P
             <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
                 
                 <section className="space-y-4">
-                    <div className="rounded-none border border-zinc-200 bg-white p-6 shadow-sm">
+                    <div className="rounded-none border border-zinc-200 bg-bone p-6 shadow-sm">
                         <h2 className="text-lg font-semibold text-zinc-900">Ranking de clientes</h2>
                         <p className="mt-1 text-sm text-zinc-500">Los clientes con mayor impacto en ventas.</p>
                     </div>

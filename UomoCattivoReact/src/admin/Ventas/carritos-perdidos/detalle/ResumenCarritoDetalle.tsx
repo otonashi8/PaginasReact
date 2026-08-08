@@ -16,7 +16,7 @@ export const ResumenCarritoDetalle = ({ carrito }: Props) => {
     const total = carrito.total;
 
     return (
-        <section className="rounded-none border border-zinc-200 bg-white p-6">
+        <section className="rounded-none border border-zinc-200 bg-bone p-6">
             <div>
                 <h3 className="text-lg font-semibold">Resumen</h3>
                 <p className="mt-1 text-sm text-zinc-500">Totales calculados a partir de los productos del carrito.</p>

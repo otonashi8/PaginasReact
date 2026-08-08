@@ -57,43 +57,6 @@
     ]
   },
   {
-    "id": 3,
-    "slug": "pantalon-sastre-negro",
-    "name": "Pantalón Sastre Negro",
-    "price": 124,
-    "previousPrice": 159,
-    "category": "Pantalón",
-    "subcategory": "Sastre",
-    "description": "Pantalón de corte sastre con acabado elegante y excelente caída, perfecto para ocasiones formales o un estilo ejecutivo.",
-    "image": "https://uomocattivo.com/wp-content/uploads/2026/05/PANTALON-SASTRE-NEGRO-3-600x900.jpg.webp",
-    "colors": [
-      "Negro"
-    ],
-    "sizes": [
-      "28",
-      "30",
-      "32",
-      "34",
-      "36"
-    ],
-    "featured": false,
-    "relatedIds": [
-      1,
-      2,
-      4
-    ],
-    "extras": [
-      "✓ Envío seguro",
-      "✓ Pago protegido",
-      "✓ Envío gratis desde S/300"
-    ],
-    "mini-image": [
-      "https://uomocattivo.com/wp-content/uploads/2026/05/PANTALON-SASTRE-NEGRO-3-600x900.jpg.webp",
-      "https://uomocattivo.com/wp-content/uploads/2026/05/PANTALON-SASTRE-NEGRO-1-600x750.png.webp",
-      "https://uomocattivo.com/wp-content/uploads/2026/05/MEDIDAS-PATALON-SASTRE-600x750.jpg.webp"
-    ]
-  },
-  {
     "id": 4,
     "slug": "polo-supremo-perla",
     "name": "Polo Supremo Perla",

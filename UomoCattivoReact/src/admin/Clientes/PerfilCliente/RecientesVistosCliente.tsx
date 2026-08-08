@@ -8,7 +8,7 @@ export const RecientesVistosCliente = ({ productos }: Props) => {
     }
 
     return (
-        <section className="rounded-none border border-zinc-200 bg-white p-6">
+        <section className="rounded-none border border-zinc-200 bg-bone p-6">
             <div>
                 <h3 className="text-lg font-semibold text-zinc-900">Productos vistos recientemente</h3>
                 <p className="mt-1 text-sm text-zinc-500">Últimos productos consultados por el cliente.</p>

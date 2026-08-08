@@ -24,7 +24,7 @@ export const ResumenRoles = ({
                 tarjetas.map((item) => (
                     <div
                         key={item.titulo}
-                        className="rounded-none border border-zinc-200 bg-white p-5"
+                        className="rounded-none border border-zinc-200 bg-bone p-5"
                     >
                         <p className="text-sm text-zinc-500">{item.titulo}</p>
                         <p className="mt-2 text-3xl font-bold">{item.valor}</p>

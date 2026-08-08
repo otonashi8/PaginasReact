@@ -7,7 +7,7 @@ type Props = {
 
 export const OrdenClientesPanel = ({ orden, onOrdenChange }: Props) => {
     return (
-        <div className="flex items-center gap-3 rounded-none border border-zinc-200 bg-white p-5">
+        <div className="flex items-center gap-3 rounded-none border border-zinc-200 bg-bone p-5">
             <label className="text-sm font-medium text-zinc-700">Ordenar por</label>
             <select
                 value={orden}

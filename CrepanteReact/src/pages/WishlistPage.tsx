@@ -6,8 +6,12 @@ import { ImagePlaceholder } from '../components/ImagePlaceholder';
 import { ProductHoverImage } from '../components/ProductHoverImage';
 import QuickAddModal from '../components/QuickAddModal';
 import { TypewriterTitle } from '../components/TypewriterTitle';
+import { resolveProductPrice } from '../services/pricingService';
+import { PermissionGate } from '../components/PermissionGate';
 import { useWishlist } from '../context/WishlistContext';
 import { getProducts } from '../services/contentService';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import PriceDisplay from '../components/PriceDisplay';
 
 export const WishlistPage = () => {
   const { favorites, toggleFavorite} = useWishlist();
@@ -30,7 +34,7 @@ export const WishlistPage = () => {
       return;
     }
 
-    const itemLines = items.map((product) => `- ${product.name} (S/${product.price})`).join('\n');
+    const itemLines = items.map((product) => `- ${product.name} (S/${resolveProductPrice(product).precioFinal.toFixed(2)})`).join('\n');
     const shareText = `Mi lista de deseos:\n${itemLines}\n\nRevisa los productos aquí: ${window.location.href}`;
 
     try {
@@ -68,6 +72,7 @@ export const WishlistPage = () => {
         <>
           <div className="flex flex-col gap-4 rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold uppercase tracking-[0.2em] text-black">Tus piezas favoritas</h2>
+            <PermissionGate permission={PERMISSIONS.wishlistShare}>
             <button
               type="button"
               onClick={shareWishlist}
@@ -75,6 +80,7 @@ export const WishlistPage = () => {
             >
               <Share2 size={16} /> Compartir lista
             </button>
+            </PermissionGate>
           </div>
 
           <QuickAddModal
@@ -108,31 +114,35 @@ export const WishlistPage = () => {
                   ) : (
                     <ImagePlaceholder label="Producto" className="h-full" />
                   )}
+                  <PermissionGate permission={PERMISSIONS.productUpdate}>
                   <button
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
                       toggleFavorite(product.id);
                     }}
-                    className={`absolute right-3 top-3 border bg-white p-2 transition-all duration-300 ${favorites.includes(product.id) ? 'border-red-600 bg-red-600 text-white' : 'border-black/10 bg-white/90 text-black hover:border-red-600 hover:text-red-600'}`}
+                    className={`absolute right-3 top-3 border bg-white p-2 transition-all duration-300 ${favorites.includes(product.id) ? 'border-red-600 bg-red-600 text-red-500' : 'border-black/10 bg-white/90 text-black hover:border-red-600 hover:text-red-600'}`}
                   >
                     <Heart size={16} />
                   </button>
+                  </PermissionGate>
                 </div>
                 <div className="mt-4 flex flex-1 flex-col">
                   <h3 className="text-lg font-semibold text-black">{product.name}</h3>
                   <div className="mt-auto flex items-center justify-between pt-4">
-                    <p className="text-base font-semibold text-red-600">S/{product.price}</p>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setSelectedQuickProduct(product);
-                      }}
-                      className="inline-flex items-center justify-center rounded-full border border-black/10 bg-black p-2 text-white transition hover:bg-red-600"
-                    >
-                      <ShoppingBag size={16} />
-                    </button>
+                    <PriceDisplay product={product} />
+                    <PermissionGate permission={PERMISSIONS.salesCreate}>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedQuickProduct(product);
+                        }}
+                        className="inline-flex items-center justify-center rounded-full border border-black/10 bg-black p-2 text-white transition hover:bg-red-600"
+                      >
+                        <ShoppingBag size={16} />
+                      </button>
+                    </PermissionGate>
                   </div>
                 </div>
               </motion.article>

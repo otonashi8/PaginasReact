@@ -9,7 +9,7 @@ export const ProductosCarrito = ({ productos }: Props) => {
     const catalogo = getProducts();
 
     return (
-        <section className="rounded-none border border-zinc-200 bg-white p-6">
+        <section className="rounded-none border border-zinc-200 bg-bone p-6">
             <div>
                 <h3 className="text-lg font-semibold text-zinc-900">Productos del carrito</h3>
                 <p className="mt-1 text-sm text-zinc-500">Revisa los items almacenados en el carrito.</p>

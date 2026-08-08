@@ -86,7 +86,7 @@ export const FormularioProducto = ({
     return (
         <div className="space-y-3">
             <section className="grid gap-3 xl:grid-cols-[1.35fr_0.75fr]">
-                <div className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+                <div className="rounded-none border border-zinc-200 bg-bone p-3 shadow-sm sm:p-4">
                     <div className="mb-3">
                         <h3 className="text-sm font-semibold text-zinc-950">Información general</h3>
                         <p className="mt-1 text-sm text-zinc-500">Datos base del producto para el catálogo administrativo.</p>
@@ -134,24 +134,24 @@ export const FormularioProducto = ({
                     </div>
 
                     <div className="space-y-3">
-                        <div className="rounded-none border border-zinc-200 bg-white p-3">
+                        <div className="rounded-none border border-zinc-200 bg-bone p-3">
                             <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">ID del producto</p>
                             <p className="mt-1 text-sm font-semibold text-zinc-950 md:text-sm">{producto.id || 'Sin ID'}</p>
                         </div>
 
-                        <div className="rounded-none border border-zinc-200 bg-white p-3">
+                        <div className="rounded-none border border-zinc-200 bg-bone p-3">
                             <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Precio actual</p>
                             <p className="mt-1 text-sm font-semibold text-zinc-950 md:text-sm">S/ {producto.precio.toFixed(2)}</p>
                         </div>
 
                         <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-none border border-zinc-200 bg-white p-3">
+                            <div className="rounded-none border border-zinc-200 bg-bone p-3">
                                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Stock</p>
                                 <p className={`mt-1 text-sm font-semibold ${stockTotal <= 0 ? 'text-red-600' : stockTotal <= 5 ? 'text-orange-600' : stockTotal <= 15 ? 'text-yellow-600' : 'text-emerald-600'}`}>
                                     {stockTotal}
                                 </p>
                             </div>
-                            <div className="rounded-none border border-zinc-200 bg-white p-3">
+                            <div className="rounded-none border border-zinc-200 bg-bone p-3">
                                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Estado</p>
                                 <p className={`mt-1 text-sm font-semibold ${producto.activo ? 'text-emerald-600' : 'text-red-600'}`}>
                                     {producto.activo ? 'Activo' : 'Inactivo'}
@@ -162,7 +162,7 @@ export const FormularioProducto = ({
                 </div>
             </section>
 
-            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+            <section className="rounded-none border border-zinc-200 bg-bone p-3 shadow-sm sm:p-4">
                 <div className="mb-3">
                     <h3 className="text-base font-semibold text-zinc-950">Clasificación</h3>
                     <p className="mt-1 text-sm text-zinc-500">Organiza el producto dentro del módulo de inventario.</p>
@@ -174,7 +174,7 @@ export const FormularioProducto = ({
                         <select
                             value={producto.genero}
                             onChange={(event) => actualizarCampo('genero', event.target.value as Producto['genero'])}
-                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                            className="w-full rounded-none border border-zinc-300 bg-bone px-3 py-2 outline-none transition focus:border-zinc-900"
                         >
                             {generosDisponibles.map((generoDisponible) => (
                                 <option key={generoDisponible} value={generoDisponible}>
@@ -219,7 +219,7 @@ export const FormularioProducto = ({
                 </div>
             </section>
 
-            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+            <section className="rounded-none border border-zinc-200 bg-bone p-3 shadow-sm sm:p-4">
                 <div className="mb-3">
                     <h3 className="text-base font-semibold text-zinc-950">Precios e inventario</h3>
                     <p className="mt-1 text-sm text-zinc-500">Configura valores comerciales y disponibilidad del producto.</p>
@@ -238,7 +238,7 @@ export const FormularioProducto = ({
                         />
                     </label>
 
-                    <div className="rounded-none border border-zinc-200 bg-white p-4">
+                    <div className="rounded-none border border-zinc-200 bg-bone p-4">
                         <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Stock total</p>
                         <p className={`mt-1 text-sm font-semibold ${stockTotal <= 0 ? 'text-red-600' : stockTotal <= 5 ? 'text-orange-600' : stockTotal <= 15 ? 'text-yellow-600' : 'text-emerald-600'}`}>
                             {stockTotal}
@@ -258,7 +258,7 @@ export const FormularioProducto = ({
                 actualizarMiniImagenes={(miniImagenes) => actualizarCampo('miniImagenes', miniImagenes)}
             />
 
-            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+            <section className="rounded-none border border-zinc-200 bg-bone p-3 shadow-sm sm:p-4">
                 <div className="mb-3">
                     <h3 className="text-base font-semibold text-zinc-950">Stock por talla</h3>
                     <p className="mt-1 text-sm text-zinc-500">Ingresa la cantidad disponible para cada talla seleccionada.</p>
@@ -284,7 +284,7 @@ export const FormularioProducto = ({
                 </div>
             </section>
 
-            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+            <section className="rounded-none border border-zinc-200 bg-bone p-3 shadow-sm sm:p-4">
                 <SelectorTallas
                     tallasSeleccionadas={producto.tallas}
                     actualizarTallas={actualizarTallas}

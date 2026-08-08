@@ -68,7 +68,7 @@ export const ClientesCrudPanel = () => {
             </div>
 
             <div className="space-y-6">
-                <div className="rounded-none border border-zinc-200 bg-white p-6">
+                <div className="rounded-none border border-zinc-200 bg-bone p-6">
                     <h2 className="text-lg font-semibold">Clientes</h2>
                     <p className="text-sm text-zinc-500">Vista general para clientes registrados y guest.</p>
                 </div>

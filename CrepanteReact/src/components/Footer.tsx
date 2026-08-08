@@ -40,7 +40,7 @@ export const Footer = () => {
         href="https://www.instagram.com/crepante/?hl=es-la"
         target="_blank"
         rel="noreferrer"
-        className="inline-flex w-full justify-center items-center gap-2 rounded-full border border-white/20 bg-black px-4 py-2 text-sm font-medium text-white transition hover:border-red-600 hover:bg-red-600"
+        className="inline-flex w-full justify-center items-center gap-2 rounded-full border border-white/20 bg-pink-700 px-4 py-2 text-sm font-medium text-white transition hover:border-red-600 hover:bg-red-600"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <rect x="3" y="3" width="18" height="18" rx="5" stroke="white" strokeWidth="1.2"/>
@@ -54,7 +54,7 @@ export const Footer = () => {
         href="https://www.facebook.com/p/Crepante-100085842814872/"
         target="_blank"
         rel="noreferrer"
-        className="inline-flex w-full justify-center items-center gap-2 rounded-full border border-white/20 bg-black px-4 py-2 text-sm font-medium text-white transition hover:border-red-600 hover:bg-red-600"
+        className="inline-flex w-full justify-center items-center gap-2 rounded-full border border-white/20 bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:border-red-600 hover:bg-red-600"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path d="M18 2h-3a4 4 0 0 0-4 4v3H8v4h3v8h4v-8h3l1-4h-4V6a1 1 0 0 1 1-1h3V2z" fill="white"/>

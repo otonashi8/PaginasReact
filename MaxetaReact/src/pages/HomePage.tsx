@@ -7,6 +7,8 @@ import { TypewriterTitle } from '../components/TypewriterTitle';
 import { useWishlist } from '../context/WishlistContext';
 import { getHomeProducts, getHomeSlides } from '../services/homeContentService';
 import type { Product } from '../types';
+import { PriceDisplay } from '../components/PriceDisplay';
+import { resolveProductPrice } from '../services/pricingService';
 
 type HomeCategory = {
   label: string;
@@ -190,7 +192,7 @@ export const HomePage = () => {
   }, [testimonialStartIndex]);
 
   const currentSlide = slides[activeSlide] ?? slides[0];
-
+  
   return (
     <section className="space-y-12 pb-12 pt-0">
       <div className="relative left-1/2 -mt-24 w-screen -translate-x-1/2 overflow-hidden bg-white">
@@ -279,6 +281,11 @@ export const HomePage = () => {
           >
             {visibleBestSellers.map((product) => {
               const isFavorite = favorites.includes(product.id);
+              const resultadoPrecio = resolveProductPrice(product);
+              const precioOriginal = resultadoPrecio.precioOriginal;
+              const precioFinal = resultadoPrecio.precioFinal;
+              const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
+              const etiquetaDescuento = resultadoPrecio.etiquetaDescuento;
 
               return (
                 <motion.article key={product.id} whileHover={{ y: -4 }} className="flex h-full flex-col gap-4">
@@ -289,8 +296,13 @@ export const HomePage = () => {
                   <h3 className="text-base font-semibold uppercase tracking-[0.08em] text-black">{product.name}</h3>
 
                   <div className="space-y-1">
-                    <p className="text-sm text-black/45 line-through">{product.previousPrice ? `S/${product.previousPrice}` : 'S/--'}</p>
-                    <p className="text-xl font-semibold text-red-600">S/{product.price}</p>
+                    <p className="text-2xl font-semibold tracking-[-0.04em] text-black"> 
+                      <PriceDisplay product={product}/>
+                      {hayDescuento && etiquetaDescuento ? (
+                      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
+                      {etiquetaDescuento}
+                      </span>
+                      ) : null}</p>
                   </div>
 
                   <div className="mt-auto flex items-center gap-2">
@@ -366,6 +378,7 @@ export const HomePage = () => {
             className="grid grid-cols-1 gap-5 xl:grid-cols-2"
           >
             {visibleTestimonials.map((testimonial) => (
+              
               <motion.article key={testimonial.id} layout className="grid overflow-hidden border border-black/15 bg-zinc-100 sm:grid-cols-[180px_1fr]">
                 <div className="h-52 sm:h-full">
                   <img src={testimonial.customerImage} alt={testimonial.customerName} className="h-full w-full object-cover" />

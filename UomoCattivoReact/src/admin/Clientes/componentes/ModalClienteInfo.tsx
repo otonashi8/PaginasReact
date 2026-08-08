@@ -22,7 +22,7 @@ export const ModalClienteInfo = ({ cliente, onClose }: Props) => {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-none border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100"
+                        className="rounded-none border border-zinc-300 bg-bone px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100"
                     >
                         Cerrar
                     </button>

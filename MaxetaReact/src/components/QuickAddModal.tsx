@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { useWishlist } from '../context/WishlistContext';
 import { useHoldNumber } from '../hooks/useHoldNumber';
 import type { Product } from '../types';
+import { PermissionGate } from './PermissionGate';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { PriceDisplay } from './PriceDisplay';
 
 type QuickAddModalProps = {
   product: Product;
@@ -54,10 +57,11 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.2em] text-black/50">Seleccionado</p>
                     <h3 className="mt-2 text-xl font-semibold leading-tight text-black sm:text-2xl">{product.name}</h3>
-                    <p className="mt-2 text-lg font-semibold text-black">S/{product.price}</p>
+                    <PriceDisplay product={product} cantidad={quantity} />
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <PermissionGate permission={PERMISSIONS.productUpdate}>
                     <button
                       type="button"
                       onClick={() => toggleFavorite(product.id)}
@@ -66,6 +70,7 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                     >
                       <Heart size={16} />
                     </button>
+                    </PermissionGate>
                     <button
                       type="button"
                       onClick={onClose}
@@ -128,6 +133,7 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                 </div>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <PermissionGate permission={PERMISSIONS.salesCreate}>
                   <button
                     type="button"
                     onClick={() => { addToCart(product.id, selSize, quantity); onClose(); }}
@@ -135,6 +141,7 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                   >
                     Agregar
                   </button>
+                  </PermissionGate>
                   <button
                     type="button"
                     onClick={onClose}

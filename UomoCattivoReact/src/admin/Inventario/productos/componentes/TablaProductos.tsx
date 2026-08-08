@@ -26,7 +26,7 @@ export const TablaProductos = ({
         {
             etiqueta: 'Productos',
             valor: totalProductos,
-            clases: 'border-zinc-200 bg-white text-zinc-900',
+            clases: 'border-zinc-200 bg-bone text-zinc-900',
         },
         {
             etiqueta: 'Activos',
@@ -56,7 +56,7 @@ export const TablaProductos = ({
                 ))}
             </div>
 
-            <div className="overflow-hidden rounded-none border border-zinc-200 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-none border border-zinc-200 bg-bone shadow-sm">
                 <div className="hidden overflow-x-auto lg:block">
                     <table className="min-w-[980px] w-full">
                         <thead className="bg-zinc-50">
@@ -131,7 +131,7 @@ export const TablaProductos = ({
                                             <button
                                                 type="button"
                                                 onClick={() => cambiarEstado(producto, 'destacado')}
-                                                className={`inline-flex rounded-none border px-3 py-1 text-xs font-semibold transition ${producto.destacado ? 'border-yellow-200 bg-yellow-100 text-yellow-800 hover:border-yellow-300 hover:bg-yellow-50' : 'border-zinc-200 bg-white text-zinc-400 hover:border-zinc-400 hover:bg-zinc-50'}`}
+                                                className={`inline-flex rounded-none border px-3 py-1 text-xs font-semibold transition ${producto.destacado ? 'border-yellow-200 bg-yellow-100 text-yellow-800 hover:border-yellow-300 hover:bg-yellow-50' : 'border-zinc-200 bg-bone text-zinc-400 hover:border-zinc-400 hover:bg-zinc-50'}`}
                                             >
                                                 {producto.destacado ? '✓' : '✕'}
                                             </button>
@@ -197,9 +197,9 @@ export const TablaProductos = ({
                                         </div>
 
                                         <div className="flex flex-wrap gap-2 text-xs text-zinc-700">
-                                            <span className="rounded-none border border-zinc-200 bg-white px-2.5 py-1">{producto.categoria}</span>
-                                            <span className="rounded-none border border-zinc-200 bg-white px-2.5 py-1">{producto.subcategoria}</span>
-                                            <span className="rounded-none border border-zinc-200 bg-white px-2.5 py-1">{producto.genero}</span>
+                                            <span className="rounded-none border border-zinc-200 bg-bone px-2.5 py-1">{producto.categoria}</span>
+                                            <span className="rounded-none border border-zinc-200 bg-bone px-2.5 py-1">{producto.subcategoria}</span>
+                                            <span className="rounded-none border border-zinc-200 bg-bone px-2.5 py-1">{producto.genero}</span>
                                         </div>
 
                                         <div className="text-sm text-zinc-700">
@@ -223,7 +223,7 @@ export const TablaProductos = ({
                                                 <span className="text-xs text-zinc-400">Sin tallas</span>
                                             ) : (
                                                 producto.tallas.map((talla) => (
-                                                    <span key={talla} className="rounded-none border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-700">
+                                                    <span key={talla} className="rounded-none border border-zinc-200 bg-bone px-2.5 py-1 text-[11px] font-medium text-zinc-700">
                                                         {talla}
                                                     </span>
                                                 ))
@@ -234,7 +234,7 @@ export const TablaProductos = ({
                                             <button
                                                 type="button"
                                                 onClick={() => cambiarEstado(producto, 'destacado')}
-                                                className={`rounded-none border px-2.5 py-1 text-xs font-semibold transition ${producto.destacado ? 'border-yellow-200 bg-yellow-100 text-yellow-800 hover:border-yellow-300 hover:bg-yellow-50' : 'border-zinc-200 bg-white text-zinc-400 hover:border-zinc-400 hover:bg-zinc-50'}`}
+                                                className={`rounded-none border px-2.5 py-1 text-xs font-semibold transition ${producto.destacado ? 'border-yellow-200 bg-yellow-100 text-yellow-800 hover:border-yellow-300 hover:bg-yellow-50' : 'border-zinc-200 bg-bone text-zinc-400 hover:border-zinc-400 hover:bg-zinc-50'}`}
                                             >
                                                 {producto.destacado ? 'Destacado ✅' : 'Destacado ❌'}
                                             </button>

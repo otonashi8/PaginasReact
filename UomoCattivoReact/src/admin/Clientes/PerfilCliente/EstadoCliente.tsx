@@ -16,7 +16,7 @@ export const EstadoCliente = ({
     ultimaCompra
 }: Props) => {
     return (
-        <section className="rounded-none border border-zinc-200 bg-white p-6">
+        <section className="rounded-none border border-zinc-200 bg-bone p-6">
             <div className="flex items-center justify-between gap-4">
                 <div>
                     <h3 className="text-lg font-semibold text-zinc-900">Estado</h3>

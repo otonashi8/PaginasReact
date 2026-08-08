@@ -122,8 +122,7 @@ if (isSearch) {
               type="button"
               onClick={() => onQuickAdd(product)}
               className="rounded-full border border-black/10 px-3 py-2 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
-            >
-              Ver
+            >Ver
             </button>
           ) : null}
         </div>

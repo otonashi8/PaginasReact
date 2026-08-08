@@ -220,12 +220,12 @@ export const HomePage = () => {
                     <h3 className="text-base font-semibold text-black">{product.name}</h3>
                     <div className="mt-auto flex items-center justify-between pt-4">
                       <p className="text-2xl font-semibold tracking-[-0.04em] text-black"> 
-                                                          <PriceDisplay product={product}/>
-                                                            {hayDescuento && etiquetaDescuento ? (
-                                                              <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
-                                                              {etiquetaDescuento}
-                                                              </span>
-                                                            ) : null}</p>
+                      <PriceDisplay product={product}/>
+                      {hayDescuento && etiquetaDescuento ? (
+                      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
+                      {etiquetaDescuento}
+                      </span>
+                      ) : null}</p>
                       <PermissionGate permission={PERMISSIONS.salesCreate}>
                         <button
                           type="button"

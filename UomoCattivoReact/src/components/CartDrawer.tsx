@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Heart, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
+import { Heart, Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useHoldNumber } from '../hooks/useHoldNumber';
 import { Link } from 'react-router-dom';
@@ -8,7 +8,6 @@ import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import useCart from '../hooks/useCart';
 import type { Product } from '../types';
-import type { PurchaseItem } from '../types/auth';
 import { getPlanById, type SubscriptionPlan } from '../plans';
 import { getProducts } from '../services/contentService';
 import { resolveProductPrice, resolveCartCoupon, usePricingRules } from '../services/pricingService';
@@ -23,26 +22,44 @@ import { ProductHoverImage } from '../components/ProductHoverImage';
 import { PermissionGate } from './PermissionGate';
 import { PERMISSIONS } from '../utils/permissionCodes';
 
+
 type CartProduct = Product & { quantity: number; size: string };
+
+type AppliedCouponType = 'percentage' | 'fixed' | 'shipping' | 'price_fixed';
+
+type AppliedCoupon = {
+  id?: number;
+  code: string;
+  type: AppliedCouponType;
+  value: number;
+  minPurchase: number;
+  active: boolean;
+  freeShipping?: boolean;
+  source: 'static' | 'admin';
+};
 
 export const CartDrawer = () => {
   const { isAuthenticated, user, recordPurchase } = useAuth();
-  const { cart, favorites, isCartOpen, closeCart, removeFromCart, updateQuantity, changeItemSize, toggleFavorite, addToCart, clearCart } = useWishlist();
+  const { favorites, toggleFavorite } = useWishlist();
+  const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, changeItemSize, addToCart, clearCart } = useCart();
   const products = getProducts();
   const [deleteConfirm, setDeleteConfirm] = useState<{ productId: number; size: string } | null>(null);
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'checkout' | 'payment'>('cart');
-  const [paymentInfo, setPaymentInfo] = useState({ name: '', email: '', address: '', paymentMethod: 'card' });
-  const [paymentDetails, setPaymentDetails] = useState({ cardNumber: '', cardName: '', cardExpiry: '', cardCvc: '', yapePhone: '' });
-  const [recommendedModalProduct, setRecommendedModalProduct] = useState<
-    (typeof products)[number] | null
-  >(null);
+  const [recommendedModalProduct, setRecommendedModalProduct] = useState<(typeof products)[number] | null>(null);
   const [recommendedSize, setRecommendedSize] = useState('M');
   const { value: recommendedQuantity, setValue: setRecommendedQuantity, start: startRecommendedChange } = useHoldNumber(1, { min: 1, step: 1, interval: 120 });
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan['id']>(user?.plan ?? 'bronze');
   const [promoCodeInput, setPromoCodeInput] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(() => {
+    try {
+      return storageManager.cart.appliedCoupon.get() as AppliedCoupon | null;
+    } catch {
+      return null;
+    }
+  });
   const [promoMessage, setPromoMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const pricingRules = usePricingRules();
 
   const selectedProducts: CartProduct[] = cart
     .map((item) => {
@@ -52,74 +69,15 @@ export const CartDrawer = () => {
         return null;
       }
 
-      return { ...product, quantity: item.quantity, size: item.size };
+      const precio = resolveProductPrice(product, { cantidad: item.quantity });
+
+      return { ...product, price: precio.precioFinal, quantity: item.quantity, size: item.size };
     })
     .filter((item): item is CartProduct => item !== null);
-
-  function QuantityInput({
-    value,
-    onChange,
-  }: {
-    value: number;
-    onChange: (v: number) => void;
-  }) {
-    const { value: v, setValue, start, stop } = useHoldNumber(value, { min: 1, step: 1, interval: 120 });
-
-    // keep internal value in sync when parent updates
-    useEffect(() => {
-      setValue(Math.max(1, value));
-    }, [value]);
-
-    // propagate changes upward
-    useEffect(() => {
-      if (v !== value) onChange(v);
-    }, [v]);
-
-    return (
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onMouseDown={() => start(-1)}
-          onTouchStart={() => start(-1)}
-          onMouseUp={stop}
-          onMouseLeave={stop}
-          onTouchEnd={stop}
-          className="rounded-full border border-black/10 bg-black/5 p-1 text-white transition hover:bg-black/10"
-        >
-          <Minus size={14} />
-        </button>
-
-        <input
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          value={v}
-          onChange={(e) => {
-            const raw = e.target.value.replace(/\D/g, '');
-            setValue(raw === '' ? 1 : Number(raw));
-          }}
-          className="w-12 rounded-full border border-black/10 bg-white py-1 text-center text-sm font-medium text-black outline-none"
-        />
-
-        <button
-          type="button"
-          onMouseDown={() => start(1)}
-          onTouchStart={() => start(1)}
-          onMouseUp={stop}
-          onMouseLeave={stop}
-          onTouchEnd={stop}
-          className="rounded-full border border-black/10 bg-black/5 p-1 text-white transition hover:bg-black/10"
-        >
-          <Plus size={14} />
-        </button>
-      </div>
-    );
-  }
 
   const subtotal = selectedProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const baseShipping = subtotal >= 300 ? 0 : 15;
   const activePlan = useMemo(() => getPlanById(selectedPlanId), [selectedPlanId]);
-  //mira si esta autenticado y si tiene un plan activo
   const hasActivePlan =
   isAuthenticated &&
   user?.plan !== undefined &&
@@ -132,22 +90,26 @@ export const CartDrawer = () => {
   );
 
   const promoDiscountAmount = useMemo(() => {
-    if (!appliedPromo) return 0;
+    if (!appliedCoupon) return 0;
 
-    if (appliedPromo.type === 'percentage') {
+    if (appliedCoupon.type === 'percentage') {
       return Number(
-        Math.min(subtotal, subtotal * (appliedPromo.value / 100)).toFixed(2)
+        Math.min(subtotal, subtotal * (appliedCoupon.value / 100)).toFixed(2)
       );
     }
 
-    if (appliedPromo.type === 'fixed') {
-      return Number(Math.min(subtotal, appliedPromo.value).toFixed(2));
+    if (appliedCoupon.type === 'fixed') {
+      return Number(Math.min(subtotal, appliedCoupon.value).toFixed(2));
+    }
+
+    if (appliedCoupon.type === 'price_fixed') {
+      return Number(Math.min(subtotal, Math.max(0, subtotal - appliedCoupon.value)).toFixed(2));
     }
 
     return 0;
-  }, [appliedPromo, subtotal]);
+  }, [appliedCoupon, subtotal]);
 
-  const shipping = appliedPromo?.type === 'shipping' ? 0 : baseShipping;
+  const shipping = appliedCoupon?.freeShipping || appliedCoupon?.type === 'shipping' ? 0 : baseShipping;
   const discountedSubtotal = Number(
     Math.max(0, subtotal - discountAmount - promoDiscountAmount).toFixed(2)
   );
@@ -163,14 +125,15 @@ export const CartDrawer = () => {
   }, [user?.plan]);
 
   useEffect(() => {
-    if (appliedPromo && subtotal < appliedPromo.minPurchase) {
-      setAppliedPromo(null);
+    if (appliedCoupon && subtotal < appliedCoupon.minPurchase) {
+      setAppliedCoupon(null);
+      storageManager.cart.appliedCoupon.clear();
       setPromoMessage({
-        text: `✕ El cupón ${appliedPromo.code} requiere compra mínima de S/${appliedPromo.minPurchase}.`,
+        text: `✕ El cupón ${appliedCoupon.code} requiere compra mínima de S/${appliedCoupon.minPurchase}.`,
         type: 'error',
       });
     }
-  }, [subtotal, appliedPromo]);
+  }, [subtotal, appliedCoupon]);
 
   const handleConfirmDelete = () => {
     if (deleteConfirm) {
@@ -178,6 +141,17 @@ export const CartDrawer = () => {
       setDeleteConfirm(null);
     }
   };
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === StorageKeys.PROMO_CODES) {
+        setPromoMessage({ text: 'Los códigos promocionales se actualizaron. Vuelve a aplicar tu cupón.', type: 'success' });
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const applyPromoCode = () => {
     const normalizedCode = promoCodeInput.trim().toUpperCase();
@@ -187,12 +161,39 @@ export const CartDrawer = () => {
       return;
     }
 
-    if (appliedPromo) {
+    if (appliedCoupon) {
       setPromoMessage({ text: '✕ Solo se permite un cupón a la vez.', type: 'error' });
       return;
     }
 
-    const foundPromo = promoCodes.find((promo) => promo.code.toUpperCase() === normalizedCode);
+    const couponFromRules = resolveCartCoupon(subtotal, normalizedCode, pricingRules);
+
+    if (couponFromRules.rule) {
+      const tipoDescuento = couponFromRules.rule.configuracion?.tipoDescuento;
+      const couponType: AppliedCouponType =
+        tipoDescuento === 'fijo'
+          ? 'fixed'
+          : tipoDescuento === 'precio_fijo'
+          ? 'price_fixed'
+          : 'percentage';
+
+      const coupon: AppliedCoupon = {
+        code: normalizedCode,
+        type: couponType,
+        value: Number(couponFromRules.rule.configuracion?.valor ?? 0),
+        minPurchase: Number(couponFromRules.rule.configuracion?.subtotalMinimo ?? 0),
+        active: true,
+        freeShipping: couponFromRules.freeShipping,
+        source: 'admin',
+      };
+
+      setAppliedCoupon(coupon);
+      storageManager.cart.appliedCoupon.set(coupon);
+      setPromoMessage({ text: '✓ Código aplicado correctamente', type: 'success' });
+      return;
+    }
+
+    const foundPromo = obtenerPromoCodes().find((promo) => promo.code.toUpperCase() === normalizedCode);
 
     if (!foundPromo) {
       setPromoMessage({ text: '✕ Código inválido', type: 'error' });
@@ -209,17 +210,19 @@ export const CartDrawer = () => {
       return;
     }
 
-    setAppliedPromo(foundPromo);
+    const coupon: AppliedCoupon = { ...foundPromo, source: 'static' };
+    setAppliedCoupon(coupon);
+    storageManager.cart.appliedCoupon.set(coupon);
     setPromoMessage({ text: '✓ Código aplicado correctamente', type: 'success' });
   };
 
   const removeAppliedPromo = () => {
-    setAppliedPromo(null);
+    setAppliedCoupon(null);
+    storageManager.cart.appliedCoupon.clear();
     setPromoCodeInput('');
     setPromoMessage({ text: 'Cupón eliminado', type: 'success' });
   };
 
-  // revisa si tiene 12 o más productos en el carrito
   const handleMembershipPlanSelect = (planId: SubscriptionPlan['id']) => {
     setSelectedPlanId(planId);
   };
@@ -244,7 +247,7 @@ export const CartDrawer = () => {
           >
             <div className="flex items-center justify-between border-b border-black/10 bg-black px-4 py-4 sm:px-6 sm:py-5">
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-white/70">Carrito</p>
+                <p className="text-sm uppercase tracking-[0.3em] text-white">Carrito</p>
                 <h2 className="text-xl font-semibold text-white">Tu compra</h2>
               </div>
               <button type="button" onClick={closeCart} className="text-white/80 hover:text-white">
@@ -255,403 +258,59 @@ export const CartDrawer = () => {
             <div className="flex-1 overflow-y-auto bg-black px-4 py-4 sm:px-6 sm:py-5">
               {checkoutStep === 'cart' ? (
                 selectedProducts.length === 0 ? (
-                  <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-white/10 p-6 text-center text-sm text-white/70">
+                  <div className="rounded-[1.5rem] border border-dashed border-white bg-bone p-6 text-center text-sm text-white">
                     Tu carrito está vacío.
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {selectedProducts.map((item) => {
-                      const itemSubtotal = item.price * item.quantity;
-
-                      return (
-                        <div key={`${item.id}-${item.size}`} className="rounded-[1.25rem] border border-black/10 bg-white p-3 sm:p-4 shadow-sm">
-                          <div className="flex gap-3 sm:gap-4">
-                            <div className="h-24 w-16 sm:h-30 sm:w-20 shrink-0 rounded-[0.75rem] overflow-hidden border border-black/10 bg-black/5">
-                              {item.image ? (
-                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <ImagePlaceholder label="Producto" className="h-full w-full" />
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-2">
-                                <div>
-                                  <h3 className="text-sm leading-5 font-semibold text-black break-words">{item.name}</h3>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => setDeleteConfirm({ productId: item.id, size: item.size })}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                              <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs">
-                                <span className="text-red-600 font-medium">Talla actual</span>
-                                <select
-                                  id={`cart-size-${item.id}-${item.size}`}
-                                  value={item.size}
-                                  onChange={(event) => changeItemSize(item.id, item.size, event.target.value)}
-                                  className="min-w-[4rem] rounded-full border border-black/10 bg-[#F7F3EC] px-2 py-1.5 text-xs text-black outline-none"
-                                >
-                                  {item.sizes.map((sizeOption) => (
-                                    <option key={sizeOption} value={sizeOption}>
-                                      {sizeOption}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div className="mt-2 space-y-2 text-sm">
-                                <div className="flex items-center justify-between text-black/70">
-                                  <span>Precio</span>
-                                  <span className="font-medium">S/{item.price}</span>
-                                </div>
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                  <span className="text-black/70">Cantidad</span>
-                                  <div>
-                                    <QuantityInput
-                                      value={item.quantity}
-                                      onChange={(v) => updateQuantity(item.id, item.size, v)}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="flex items-center justify-between font-semibold text-black">
-                                  <span>Subtotal</span>
-                                  <span>S/{itemSubtotal}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <CartItemsList
+                    items={selectedProducts}
+                    changeItemSize={changeItemSize}
+                    updateQuantity={updateQuantity}
+                    setDeleteConfirm={setDeleteConfirm}
+                  />
                 )
               ) : null}
 
               {checkoutStep === 'cart' && (
-                <div className="mt-6 space-y-4 border-t border-white/10 pt-5 sm:pt-6">
-                  <div className="rounded-[1rem] border border-white/10 bg-white/10 p-4 text-sm text-white/90">
-                    <p className="font-semibold uppercase tracking-[0.2em] text-white">Código promocional</p>
-                    <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                      <input
-                        type="text"
-                        value={promoCodeInput}
-                        onChange={(event) => setPromoCodeInput(event.target.value)}
-                        placeholder="Ingresa tu cupón"
-                        className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-black outline-none transition-all duration-300"
-                      />
-                      <button
-                        type="button"
-                        onClick={applyPromoCode}
-                        className="rounded-full bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-500"
-                      >
-                        Aplicar
-                      </button>
-                    </div>
-                    {promoMessage ? (
-                      <p className={`mt-3 text-sm ${promoMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {promoMessage.text}
-                      </p>
-                    ) : null}
-
-                    {appliedPromo ? (
-                      <div className="mt-4 rounded-[1rem] border border-red-500/70 bg-gradient-to-r from-red-600/20 to-red-500/10 p-3 text-sm text-white shadow-sm">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            <p className="font-semibold text-red-200">Cupón aplicado</p>
-                            <p className="mt-1 text-white/90">
-                              {appliedPromo.code}{' '}
-                              {appliedPromo.type === 'percentage'
-                                ? `(-${appliedPromo.value}% • ahorro de S/${promoDiscountAmount.toFixed(2)})`
-                                : appliedPromo.type === 'fixed'
-                                ? `(-S/${appliedPromo.value} de descuento)`
-                                : '(Envío gratis)'}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={removeAppliedPromo}
-                            className="rounded-full border border-red-400/40 bg-black/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-600 hover:text-white"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {!hasActivePlan && (
-                    <div className="rounded-[1rem] border border-white/10 bg-white/10 p-3 sm:p-4 text-sm text-white/80">
-                      <p className="font-semibold text-white">
-                        ¿Quieres unirte al programa mayorista?
-                      </p>
-                      <p className="mt-2 text-sm text-white/70">
-                        Elige un plan y continúa con el mismo flujo de registro compartido por toda la app.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setIsMembershipModalOpen(true)}
-                        className="mt-4 w-full sm:w-auto rounded-full bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500"
-                      >
-                        Quiero unirme
-                      </button>
-                    </div>
-                  )}
-                  {hasActivePlan && (
-                  <div className="rounded-[1rem] border border-white/10 bg-white/10 p-3 sm:p-4 text-sm text-white/80">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.25em] text-white/60">Plan activo</p>
-                        <p className="mt-1 font-semibold text-white">{activePlan.nombre}</p>
-                      </div>
-                      <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">
-                        {activePlan.descuento}%
-                      </span>
-                    </div>
-
-                    <div className="mt-4 space-y-2 text-sm">
-                      <div className="flex justify-between text-white/70">
-                        <span>Subtotal</span>
-                        <span>S/{subtotal.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-white/70">
-                        <span>Descuento</span>
-                        <span>-S/{discountAmount.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-white/70">
-                        <span>Total</span>
-                        <span>S/{discountedSubtotal.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-red-300">
-                        <span>Ahorro obtenido</span>
-                        <span>S/{discountAmount.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  )}
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between text-white/70">
-                      <span>Subtotal</span>
-                      <span>S/{subtotal.toFixed(2)}</span>
-                    </div>
-                    {promoDiscountAmount > 0 ? (
-                      <div className="flex justify-between text-white/70">
-                        <span>Descuento aplicado</span>
-                        <span>-S/{promoDiscountAmount.toFixed(2)}</span>
-                      </div>
-                    ) : null}
-                    <div className="flex justify-between text-white/60">
-                      <span>Envío (&gt; S/300 gratis)</span>
-                      <span className={shipping === 0 ? 'text-red-500 font-semibold' : 'text-white/80'}>{shipping === 0 ? 'GRATIS' : `S/${shipping}`}</span>
-                    </div>
-                    <div className="flex flex-col gap-3 pt-2 border-t border-white/10">
-                      <div className="flex items-center justify-between text-base sm:text-lg font-semibold text-white">
-                        <span>Total final</span>
-                        <span>S/{discountedTotal.toFixed(2)}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutStep('checkout')}
-                        className="w-full rounded-full bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-500">
-                        Pagar ahora
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <CartSummary
+                  subtotal={subtotal}
+                  promoDiscountAmount={promoDiscountAmount}
+                  shipping={shipping}
+                  discountedSubtotal={discountedSubtotal}
+                  discountedTotal={discountedTotal}
+                  hasActivePlan={hasActivePlan}
+                  activePlan={activePlan}
+                  onApplyPromo={applyPromoCode}
+                  promoMessage={promoMessage}
+                  appliedCoupon={appliedCoupon}
+                  promoCodeInput={promoCodeInput}
+                  setPromoCodeInput={setPromoCodeInput}
+                  removeAppliedPromo={removeAppliedPromo}
+                  setIsMembershipModalOpen={setIsMembershipModalOpen}
+                  setCheckoutStep={setCheckoutStep}
+                />
               )}
 
-              {checkoutStep === 'checkout' ? (
-                <div className="mt-4 rounded-[1.25rem] border border-white/10 bg-white/5 p-3 sm:p-4 lg:p-5 text-white">
-                  <h3 className="text-base font-semibold">Datos de envío y contacto</h3>
-                  <div className="mt-4 space-y-4 text-sm">
-                    <label className="block">
-                      <span className="text-white/70">Nombre completo</span>
-                      <input
-                        type="text"
-                        value={paymentInfo.name}
-                        onChange={(event) => setPaymentInfo({ ...paymentInfo, name: event.target.value })}
-                        className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-white/70">Email</span>
-                      <input
-                        type="email"
-                        value={paymentInfo.email}
-                        onChange={(event) => setPaymentInfo({ ...paymentInfo, email: event.target.value })}
-                        className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-white/70">Dirección</span>
-                      <input
-                        type="text"
-                        value={paymentInfo.address}
-                        onChange={(event) => setPaymentInfo({ ...paymentInfo, address: event.target.value })}
-                        className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-white/70">Método de pago</span>
-                      <select
-                        value={paymentInfo.paymentMethod}
-                        onChange={(event) => setPaymentInfo({ ...paymentInfo, paymentMethod: event.target.value })}
-                        className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                      >
-                        <option value="card">Tarjeta</option>
-                        <option value="paypal">PayPal</option>
-                        <option value="yape">Yape</option>
-                        <option value="cash">Contra entrega</option>
-                      </select>
-                    </label>
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutStep('cart')}
-                        className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-black/5 hover:text-white"
-                      >
-                        Volver
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutStep('payment')}
-                        className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
-                      >
-                        Confirmar datos
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              {checkoutStep === 'checkout' || checkoutStep === 'payment' ? (
+                <CartCheckout
+                  selectedProducts={selectedProducts}
+                  subtotal={subtotal}
+                  discountAmount={discountAmount}
+                  promoDiscountAmount={promoDiscountAmount}
+                  shipping={shipping}
+                  discountedTotal={discountedTotal}
+                  hasActivePlan={hasActivePlan}
+                  activePlan={activePlan}
+                  checkoutStep={checkoutStep}
+                  setCheckoutStep={setCheckoutStep}
+                  clearCart={clearCart}
+                  isAuthenticated={isAuthenticated}
+                  user={user}
+                  recordPurchase={recordPurchase}
+                />
               ) : null}
 
-              {checkoutStep === 'payment' ? (
-                <div className="mt-4 rounded-[1.25rem] border border-white/10 bg-white/5 p-3 sm:p-4 lg:p-5 text-white">
-                  <h3 className="text-base font-semibold">Pago — {paymentInfo.paymentMethod}</h3>
-                  <div className="mt-4 space-y-4 text-sm">
-                    {paymentInfo.paymentMethod === 'card' && (
-                      <>
-                        <label className="block">
-                          <span className="text-white/70">Número de tarjeta</span>
-                          <input
-                            type="text"
-                            value={paymentDetails.cardNumber}
-                            onChange={(e) => setPaymentDetails({ ...paymentDetails, cardNumber: e.target.value })}
-                            className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                          />
-                        </label>
-                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                          <label className="block">
-                            <span className="text-white/70">Nombre en la tarjeta</span>
-                            <input
-                              type="text"
-                              value={paymentDetails.cardName}
-                              onChange={(e) => setPaymentDetails({ ...paymentDetails, cardName: e.target.value })}
-                              className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                            />
-                          </label>
-                          <label className="block">
-                            <span className="text-white/70">Expiración / CVC</span>
-                            <div className="mt-2 flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="MM/AA"
-                                value={paymentDetails.cardExpiry}
-                                onChange={(e) => setPaymentDetails({ ...paymentDetails, cardExpiry: e.target.value })}
-                                className="w-1/2 rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                              />
-                              <input
-                                type="text"
-                                placeholder="CVC"
-                                value={paymentDetails.cardCvc}
-                                onChange={(e) => setPaymentDetails({ ...paymentDetails, cardCvc: e.target.value })}
-                                className="w-1/2 rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                              />
-                            </div>
-                          </label>
-                        </div>
-                      </>
-                    )}
-
-                    {paymentInfo.paymentMethod === 'yape' && (
-                      <label className="block">
-                        <span className="text-white/70">Número Yape</span>
-                        <input
-                          type="tel"
-                          value={paymentDetails.yapePhone}
-                          onChange={(e) => setPaymentDetails({ ...paymentDetails, yapePhone: e.target.value })}
-                          className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                        />
-                      </label>
-                    )}
-
-                    {paymentInfo.paymentMethod === 'paypal' && (
-                      <p className="text-sm text-white/70">Serás redirigido a PayPal tras confirmar.</p>
-                    )}
-
-                    {paymentInfo.paymentMethod === 'cash' && (
-                      <p className="text-sm text-white/70">Pagarás al recibir el pedido.</p>
-                    )}
-
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutStep('checkout')}
-                        className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-black/5 hover:text-white"
-                      >
-                        Volver
-                      </button>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!selectedProducts.length) {
-                            alert('Tu carrito está vacío.');
-                            return;
-                          }
-
-                          if (!isAuthenticated || !user) {
-                            alert('Inicia sesión para registrar tu compra.');
-                            return;
-                          }
-
-                          const items: PurchaseItem[] = selectedProducts.map((item) => {
-                            const lineSubtotal = item.price * item.quantity;
-                            const lineDiscount = hasActivePlan
-                            ? Number((lineSubtotal * (activePlan.descuento / 100)).toFixed(2)) : 0;
-                            return {
-                              productId: item.id,
-                              name: item.name,
-                              quantity: item.quantity,
-                              unitPrice: item.price,
-                              subtotal: lineSubtotal,
-                              discount: lineDiscount,
-                              total: Number((lineSubtotal - lineDiscount).toFixed(2)),
-                              size: item.size,
-                            };
-                          });
-
-                          await recordPurchase({
-                            items,
-                            subtotal,
-                            discount: discountAmount,
-                            total: discountedSubtotal + shipping,
-                            paymentMethod: paymentInfo.paymentMethod,
-                          });
-
-                          clearCart();
-                          alert('Pago simulado. Gracias.');
-                          setCheckoutStep('cart');
-                        }}
-                        className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
-                      >
-                        Confirmar pago
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="rounded-[1.25rem] border border-white/10 bg-white/5 p-4 mt-4">
+              <div className="rounded-[1.25rem] border border-white bg-white/5 p-4 mt-4">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Nuestras Recomendaciones</p>
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {products.slice(0, 8).map((product) => {
@@ -662,7 +321,7 @@ export const CartDrawer = () => {
                         key={product.id}
                         to={`/producto/${product.slug}`}
                         onClick={() => closeCart()}
-                        className="group overflow-hidden rounded-lg border border-black/10 bg-white transition hover:border-red-600"
+                        className="group overflow-hidden rounded-lg border border-black/10 bg-bone transition hover:border-red-600"
                       >
                         <div className="relative h-40 sm:h-48 lg:h-52 xl:h-56 bg-[#F7F3EC] flex items-center justify-center">
                           {product.image ? (
@@ -675,21 +334,23 @@ export const CartDrawer = () => {
                             <ImagePlaceholder label="Producto" className="h-full w-full" />
                           )}
 
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              toggleFavorite(product.id);
-                            }}
-                            className={`absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full border p-2 transition ${
-                              isFavorite
-                                ? 'border-red-600 bg-red-600 text-white'
-                                : 'border-black/10 bg-white text-black hover:border-red-600 hover:text-red-600'
-                            }`}
-                          >
-                            <Heart size={16} />
-                          </button>
+                          <PermissionGate permission={PERMISSIONS.productUpdate}>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                toggleFavorite(product.id);
+                              }}
+                              className={`absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full border p-2 transition ${
+                                isFavorite
+                                  ? 'border-red-600 bg-red-600 text-white'
+                                  : 'border-black/10 bg-bone text-black hover:border-red-600 hover:text-red-600'
+                              }`}
+                            >
+                              <Heart size={16} />
+                            </button>
+                          </PermissionGate>
                         </div>
 
                         <div className="p-2.5 sm:p-3">
@@ -698,23 +359,23 @@ export const CartDrawer = () => {
                           </p>
 
                           <div className="mt-3 flex items-center justify-between">
-                            <p className="text-sm text-red-600">
-                              S/{product.price}
-                            </p>
+                            <PriceDisplay product={product} />
 
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                setRecommendedModalProduct(product);
-                                setRecommendedSize(product.sizes[0] ?? 'M');
-                                setRecommendedQuantity(1);
-                              }}
-                              className="inline-flex items-center justify-center rounded-full border border-black/10 bg-black p-2 text-white transition hover:bg-red-600"
-                            >
-                              <ShoppingBag size={16} />
-                            </button>
+                            <PermissionGate permission={PERMISSIONS.salesCreate}>
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  setRecommendedModalProduct(product);
+                                  setRecommendedSize(product.sizes[0] ?? 'M');
+                                  setRecommendedQuantity(1);
+                                }}
+                                className="inline-flex items-center justify-center rounded-full border border-black/10 bg-black p-2 text-white transition hover:bg-red-600"
+                              >
+                                <ShoppingBag size={16} />
+                              </button>
+                            </PermissionGate>
                           </div>
                         </div>
                       </Link>
@@ -732,7 +393,7 @@ export const CartDrawer = () => {
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.95, opacity: 0 }}
-                    className="my-auto w-full max-w-xl rounded-[1.5rem] border border-black/10 bg-white p-4 sm:p-6 shadow-2xl">
+                    className="my-auto w-full max-w-xl rounded-[1.5rem] border border-black/10 bg-bone p-4 sm:p-6 shadow-2xl">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="text-xl sm:text-2xl font-semibold text-black">Agregar al carrito</h3>
@@ -741,7 +402,7 @@ export const CartDrawer = () => {
                       <button
                         type="button"
                         onClick={() => setRecommendedModalProduct(null)}
-                        className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:border-red-600 hover:text-red-600"
+                        className="rounded-full border border-black/10 bg-bone p-2 text-black transition hover:border-red-600 hover:text-red-600"
                       >✕</button>
                     </div>
 
@@ -756,7 +417,7 @@ export const CartDrawer = () => {
                       <div className="space-y-4">
                         <div>
                           <span className="text-sm uppercase tracking-[0.2em] text-black/60">Precio</span>
-                          <p className="mt-2 text-2xl sm:text-3xl font-semibold text-red-600">S/{recommendedModalProduct.price}</p>
+                          <PriceDisplay product={recommendedModalProduct} />
                         </div>
                         <label className="block">
                           <span className="text-sm uppercase tracking-[0.2em] text-black/60">Talla</span>
@@ -779,7 +440,7 @@ export const CartDrawer = () => {
                               type="button"
                               onMouseDown={() => startRecommendedChange(-1)}
                               onTouchStart={() => startRecommendedChange(-1)}
-                              className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:bg-black/5 hover:text-white"
+                              className="rounded-full border border-black/10 bg-bone p-2 text-black transition hover:bg-black/5 hover:text-white"
                             >
                               <Minus size={16} />
                             </button>
@@ -793,29 +454,31 @@ export const CartDrawer = () => {
                                 const v = e.target.value.replace(/\D/g, '');
                                 setRecommendedQuantity(v === '' ? 1 : Number(v));
                               }}
-                              className="w-16 rounded-full border border-black/10 bg-white py-2 text-center text-lg font-semibold text-black outline-none"
+                              className="w-16 rounded-full border border-black/10 bg-bone py-2 text-center text-lg font-semibold text-black outline-none"
                             />
 
                             <button
                               type="button"
                               onMouseDown={() => startRecommendedChange(1)}
                               onTouchStart={() => startRecommendedChange(1)}
-                              className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:bg-black/5 hover:text-white"
+                              className="rounded-full border border-black/10 bg-bone p-2 text-black transition hover:bg-black/5 hover:text-white"
                             >
                               <Plus size={16} />
                             </button>
                           </div>
                         </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            addToCart(recommendedModalProduct.id, recommendedSize, recommendedQuantity);
-                            setRecommendedModalProduct(null);
-                          }}
-                          className="w-full rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
-                        >
-                          Agregar al carrito
-                        </button>
+                        <PermissionGate permission={PERMISSIONS.salesCreate}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              addToCart(recommendedModalProduct.id, recommendedSize, recommendedQuantity);
+                              setRecommendedModalProduct(null);
+                            }}
+                            className="w-full rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
+                          >
+                            Agregar al carrito
+                          </button>
+                        </PermissionGate>
                       </div>
                     </div>
                   </motion.div>
@@ -837,7 +500,7 @@ export const CartDrawer = () => {
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
-                  className="my-auto w-full max-w-sm rounded-[1.5rem] border border-black/10 bg-white p-5 sm:p-6 shadow-2xl"
+                  className="my-auto w-full max-w-sm rounded-[1.5rem] border border-black/10 bg-bone p-5 sm:p-6 shadow-2xl"
                 >
                   <h3 className="text-lg font-semibold text-black">¿Eliminar producto?</h3>
                   <p className="mt-2 text-sm text-black/70">¿Está seguro de que desea eliminar este artículo del carrito?</p>
@@ -845,17 +508,19 @@ export const CartDrawer = () => {
                     <button
                       type="button"
                       onClick={() => setDeleteConfirm(null)}
-                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-black/5 hover:text-white"
+                      className="flex-1 rounded-full border border-black/10 bg-bone px-4 py-2 text-sm font-medium text-black transition hover:bg-black/5 hover:text-white"
                     >
                       Cancelar
                     </button>
-                    <button
-                      type="button"
-                      onClick={handleConfirmDelete}
-                      className="flex-1 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
-                    >
-                      Eliminar
-                    </button>
+                    <PermissionGate permission={PERMISSIONS.salesDelete}>
+                      <button
+                        type="button"
+                        onClick={handleConfirmDelete}
+                        className="flex-1 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                      >
+                        Eliminar
+                      </button>
+                    </PermissionGate>
                   </div>
                 </motion.div>
               </motion.div>

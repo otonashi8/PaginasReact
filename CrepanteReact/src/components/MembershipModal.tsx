@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getPlanById, getPlanOptions, type SubscriptionPlan } from '../plans';
 import type { RegisterUserInput } from '../types/auth';
+import { PermissionGate } from './PermissionGate';
+import { PERMISSIONS } from '../utils/permissionCodes';
 
 type MembershipModalProps = {
   isOpen: boolean;
@@ -316,6 +318,7 @@ export const MembershipModal = ({
                   Tu plan <span className="font-semibold">{currentPlan.nombre}</span> se encuentra activo y funcionando correctamente.
                 </p>
               </div>
+              <PermissionGate permission={PERMISSIONS.subscriptionUpdate}>
               <motion.button
                 type="button"
                 onClick={() => setView('select')}
@@ -325,6 +328,7 @@ export const MembershipModal = ({
               >
                 Administrar membresía →
               </motion.button>
+              </PermissionGate>
             </div>
           </motion.div>
         </motion.div>
@@ -471,7 +475,7 @@ export const MembershipModal = ({
                     ))}
                   </ul>
                 </div>
-
+                <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
                 <motion.button
                   type="button"
                   onClick={handleContinueToAccount}
@@ -481,6 +485,7 @@ export const MembershipModal = ({
                 >
                   Continuar al pago
                 </motion.button>
+                </PermissionGate>
               </div>
             </motion.div>
           ) : null}
@@ -525,7 +530,7 @@ export const MembershipModal = ({
                   </select>
                 </label>
                 <label className="flex flex-col gap-4 border border-white/10 bg-[#181818] p-5 lg:flex-row lg:items-center lg:justify-between">
-                  <span>Renovación automática</span>
+                  <span className="text-white">Renovación automática</span>
                   <select name="autoRenew" value={String(registerForm.autoRenew)} onChange={handleRegisterChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white outline-none focus:border-red-600">
                     <option value="true">Sí</option>
                     <option value="false">No</option>
@@ -539,9 +544,11 @@ export const MembershipModal = ({
                 <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setFlowStep('plan')} className="flex-1 rounded-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm font-medium text-black transition hover:bg-red-600 uppercase tracking-[0.16em]/5">
                   Volver
                 </motion.button>
+                <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
                 <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="submit" className="flex-1 rounded-full bg-red-600 uppercase tracking-[0.16em] px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600">
                   Continuar
                 </motion.button>
+                </PermissionGate>
               </div>
             </motion.form>
           ) : null}
@@ -608,9 +615,11 @@ export const MembershipModal = ({
                 <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setFlowStep(isAuthenticated ? 'plan' : 'account')} className="flex-1 rounded-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm font-medium text-white transition hover:bg-red-600 uppercase tracking-[0.16em]/5">
                   Volver
                 </motion.button>
+                <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
                 <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="submit" disabled={isSubmitting} className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-red-600 uppercase tracking-[0.16em]/70">
                   {isSubmitting ? 'Activando...' : 'Iniciar membresía'}
                 </motion.button>
+                </PermissionGate>
               </div>
             </motion.form>
           ) : null}

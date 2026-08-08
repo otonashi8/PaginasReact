@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getPlanById, getPlanOptions, type SubscriptionPlan } from '../plans';
 import type { RegisterUserInput } from '../types/auth';
+import { PermissionGate } from './PermissionGate';
+import { PERMISSIONS } from '../utils/permissionCodes';
 
 type MembershipModalProps = {
   isOpen: boolean;
@@ -350,6 +352,7 @@ export const MembershipModal = ({
               <p className="text-center text-sm text-black/70 sm:text-left">
                 Tu membresía actual está activa con <span className="font-semibold text-black">{currentPlan.nombre}</span>.
               </p>
+              <PermissionGate permission={PERMISSIONS.subscriptionUpdate}>
               <button
                 type="button"
                 onClick={() => setView('select')}
@@ -357,6 +360,7 @@ export const MembershipModal = ({
               >
                 ✨ Cambiar Plan
               </button>
+              </PermissionGate>
             </div>
           </motion.div>
         </motion.div>
@@ -484,7 +488,7 @@ export const MembershipModal = ({
                     ))}
                   </ul>
                 </div>
-
+                <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
                 <button
                   type="button"
                   onClick={handleContinueToAccount}
@@ -492,6 +496,7 @@ export const MembershipModal = ({
                 >
                   Continuar al pago
                 </button>
+                </PermissionGate>
               </div>
             </div>
           ) : null}
@@ -550,9 +555,11 @@ export const MembershipModal = ({
                 <button type="button" onClick={() => setFlowStep('plan')} className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-black/5">
                   Volver
                 </button>
+                <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
                 <button type="submit" className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600">
                   Continuar
                 </button>
+                </PermissionGate>
               </div>
             </form>
           ) : null}
@@ -637,9 +644,11 @@ export const MembershipModal = ({
                 <button type="button" onClick={() => setFlowStep('account')} className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-black/5">
                   Volver
                 </button>
+                <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
                 <button type="submit" disabled={isSubmitting} className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-black/70">
                   {isSubmitting ? 'Activando...' : 'Iniciar membresía'}
                 </button>
+                </PermissionGate>
               </div>
             </form>
           ) : null}

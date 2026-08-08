@@ -13,6 +13,9 @@ export const TermsPage = () => {
           <article key={section.title} className="rounded-[1.25rem] border border-black/10 p-5">
             <h2 className="text-lg font-semibold text-black">{section.title}</h2>
             <p className="mt-2 text-sm text-black/70">{section.text}</p>
+            {section.text2 && <p className="mt-2 text-sm text-black/70">{section.text2}</p>}
+            {section.text3 && <p className="mt-2 text-sm text-black/70">{section.text3}</p>}
+            {section.text4 && <p className="mt-2 text-sm text-black/70">{section.text4}</p>}
           </article>
         ))}
       </div>

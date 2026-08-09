@@ -121,6 +121,7 @@ export const HomePage = () => {
                   ) : (
                     <ImagePlaceholder label="Producto" className="h-full" />
                   )}
+                  <PermissionGate permission={PERMISSIONS.productUpdate}>
                   <button
                     type="button"
                     onClick={(event) => {
@@ -131,6 +132,7 @@ export const HomePage = () => {
                   >
                     <Heart size={16} />
                   </button>
+                  </PermissionGate>
                 </div>
                 <div className="mt-4 flex flex-1 flex-col">
                   <h3 className="text-lg font-semibold text-black">{product.name}</h3>
@@ -142,6 +144,7 @@ export const HomePage = () => {
                   {etiquetaDescuento}
                   </span>
                   ) : null}</p>
+                    <PermissionGate permission={PERMISSIONS.salesCreate}>
                     <button
                       type="button"
                       onClick={(event) => {
@@ -152,6 +155,7 @@ export const HomePage = () => {
                     >
                       <ShoppingBag size={16} />
                     </button>
+                    </PermissionGate>
                   </div>
                 </div>
               </motion.article>
@@ -283,7 +287,7 @@ export const HomePage = () => {
                     <p className="text-sm uppercase tracking-[0.25em] text-black/60">Compra rápida</p>
                     <h3 className="mt-2 text-xl font-semibold text-black">{selectedProduct.name}</h3>
                   </div>
-                  <p className="text-2xl font-semibold text-red-600">S/{resolveProductPrice(selectedProduct).precioFinal.toFixed(2)}</p>
+                  <p className="text-2xl font-semibold text-red-600"><PriceDisplay product={selectedProduct} /></p>
                   <div>
                     <label className="text-sm font-medium text-black">Talla</label>
                     <select

@@ -9,7 +9,7 @@ export const PoliciesPage = () => {
       <h1 className="text-3xl font-semibold uppercase tracking-[0.2em] text-black">Políticas de compra</h1>
       <div className="grid gap-6 md:grid-cols-3">
         {policies.map((policy) => (
-          <article key={policy.title} className="rounded-[1.5rem] bg-[#F7F3EC] p-6">
+          <article key={policy.title} className="rounded-[1.5rem] bg-[#F7F3EC] p-6 border border-black/10">
             <h2 className="text-lg font-semibold text-black">{policy.title}</h2>
             <p className="mt-3 text-sm text-black/70">{policy.text}</p>
             {policy.text2 && <p className="mt-3 text-sm text-black/70">{policy.text2}</p>}

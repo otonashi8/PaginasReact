@@ -1,28 +1,27 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Heart, Minus, Plus, ShoppingBag } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ProductHoverImage } from '../components/ProductHoverImage';
 import { useWishlist } from '../context/WishlistContext';
 import { getProductBySlug, getRelatedProducts } from '../services/contentService';
 import type { Product } from '../types';
+import { PermissionGate } from '../components/PermissionGate';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { resolveProductPrice } from '../services/pricingService';
+import PriceDisplay from '../components/PriceDisplay';
 
 export const ProductPage = () => {
   const { slug } = useParams();
   const { favorites, toggleFavorite, addToCart } = useWishlist();
-
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("M");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-
   const [quickBuyProduct, setQuickBuyProduct] = useState<Product | null>(null);
   const [quickBuySize, setQuickBuySize] = useState("M");
   const [quickBuyQuantity, setQuickBuyQuantity] = useState(1);
-
   const product = slug ? getProductBySlug(slug) : undefined;
-
   const [uploadedImages, setUploadedImages] = useState<(string | null)[]>([]);
-
   const changeQuantity = (value: number) => {
     setQuantity(Math.max(1, value));
   };
@@ -80,6 +79,12 @@ export const ProductPage = () => {
 
   const relatedProducts = getRelatedProducts(product.id);
   const isFavorite = favorites.includes(product.id);
+  const resultadoPrecio = useMemo(() => resolveProductPrice(product, { cantidad: quantity }), [product, quantity]);
+  const precioOriginal = resultadoPrecio.precioOriginal;
+  const precioFinal = resultadoPrecio.precioFinal;
+  const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
+  const etiquetaDescuento = resultadoPrecio.etiquetaDescuento;
+
 
   const openQuickBuy = (item: Product) => {
     setQuickBuyProduct(item);
@@ -147,12 +152,18 @@ export const ProductPage = () => {
         <div className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
           <p className="text-sm uppercase tracking-[0.2em] text-black/60">{product.category}</p>
           <p className="mt-2 text-sm text-black/50">{product.subcategory}</p>
-          <div className="mt-4 flex items-center gap-3">
-            {product.previousPrice ? (
-              <span className="text-lg text-black/40 line-through">S/{product.previousPrice}</span>
-            ) : null}
-            <span className="text-2xl sm:text-3xl font-semibold text-red-600">S/{product.price}</span>
-          </div>
+          <div className="flex items-end gap-3">
+              <PriceDisplay product={product} cantidad={quantity} />
+              {hayDescuento && etiquetaDescuento ? (
+                <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
+                  {etiquetaDescuento}
+                </span>
+              ) : !hayDescuento && product.previousPrice ? (
+                <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
+                  Oferta
+                </span>
+              ) : null}
+            </div>
 
           <div className="mt-6 space-y-4">
             <div>
@@ -203,6 +214,7 @@ export const ProductPage = () => {
           </div>
 
           <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <PermissionGate permission={PERMISSIONS.salesCreate}>
             <button
               type="button"
               onClick={() => addToCart(product.id, selectedSize, quantity)}
@@ -210,19 +222,21 @@ export const ProductPage = () => {
             >
               <ShoppingBag size={16} /> Añadir al carrito
             </button>
-            <button
-              type="button"
-              onClick={() => toggleFavorite(product.id)}
-              className={`inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border px-5 py-3 text-sm font-medium transition ${isFavorite ? 'border-red-600 bg-red-600 text-white' : 'border-black/10 text-black hover:border-red-600 hover:text-red-600'}`}
-            >
-              <Heart size={16} /> Favorito
-            </button>
+            </PermissionGate>
+            <PermissionGate permission={PERMISSIONS.productUpdate}>
+              <button
+                type="button"
+                onClick={() => toggleFavorite(product.id)}
+                className={`inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border px-5 py-3 text-sm font-medium transition ${isFavorite ? 'border-red-600 bg-red-600 text-white' : 'border-black/10 text-black hover:border-red-600 hover:text-red-600'}`}
+              >
+                <Heart size={16} /> Favorito
+              </button>
+            </PermissionGate>
           </div>
 
           <div className="mt-8 rounded-[1.5rem] border border-black/10 bg-[#F7F3EC] p-5">
             <h2 className="text-base sm:text-lg font-semibold text-black">Descripción</h2>
             <p className="mt-3 text-sm text-black/70">{product.description}</p>
-            <p className="mt-4 text-sm text-black/70">Colores: {product.colors.join(', ')}</p>
           </div>
 
           <div className="mt-8 grid gap-3 grid-cols-1 sm:grid-cols-3">
@@ -254,24 +268,28 @@ export const ProductPage = () => {
                       className="h-full w-full object-contain transition duration-200 hover:scale-105"
                     />
                   </Link>
+
                   <div className="absolute right-3 top-3">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        toggleFavorite(item.id);
-                      }}
-                      className={`rounded-full border p-2 transition ${isRelatedFavorite ? 'border-red-600 bg-red-600 text-white' : 'border-black/10 bg-white/90 text-black hover:border-red-600 hover:text-red-600'}`}
-                    >
-                      <Heart size={16} />
-                    </button>
+                    <PermissionGate permission={PERMISSIONS.productUpdate}>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          toggleFavorite(item.id);
+                        }}
+                        className={`rounded-full border p-2 transition ${isRelatedFavorite ? 'border-red-600 bg-red-600 text-white' : 'border-black/10 bg-white/90 text-black hover:border-red-600 hover:text-red-600'}`}
+                      >
+                        <Heart size={16} />
+                      </button>
+                    </PermissionGate>
                   </div>
                 </div>
                 <div className="mt-4">
                   <h3 className="text-base sm:text-lg font-semibold text-black">{item.name}</h3>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <p className="text-base font-semibold text-red-600">S/{item.price}</p>
+                    <PermissionGate permission={PERMISSIONS.salesCreate}>
                     <button
                       type="button"
                       onClick={(event) => {
@@ -283,6 +301,7 @@ export const ProductPage = () => {
                     >
                       <ShoppingBag size={16} />
                     </button>
+                    </PermissionGate>
                   </div>
                 </div>
               </motion.article>
@@ -326,7 +345,7 @@ export const ProductPage = () => {
                 <div className="space-y-3 sm:space-y-4">
                   <div>
                     <p className="text-sm uppercase tracking-[0.2em] text-black/60">Precio</p>
-                    <p className="mt-2 text-2xl sm:text-3xl font-semibold text-red-600">S/{quickBuyProduct.price}</p>
+                    <p className="mt-2 text-2xl sm:text-3xl font-semibold text-red-600">S/{resolveProductPrice(quickBuyProduct, { cantidad: quickBuyQuantity }).precioFinal.toFixed(2)}</p>
                   </div>
                   <div>
                     <label className="text-sm uppercase tracking-[0.2em] text-black/60">Talla</label>
@@ -372,6 +391,8 @@ export const ProductPage = () => {
                       </button>
                     </div>
                   </div>
+
+                  <PermissionGate permission={PERMISSIONS.salesCreate}>
                   <button
                     type="button"
                     onClick={handleQuickBuyConfirm}
@@ -379,6 +400,7 @@ export const ProductPage = () => {
                   >
                     Añadir al carrito
                   </button>
+                  </PermissionGate>
                 </div>
               </div>
             </motion.div>

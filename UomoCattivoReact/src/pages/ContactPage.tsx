@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { MembershipModal } from '../components/MembershipModal';
 import { getContactContent } from '../services/contentService';
+import { PermissionGate } from '../components/PermissionGate';
+import { PERMISSIONS } from '../utils/permissionCodes';
 
 export const ContactPage = () => {
   const content = getContactContent();
@@ -72,9 +74,12 @@ export const ContactPage = () => {
             <div className="mt-4 space-y-3">
               <input className="w-full rounded-full border border-black/10 bg-[#F7F3EC] px-4 py-3 text-sm outline-none transition focus:border-red-600" placeholder="Tu nombre" />
               <input className="w-full rounded-full border border-black/10 bg-[#F7F3EC] px-4 py-3 text-sm outline-none transition focus:border-red-600" placeholder="Tu negocio o marca" />
+              <PermissionGate permission={PERMISSIONS.affiliateCreate}>
               <button type="button" className="w-full rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition duration-300 hover:bg-red-600 hover:scale-[1.02]">
                 Solicitar afiliación
               </button>
+              </PermissionGate>
+              <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
               <button
                 type="button"
                 onClick={() => setIsMembershipModalOpen(true)}
@@ -82,6 +87,7 @@ export const ContactPage = () => {
               >
                 Benefíciate
               </button>
+              </PermissionGate>
             </div>
           </div>
         </div>

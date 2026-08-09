@@ -23,9 +23,7 @@ export const ProductCard = ({ product, variant = "default", onQuickAdd }: Produc
   const isFavorite = favorites.includes(product.id);
   const isCompact = variant === "compact";
   const isSearch = variant === "search";
-
   const resultadoPrecio = useMemo(() => resolveProductPrice(product), [product]);
-
   const precioOriginal = resultadoPrecio.precioOriginal;
   const precioFinal = resultadoPrecio.precioFinal;
   const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;

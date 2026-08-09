@@ -5,6 +5,8 @@ import { PageSection } from '../components/PageSection';
 import { SectionTitle } from '../components/SectionTitle';
 import { MembershipModal } from '../components/MembershipModal';
 import { getPlanOptions, type SubscriptionPlan } from '../plans';
+import { PermissionGate } from '../components/PermissionGate';
+import { PERMISSIONS } from '../utils/permissionCodes';
 
 type FaqItem = {
   question: string;
@@ -206,7 +208,8 @@ export const BenefitPage = () => {
                   </li>
                 ))}
               </ul>
-
+              
+              <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
               <button
                 type="button"
                 onClick={() => handleOpenMembershipModal(plan)}
@@ -215,6 +218,7 @@ export const BenefitPage = () => {
                 Suscribirme
                 <ArrowRight size={16} />
               </button>
+              </PermissionGate>
             </motion.article>
           ))}
         </div>

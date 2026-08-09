@@ -110,6 +110,7 @@ function App() {
   const [contactOpen, setContactOpen] = useState(false)
   const [purchaseSuccess, setPurchaseSuccess] = useState(false)
 
+
   useEffect(() => {
     const handleScroll = () => setHeaderScrolled(window.scrollY > 30)
     handleScroll()

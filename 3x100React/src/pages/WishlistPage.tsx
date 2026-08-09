@@ -1,22 +1,24 @@
 import { motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { ArrowRight, Heart, ShoppingBag, Share2 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ImagePlaceholder } from '../components/ImagePlaceholder';
 import { ProductHoverImage } from '../components/ProductHoverImage';
+import QuickAddModal from '../components/QuickAddModal';
+import { TypewriterTitle } from '../components/TypewriterTitle';
+import { resolveProductPrice } from '../services/pricingService';
 import { PermissionGate } from '../components/PermissionGate';
 import { useWishlist } from '../context/WishlistContext';
 import { getProducts } from '../services/contentService';
-import PriceDisplay from '../components/PriceDisplay';
-import { StorageService } from '../services/storageService';
 import { PERMISSIONS } from '../utils/permissionCodes';
+import PriceDisplay from '../components/PriceDisplay';
 
 export const WishlistPage = () => {
   const { favorites, toggleFavorite} = useWishlist();
   const products = getProducts();
   const items = products.filter((product) => favorites.includes(product.id));
-  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedQuickProduct, setSelectedQuickProduct] = useState<typeof items[number] | null>(null);
   const [shareStatus, setShareStatus] = useState('');
   const pageSize = 8;
 
@@ -28,31 +30,26 @@ export const WishlistPage = () => {
 
   const shareWishlist = async () => {
     if (!items.length) {
-      setShareStatus("No hay productos en la lista.");
+      setShareStatus('No hay productos en la lista.');
       return;
     }
 
-    const id = crypto.randomUUID();
-
-    StorageService.saveSharedWishlist(id, favorites.map((favorite) => favorite.toString()));
-
-    const url = `${window.location.origin}/wishlist/${id}`;
+    const itemLines = items.map((product) => `- ${product.name} (S/${resolveProductPrice(product).precioFinal.toFixed(2)})`).join('\n');
+    const shareText = `Mi lista de deseos:\n${itemLines}\n\nRevisa los productos aquí: ${window.location.href}`;
 
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "Mi lista de deseos",
-          text: "Mira mi lista de productos favoritos.",
-          url,
+          title: 'Mi lista de deseos',
+          text: shareText,
         });
-
-        setShareStatus("Lista compartida correctamente.");
+        setShareStatus('Compartido correctamente.');
       } else {
-        await navigator.clipboard.writeText(url);
-        setShareStatus("Enlace copiado al portapapeles.");
+        await navigator.clipboard.writeText(shareText);
+        setShareStatus('Lista copiada al portapapeles.');
       }
     } catch {
-      setShareStatus("No se pudo compartir la lista.");
+      setShareStatus('No se pudo compartir.');
     }
   };
 
@@ -60,7 +57,7 @@ export const WishlistPage = () => {
     <section className="space-y-8">
       <div>
         <p className="text-sm uppercase tracking-[0.3em] text-black/60">Lista de Deseados</p>
-        <h1 className="mt-2 text-3xl font-semibold uppercase tracking-[0.2em] text-black">Tus piezas favoritas</h1>
+        <TypewriterTitle as="h1" text="Tus piezas favoritas" className="mt-2 text-3xl font-semibold uppercase tracking-[0.2em] text-black" />
       </div>
 
       {items.length === 0 ? (
@@ -76,15 +73,22 @@ export const WishlistPage = () => {
           <div className="flex flex-col gap-4 rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold uppercase tracking-[0.2em] text-black">Tus piezas favoritas</h2>
             <PermissionGate permission={PERMISSIONS.wishlistShare}>
-              <button
-                type="button"
-                onClick={shareWishlist}
-                className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border border-black/10 bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-red-600"
-              >
-                <Share2 size={16} /> Compartir lista
-              </button>
+            <button
+              type="button"
+              onClick={shareWishlist}
+              className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border border-black/10 bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-red-600"
+            >
+              <Share2 size={16} /> Compartir lista
+            </button>
             </PermissionGate>
           </div>
+
+          <QuickAddModal
+            product={selectedQuickProduct ?? (paginatedItems[0] ?? null) as any}
+            isOpen={Boolean(selectedQuickProduct)}
+            initialSize={selectedQuickProduct?.sizes?.[0]}
+            onClose={() => setSelectedQuickProduct(null)}
+          />
 
           {shareStatus ? (
             <div className="rounded-[1.5rem] border border-black/10 bg-white p-4 text-sm text-black/70">{shareStatus}</div>
@@ -111,16 +115,18 @@ export const WishlistPage = () => {
                     <ImagePlaceholder label="Producto" className="h-full" />
                   )}
                   <PermissionGate permission={PERMISSIONS.productUpdate}>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        toggleFavorite(product.id);
-                      }}
-                      className={`absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full border p-2 transition ${favorites.includes(product.id) ? 'border-red-600 bg-red-600 text-white' : 'border-black/10 bg-white/90 text-black hover:border-red-600 hover:text-red-600'}`}
-                    >
-                      <Heart size={16} />
-                    </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleFavorite(product.id);
+                    }}
+                    className={`absolute right-3 top-3 border bg-red-600 p-2 transition-all duration-300 ${favorites.includes(product.id)
+                      ? 'border-red-600 bg-red-600 text-white' 
+                      : 'border-black/10 bg-white/90 text-black hover:border-red-600 hover:text-red-600'}`}
+                  >
+                    <Heart size={16} />
+                  </button>
                   </PermissionGate>
                 </div>
                 <div className="mt-4 flex flex-1 flex-col">
@@ -132,7 +138,7 @@ export const WishlistPage = () => {
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          navigate(`/producto/${product.slug}`);
+                          setSelectedQuickProduct(product);
                         }}
                         className="inline-flex items-center justify-center rounded-full border border-black/10 bg-black p-2 text-white transition hover:bg-red-600"
                       >

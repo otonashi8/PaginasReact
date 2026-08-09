@@ -46,7 +46,7 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
           >
             <div className="grid md:grid-cols-[1.05fr_0.95fr]">
               <div className="relative border-b border-zinc-100 bg-zinc-50 md:border-b-0 md:border-r">
-                <img src={product.image} alt={product.name} className="h-64 w-full object-contain p-6 sm:h-72 md:h-full md:min-h-[520px] md:p-8" />
+                <img src={product.image} alt={product.name} className="h-64 w-full object-contain p-6 sm:h-72 md:h-full md:min-h-[520px] md:p-8 bg bg-white" />
                 <div className="absolute left-4 top-4 rounded-none border border-zinc-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-black/70 backdrop-blur">
                   Compra Rápida
                 </div>

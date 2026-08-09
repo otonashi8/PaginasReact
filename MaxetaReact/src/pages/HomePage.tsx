@@ -9,6 +9,8 @@ import { getHomeProducts, getHomeSlides } from '../services/homeContentService';
 import type { Product } from '../types';
 import { PriceDisplay } from '../components/PriceDisplay';
 import { resolveProductPrice } from '../services/pricingService';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { PermissionGate } from '../components/PermissionGate';
 
 type HomeCategory = {
   label: string;
@@ -306,6 +308,7 @@ export const HomePage = () => {
                   </div>
 
                   <div className="mt-auto flex items-center gap-2">
+                    <PermissionGate permission={PERMISSIONS.productUpdate}>
                     <button
                       type="button"
                       onClick={() => toggleFavorite(product.id)}
@@ -314,7 +317,8 @@ export const HomePage = () => {
                     >
                       <Heart size={16} />
                     </button>
-
+                    </PermissionGate>
+                    <PermissionGate permission={PERMISSIONS.salesCreate}>
                     <button
                       type="button"
                       onClick={() => setSelectedQuickProduct(product)}
@@ -322,6 +326,7 @@ export const HomePage = () => {
                     >
                       <ShoppingBag size={15} /> Compra rápida
                     </button>
+                    </PermissionGate>
                   </div>
                 </motion.article>
               );
@@ -402,7 +407,7 @@ export const HomePage = () => {
                     <img src={testimonial.productImage} alt={testimonial.productName} className="h-16 w-16 object-cover" />
                     <div>
                       <p className="text-sm font-semibold uppercase tracking-[0.08em] text-black">{testimonial.productName}</p>
-                      <p className="text-sm font-semibold text-red-600">{testimonial.productPrice}</p>
+                      <p className="text-sm font-semibold text-red-600">S/{testimonial.productPrice}</p>
                     </div>
                   </div>
                 </div>

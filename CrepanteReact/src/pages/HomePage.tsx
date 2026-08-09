@@ -408,6 +408,7 @@ export const HomePage = () => {
                     ) : (
                       <ImagePlaceholder label="Producto" className="h-full" />
                     )}
+                    <PermissionGate permission={PERMISSIONS.productUpdate}>
                     <button
                       type="button"
                       onClick={(event) => {
@@ -418,6 +419,7 @@ export const HomePage = () => {
                     >
                       <Heart size={16} />
                     </button>
+                    </PermissionGate>
                   </div>
                   <div className="mt-4 flex flex-1 flex-col">
                     <h3 className="text-base font-semibold text-black">{product.name}</h3>
@@ -429,6 +431,7 @@ export const HomePage = () => {
                       {etiquetaDescuento}
                       </span>
                       ) : null}</p>
+                      <PermissionGate permission={PERMISSIONS.salesCreate}>
                       <button
                         type="button"
                         onClick={(event) => {
@@ -439,6 +442,7 @@ export const HomePage = () => {
                       >
                         <ShoppingBag size={16} />
                       </button>
+                      </PermissionGate>
                     </div>
                   </div>
                 </motion.article>
@@ -531,7 +535,7 @@ export const HomePage = () => {
                     >Agregar al carrito
                     </button>
                     </PermissionGate>
-                    <PermissionGate permission={PERMISSIONS.salesCreate}>
+                    <PermissionGate permission={PERMISSIONS.productUpdate}>
                     <button
                       type="button"
                       onClick={() => toggleFavorite(selectedProduct.id)}

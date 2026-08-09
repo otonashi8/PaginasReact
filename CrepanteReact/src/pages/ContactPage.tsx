@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Mail, Phone } from 'lucide-react';
 import { MembershipModal } from '../components/MembershipModal';
 import { TypewriterTitle } from '../components/TypewriterTitle';
+import { PermissionGate } from '../components/PermissionGate';
+import { PERMISSIONS } from '../utils/permissionCodes';
 
 export const ContactPage = () => {
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
@@ -71,9 +73,12 @@ export const ContactPage = () => {
             <div className="mt-4 space-y-3">
               <input className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-red-600" placeholder="Tu nombre" />
               <input className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-red-600" placeholder="Tu negocio o marca" />
+              <PermissionGate permission={PERMISSIONS.affiliateCreate}>
               <button type="button" className="w-full rounded-xl border border-black bg-black px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors duration-200 hover:border-red-600 hover:bg-red-600">
                 Solicitar afiliación
               </button>
+              </PermissionGate>
+              <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
               <button
                 type="button"
                 onClick={() => setIsMembershipModalOpen(true)}
@@ -81,6 +86,7 @@ export const ContactPage = () => {
               >
                 Benefíciate
               </button>
+              </PermissionGate>
             </div>
           </div>
         </div>

@@ -16,6 +16,9 @@ import CartItemsList from './CartItemsList';
 import CartSummary from './CartSummary';
 import CartCheckout from './CartCheckout';
 import { PriceDisplay } from './PriceDisplay';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { PermissionGate } from './PermissionGate';
+import { resolveProductPrice } from '../services/pricingService';
 
 type CartProduct = Product & { quantity: number; size: string };
 
@@ -242,7 +245,7 @@ export const CartDrawer = () => {
                           ) : (
                             <ImagePlaceholder label="Producto" className="h-full w-full" />
                           )}
-
+                          <PermissionGate permission={PERMISSIONS.productUpdate}>
                           <button
                             type="button"
                             onClick={(event) => {
@@ -250,7 +253,7 @@ export const CartDrawer = () => {
                               event.stopPropagation();
                               toggleFavorite(product.id);
                             }}
-                            className={`absolute right-3 top-3 border bg-white p-2 transition-all duration-300 ${
+                            className={`absolute right-3 top-3 border bg-red p-2 transition-all duration-300 ${
                               isFavorite
                                 ? 'border-red-600 bg-red-600 text-white shadow-md'
                                 : 'border-black/10 bg-white text-black hover:border-red-600 hover:text-red-600'
@@ -258,13 +261,19 @@ export const CartDrawer = () => {
                           >
                             <Heart size={16} />
                           </button>
+                          </PermissionGate>
                         </div>
 
                         <div className="border-t border-zinc-200 p-4">
                           <p className="line-clamp-2 text-sm font-bold uppercase tracking-[0.05em] text-black">{product.name}</p>
 
                           <div className="mt-3 flex items-center justify-between">
-                            <p className="text-base font-bold text-red-600">S/{product.price}</p>
+                            {product.previousPrice ? (
+                            <p className="text-sm text-black/40 line-through">S/{resolveProductPrice(product).precioOriginal.toFixed(2)}</p>
+                            ) : null}
+                            <p className="text-base font-semibold text-red-600">S/{resolveProductPrice(product).precioFinal.toFixed(2)}</p>
+                            <p></p>
+                            <PermissionGate permission={PERMISSIONS.salesCreate}>
                             <button
                               type="button"
                               onClick={(event) => {
@@ -278,6 +287,7 @@ export const CartDrawer = () => {
                             >
                               <ShoppingBag size={16} />
                             </button>
+                            </PermissionGate>
                           </div>
                         </div>
                       </Link>
@@ -340,7 +350,14 @@ export const CartDrawer = () => {
                             <button type="button" onMouseDown={() => startRecommendedChange(1)} onTouchStart={() => startRecommendedChange(1)} className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:bg-black/5 hover:text-white"><Plus size={16} /></button>
                           </div>
                         </label>
-                        <button type="button" onClick={() => { addToCart(recommendedModalProduct.id, recommendedSize, recommendedQuantity); setRecommendedModalProduct(null); }} className="w-full rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600">Agregar al carrito</button>
+                        <PermissionGate permission={PERMISSIONS.salesCreate}>
+                        <button 
+                        type="button" 
+                        onClick={() => { addToCart(recommendedModalProduct.id, recommendedSize, recommendedQuantity); setRecommendedModalProduct(null); }} 
+                        className="w-full rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600">
+                          Agregar al carrito
+                        </button>
+                        </PermissionGate>
                       </div>
                     </div>
                   </motion.div>
@@ -358,7 +375,14 @@ export const CartDrawer = () => {
                   <p className="mt-2 text-sm text-black/70">¿Está seguro de que desea eliminar este artículo del carrito?</p>
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                     <motion.button type="button" onClick={() => setDeleteConfirm(null)} whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-black/5">Cancelar</motion.button>
-                    <motion.button type="button" onClick={handleConfirmDelete} whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} className="flex-1 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600">Eliminar</motion.button>
+                    <PermissionGate permission={PERMISSIONS.salesDelete}>
+                    <motion.button 
+                    type="button" 
+                    onClick={handleConfirmDelete} whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} 
+                    className="flex-1 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600">
+                      Eliminar
+                    </motion.button>
+                    </PermissionGate>
                   </div>
                 </motion.div>
               </motion.div>

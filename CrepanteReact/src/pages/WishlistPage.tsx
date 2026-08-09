@@ -121,7 +121,9 @@ export const WishlistPage = () => {
                       event.stopPropagation();
                       toggleFavorite(product.id);
                     }}
-                    className={`absolute right-3 top-3 border bg-white p-2 transition-all duration-300 ${favorites.includes(product.id) ? 'border-red-600 bg-red-600 text-red-500' : 'border-black/10 bg-white/90 text-black hover:border-red-600 hover:text-red-600'}`}
+                    className={`absolute right-3 top-3 border bg-red-600 p-2 transition-all duration-300 ${favorites.includes(product.id)
+                      ? 'border-red-600 bg-red-600 text-white' 
+                      : 'border-black/10 bg-white/90 text-black hover:border-red-600 hover:text-red-600'}`}
                   >
                     <Heart size={16} />
                   </button>

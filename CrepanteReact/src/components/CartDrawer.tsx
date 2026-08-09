@@ -334,9 +334,9 @@ export const CartDrawer = () => {
                                 event.stopPropagation();
                                 toggleFavorite(product.id);
                               }}
-                              className={`absolute right-3 top-3 border bg-white p-2 transition-all duration-300 ${
+                              className={`absolute right-3 top-3 border bg-red-600 p-2 transition-all duration-300 ${
                                 isFavorite
-                                  ? 'border-red-600 bg-red-600 text-red-600 shadow-md'
+                                  ? 'border-red-600 bg-red-600 text-white shadow-md'
                                   : 'border-black/10 bg-white text-black hover:border-red-600 hover:text-red-600'
                               }`}
                             >

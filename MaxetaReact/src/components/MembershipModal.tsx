@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getPlanById, getPlanOptions, type SubscriptionPlan } from '../plans';
 import type { RegisterUserInput } from '../types/auth';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { PermissionGate } from './PermissionGate';
 
 type MembershipModalProps = {
   isOpen: boolean;
@@ -316,6 +318,7 @@ export const MembershipModal = ({
                   Tu plan <span className="font-semibold">{currentPlan.nombre}</span> se encuentra activo y funcionando correctamente.
                 </p>
               </div>
+              <PermissionGate permission={PERMISSIONS.subscriptionUpdate}>
               <motion.button
                 type="button"
                 onClick={() => setView('select')}
@@ -325,6 +328,7 @@ export const MembershipModal = ({
               >
                 Administrar membresía →
               </motion.button>
+              </PermissionGate>
             </div>
           </motion.div>
         </motion.div>
@@ -471,16 +475,16 @@ export const MembershipModal = ({
                     ))}
                   </ul>
                 </div>
-
+                <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
                 <motion.button
                   type="button"
                   onClick={handleContinueToAccount}
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.99 }}
                   className="mt-8 w-full border border-red-600 bg-red-600 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-red-500"
-                >
-                  Continuar al pago
+                >Continuar al pago
                 </motion.button>
+                </PermissionGate>
               </div>
             </motion.div>
           ) : null}
@@ -608,9 +612,11 @@ export const MembershipModal = ({
                 <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setFlowStep(isAuthenticated ? 'plan' : 'account')} className="flex-1 rounded-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm font-medium text-white transition hover:bg-red-600 uppercase tracking-[0.16em]/5">
                   Volver
                 </motion.button>
+                <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
                 <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="submit" disabled={isSubmitting} className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-red-600 uppercase tracking-[0.16em]/70">
                   {isSubmitting ? 'Activando...' : 'Iniciar membresía'}
                 </motion.button>
+                </PermissionGate>
               </div>
             </motion.form>
           ) : null}

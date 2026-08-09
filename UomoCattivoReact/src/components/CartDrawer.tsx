@@ -321,7 +321,7 @@ export const CartDrawer = () => {
                         key={product.id}
                         to={`/producto/${product.slug}`}
                         onClick={() => closeCart()}
-                        className="group overflow-hidden rounded-lg border border-black/10 bg-bone transition hover:border-red-600"
+                        className="group overflow-hidden rounded-lg border border-black/10 bg-white transition hover:border-red-600"
                       >
                         <div className="relative h-40 sm:h-48 lg:h-52 xl:h-56 bg-[#F7F3EC] flex items-center justify-center">
                           {product.image ? (
@@ -344,8 +344,8 @@ export const CartDrawer = () => {
                               }}
                               className={`absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full border p-2 transition ${
                                 isFavorite
-                                  ? 'border-red-600 bg-red-600 text-white'
-                                  : 'border-black/10 bg-bone text-black hover:border-red-600 hover:text-red-600'
+                                  ? 'border-red-600 bg-red-600 text-bone'
+                                  : 'border-black/10 bg-white text-black hover:border-red-600 hover:text-red-600'
                               }`}
                             >
                               <Heart size={16} />

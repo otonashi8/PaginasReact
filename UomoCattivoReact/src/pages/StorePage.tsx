@@ -7,6 +7,10 @@ import { ProductHoverImage } from '../components/ProductHoverImage';
 import { useWishlist } from '../context/WishlistContext';
 import { getProducts } from '../services/contentService';
 import type { Product } from '../types';
+import { PriceDisplay } from '../components/PriceDisplay';
+import { resolveProductPrice } from '../services/pricingService';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { PermissionGate } from '../components/PermissionGate';
 
 type FilterCategory = 'Todas' | 'Polos' | 'Shorts' | 'Joggers' | 'Pantalón';
 type FilterSection = 'categories' | 'subcategories' | 'price' | 'sizes';
@@ -409,6 +413,7 @@ export const StorePage = () => {
                         <div>
                           <h3 className="text-lg font-semibold text-black">{product.name}</h3>
                         </div>
+                        <PermissionGate permission={PERMISSIONS.productUpdate}>
                         <button
                           type="button"
                           onClick={(event) => {
@@ -420,14 +425,16 @@ export const StorePage = () => {
                         >
                           <Heart size={16} />
                         </button>
+                        </PermissionGate>
                       </div>
                       <div className="mt-4 flex items-center justify-between">
                         <div>
                           {product.previousPrice ? (
-                            <p className="text-sm text-black/40 line-through">S/{product.previousPrice}</p>
+                            <p className="text-sm text-black/40 line-through">S/{resolveProductPrice(product).precioOriginal.toFixed(2)}</p>
                           ) : null}
-                          <p className="text-base font-semibold text-red-600">S/{product.price}</p>
+                          <p className="text-base font-semibold text-red-600">S/{resolveProductPrice(product).precioFinal.toFixed(2)}</p>
                         </div>
+                        <PermissionGate permission={PERMISSIONS.salesCreate}>
                         <button
                           type="button"
                           onClick={(event) => {
@@ -439,6 +446,7 @@ export const StorePage = () => {
                         >
                           <ShoppingBag size={16} />
                         </button>
+                        </PermissionGate>
                       </div>
                     </motion.article>
                   );
@@ -507,7 +515,9 @@ export const StorePage = () => {
                 <div className="space-y-3 sm:space-y-4">
                   <div>
                     <p className="text-sm uppercase tracking-[0.2em] text-black/60">Precio</p>
-                    <p className="mt-2 text-2xl sm:text-3xl font-semibold text-red-600">S/{quickCartProduct.price}</p>
+                    <div>
+                      <PriceDisplay product={quickCartProduct} cantidad={quickCartQuantity} />
+                    </div>
                   </div>
                   <div>
                     <label className="text-sm uppercase tracking-[0.2em] text-black/60">Talla</label>
@@ -553,6 +563,7 @@ export const StorePage = () => {
                       </button>
                     </div>
                   </div>
+                  <PermissionGate permission={PERMISSIONS.salesCreate}>
                   <button
                     type="button"
                     onClick={confirmQuickCart}
@@ -560,6 +571,7 @@ export const StorePage = () => {
                   >
                     Añadir al carrito
                   </button>
+                  </PermissionGate>
                 </div>
               </div>
             </motion.div>

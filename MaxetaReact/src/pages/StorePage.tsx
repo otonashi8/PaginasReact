@@ -10,6 +10,8 @@ import { getProducts } from '../services/contentService';
 import type { Product } from '../types';
 import { resolveProductPrice } from '../services/pricingService';
 import { PriceDisplay } from '../components/PriceDisplay';
+import { PermissionGate} from '../components/PermissionGate';
+import { PERMISSIONS } from '../utils/permissionCodes';
 
 type SortOption = 'ultimos' | 'popularidad' | 'vista';
 type RootFilter = 'Todas' | 'Hombre' | 'Mujer' | 'Colecciones' | '4x100';
@@ -933,6 +935,7 @@ export const StorePage = () => {
                               <p className="text-[0.68rem] uppercase tracking-[0.24em] text-black/45">{product.category}</p>
                               <h3 className="text-lg font-semibold leading-snug text-black">{product.name}</h3>
                             </div>
+                            <PermissionGate permission={PERMISSIONS.productUpdate}>
                             <button
                               type="button"
                               onClick={(event) => {
@@ -949,6 +952,7 @@ export const StorePage = () => {
                             >
                               <Heart size={15} />
                             </button>
+                            </PermissionGate>
                           </div>
 
                           <div className="mt-auto flex flex-col gap-4 border-t border-black/6 pt-4 sm:flex-row sm:items-end sm:justify-between">
@@ -961,6 +965,7 @@ export const StorePage = () => {
                                         </span>
                                       ) : null}</p>
                             </div>
+                            <PermissionGate permission={PERMISSIONS.salesCreate}>
                             <button
                               type="button"
                               onClick={(event) => {
@@ -972,6 +977,7 @@ export const StorePage = () => {
                             >
                               <ShoppingBag size={15} />
                             </button>
+                            </PermissionGate>
                           </div>
                         </div>
                       </motion.article>
@@ -1094,13 +1100,14 @@ export const StorePage = () => {
                       </button>
                     </div>
                   </div>
+                  <PermissionGate permission={PERMISSIONS.salesCreate}>
                   <button
                     type="button"
                     onClick={confirmQuickCart}
                     className="mt-4 w-full border border-black bg-black px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition duration-300 hover:border-red-600 hover:bg-red-600"
-                  >
-                    Añadir al carrito
+                  >Añadir al carrito
                   </button>
+                  </PermissionGate>
                 </div>
               </div>
             </motion.div>

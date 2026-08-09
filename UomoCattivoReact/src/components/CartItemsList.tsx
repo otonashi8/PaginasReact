@@ -58,7 +58,7 @@ export default function CartItemsList({
                       id={`cart-size-${item.id}-${item.size}`}
                       value={item.size}
                       onChange={(event) => changeItemSize(item.id, item.size, event.target.value)}
-                      className="min-w-[4.2rem] rounded-full border border-white bg-bone px-3 py-1.5 text-xs text-black outline-none"
+                      className="min-w-[4.2rem] rounded-full border border-white bg-white px-3 py-1.5 text-xs text-black outline-none"
                     >
                       {item.sizes.map((sizeOption) => (
                         <option key={sizeOption} value={sizeOption}>

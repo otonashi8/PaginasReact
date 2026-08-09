@@ -106,9 +106,7 @@ export const ProductPage = () => {
 
   const relatedProducts = getRelatedProducts(product.id);
   const isFavorite = favorites.includes(product.id);
-
   const resultadoPrecio = useMemo(() => resolveProductPrice(product, { cantidad: quantity }), [product, quantity]);
-
   const precioOriginal = resultadoPrecio.precioOriginal;
   const precioFinal = resultadoPrecio.precioFinal;
   const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
@@ -335,7 +333,12 @@ export const ProductPage = () => {
 
         <div className="mt-7 grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
           {relatedProducts.map((item, index) => {
-            const isRelatedFavorite = favorites.includes(item.id);
+              const relatedProducts = getRelatedProducts(product.id);
+              const resultadoPrecio = useMemo(() => resolveProductPrice(product, { cantidad: quantity }), [product, quantity]);
+              const precioOriginal = resultadoPrecio.precioOriginal;
+              const precioFinal = resultadoPrecio.precioFinal;
+              const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
+              const etiquetaDescuento = resultadoPrecio.etiquetaDescuento;
 
             return (
               <motion.article
@@ -365,7 +368,7 @@ export const ProductPage = () => {
                           event.stopPropagation();
                           toggleFavorite(item.id);
                         }}
-                        className={`rounded-full border p-2.5 transition-colors ${isRelatedFavorite ? 'border-red-600 bg-red-600 text-white' : 'border-black/15 bg-white text-black hover:border-red-600 hover:text-red-600'}`}
+                        className={`rounded-full border p-2.5 transition-colors ${relatedProducts ? 'border-red-600 bg-red-600 text-white' : 'border-black/15 bg-white text-black hover:border-red-600 hover:text-red-600'}`}
                       >
                         <Heart size={16} />
                       </button>
@@ -378,7 +381,14 @@ export const ProductPage = () => {
                   <p className="mt-1 text-xs uppercase tracking-[0.18em] text-black/45">{item.category}</p>
 
                   <div className="mt-4 flex items-center justify-between gap-3">
-                    <p className="text-lg font-semibold text-red-600">S/{item.price}</p>
+                    <p className="text-lg font-semibold text-red-600">
+                      <PriceDisplay product={item}/>
+                      {hayDescuento && etiquetaDescuento ? (
+                        <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
+                          {etiquetaDescuento}
+                        </span>
+                      ) : null}
+                    </p>
                     <PermissionGate permission={PERMISSIONS.salesCreate}>
                       <motion.button
                         type="button"

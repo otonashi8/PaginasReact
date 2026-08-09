@@ -2,6 +2,8 @@
 import type { Product } from '../types';
 import type { PurchaseItem } from '../types/auth';
 import type { SubscriptionPlan } from '../plans';
+import { PermissionGate } from './PermissionGate';
+import { PERMISSIONS } from '../utils/permissionCodes';
 
 type CartProduct = Product & { quantity: number; size: string };
 
@@ -194,6 +196,7 @@ export default function CartCheckout({
               >
                 Volver
               </motion.button>
+              <PermissionGate permission={PERMISSIONS.salesCreate}>
               <motion.button
                 type="button"
                 onClick={async () => {
@@ -250,6 +253,7 @@ export default function CartCheckout({
               >
                 Confirmar pago
               </motion.button>
+              </PermissionGate>
             </div>
           </div>
         </motion.div>

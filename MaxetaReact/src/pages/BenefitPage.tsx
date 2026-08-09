@@ -6,6 +6,8 @@ import { SectionTitle } from '../components/SectionTitle';
 import { TypewriterTitle } from '../components/TypewriterTitle';
 import { MembershipModal } from '../components/MembershipModal';
 import { getPlanOptions, type SubscriptionPlan } from '../plans';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { PermissionGate } from '../components/PermissionGate';
 
 type FaqItem = {
   question: string;
@@ -195,6 +197,7 @@ export const BenefitPage = () => {
                 ))}
               </ul>
 
+              <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
               <button
                 type="button"
                 onClick={() => handleOpenMembershipModal(plan)}
@@ -203,6 +206,7 @@ export const BenefitPage = () => {
                 Suscribirme
                 <ArrowRight size={16} />
               </button>
+              </PermissionGate>
             </motion.article>
           ))}
         </div>

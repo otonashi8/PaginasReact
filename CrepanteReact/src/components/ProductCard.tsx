@@ -6,6 +6,8 @@ import type { Product } from '../types';
 import { ProductHoverImage } from './ProductHoverImage';
 import QuickAddModal from './QuickAddModal';
 import { useState } from 'react';
+import { PermissionGate } from './PermissionGate';
+import { PERMISSIONS } from '../utils/permissionCodes';
 
 type ProductCardProps = {
   product: Product;
@@ -73,6 +75,7 @@ if (isSearch) {
           <h3 className="text-lg font-semibold text-black">{product.name}</h3>
           <p className="mt-1 text-sm text-black/70">{product.category}</p>
         </div>
+        <PermissionGate permission={PERMISSIONS.productUpdate}>
         <button
           type="button"
           onClick={() => toggleFavorite(product.id)}
@@ -80,6 +83,7 @@ if (isSearch) {
         >
           <Heart size={16} />
         </button>
+        </PermissionGate>
       </div>
       <div className="mt-4 flex items-center justify-between">
         <div>
@@ -87,6 +91,7 @@ if (isSearch) {
           <p className="text-base font-semibold text-red-600">S/{product.price}</p>
         </div>
         <div className="flex items-center gap-2">
+          <PermissionGate permission={PERMISSIONS.salesCreate}>
           <button
             type="button"
             onClick={() => setIsQuickOpen(true)}
@@ -94,6 +99,7 @@ if (isSearch) {
           >
             <Plus size={16} />
           </button>
+          </PermissionGate>
           <QuickAddModal product={product} isOpen={isQuickOpen} onClose={() => setIsQuickOpen(false)} />
           {onQuickAdd ? (
             <button

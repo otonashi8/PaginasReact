@@ -1,12 +1,16 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Heart, Minus, Plus, RotateCcw, Shield, ShoppingBag, Truck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ProductHoverImage } from '../components/ProductHoverImage';
 import { TypewriterTitle } from '../components/TypewriterTitle';
 import { useWishlist } from '../context/WishlistContext';
 import { getProductBySlug, getRelatedProducts } from '../services/contentService';
 import type { Product } from '../types';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { PermissionGate } from '../components/PermissionGate';
+import { resolveProductPrice } from '../services/pricingService';
+import { PriceDisplay } from '../components/PriceDisplay';
 
 const allSizeOptions = ['S', 'M', 'L', 'XL', '28', '30', '32', '34', '36'];
 
@@ -83,6 +87,11 @@ export const ProductPage = () => {
 
   const relatedProducts = getRelatedProducts(product.id);
   const isFavorite = favorites.includes(product.id);
+  const resultadoPrecio = useMemo(() => resolveProductPrice(product, { cantidad: quantity }), [product, quantity]);
+  const precioOriginal = resultadoPrecio.precioOriginal;
+  const precioFinal = resultadoPrecio.precioFinal;
+  const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
+  const etiquetaDescuento = resultadoPrecio.etiquetaDescuento;
 
   const openQuickBuy = (item: Product) => {
     setQuickBuyProduct(item);
@@ -167,10 +176,16 @@ export const ProductPage = () => {
           <h2 className="mt-1 text-sm font-medium uppercase tracking-[0.25em] text-black">{product.subcategory}</h2>
 
           <div className="mt-6 flex items-end gap-3">
-            {product.previousPrice ? (
-              <span className="pb-1 text-base lg:text-lg text-black/40 line-through sm:text-base">S/{product.previousPrice}</span>
-            ) : null}
-            <span className="text-5xl lg:text-6xl font-semibold leading-none text-red-600 sm:text-[2.7rem]">S/{product.price}</span>
+            <PriceDisplay product={product} cantidad={quantity} />
+              {hayDescuento && etiquetaDescuento ? (
+                <span className="rounded-full bg-red-50 px-3 py-1 text-xl font-semibold uppercase tracking-[0.16em] text-red-600">
+                  {etiquetaDescuento}
+                </span>
+              ) : !hayDescuento && product.previousPrice ? (
+                <span className="rounded-full bg-red-50 px-3 py-1 text-xl font-semibold uppercase tracking-[0.16em] text-red-600">
+                  Oferta
+                </span>
+              ) : null}
           </div>
 
           <div className="mt-7 space-y-8">
@@ -241,6 +256,7 @@ export const ProductPage = () => {
           </div>
 
           <div className="mt-10 flex flex-col gap-3">
+            <PermissionGate permission={PERMISSIONS.salesCreate}>
             <motion.button
               type="button"
               whileHover={{ y: -1 }}
@@ -250,6 +266,8 @@ export const ProductPage = () => {
             >
               <ShoppingBag size={16} /> Agregar al carrito
             </motion.button>
+            </PermissionGate>
+            <PermissionGate permission={PERMISSIONS.productUpdate}>
             <motion.button
               type="button"
               whileHover={{ y: -1 }}
@@ -259,19 +277,12 @@ export const ProductPage = () => {
             >
               <Heart size={16} /> Favoritos
             </motion.button>
+            </PermissionGate>
           </div>
 
           <div className="mt-10 border-t border-black/10 pt-8">
             <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-black">Descripcion</h3>
             <p className="mt-3 text-sm leading-relaxed text-black/70">{product.description}</p>
-            <div className="mt-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-black">Colores</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {product.colors.map((color) => (
-                  <span key={color} className="border border-black/15 px-3 py-1 text-xs uppercase tracking-[0.15em]" > {color} </span>
-                ))}
-              </div>
-            </div>
           </div>
 
           <div className="mt-10 space-y-4">
@@ -322,6 +333,7 @@ export const ProductPage = () => {
                     />
                   </Link>
 
+                  <PermissionGate permission={PERMISSIONS.productUpdate}>
                   <button
                     type="button"
                     onClick={(event) => {
@@ -334,9 +346,9 @@ export const ProductPage = () => {
                         ? 'border-red-600 bg-red-600 text-white'
                         : 'border-black/10 bg-white text-black hover:border-red-600 hover:text-red-600'
                     }`}
-                  >
-                    <Heart size={17} />
+                  ><Heart size={17} />
                   </button>
+                  </PermissionGate>
                 </div>
 
                 <div className="space-y-4 p-5">
@@ -348,8 +360,15 @@ export const ProductPage = () => {
                   <div className="flex items-center justify-between border-t border-black/10 pt-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.22em] text-black/40">Precio</p>
-                      <p className="mt-1 text-2xl font-semibold text-red-600">S/{item.price}</p>
+                      <p className="text-2xl font-semibold tracking-[-0.04em] text-black"> 
+                      <PriceDisplay product={product}/>
+                      {hayDescuento && etiquetaDescuento ? (
+                      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
+                      {etiquetaDescuento}
+                      </span>
+                      ) : null}</p>
                     </div>
+                    <PermissionGate permission={PERMISSIONS.salesCreate}>
                     <motion.button
                       type="button"
                       whileHover={{ scale: 1.05 }}
@@ -362,6 +381,7 @@ export const ProductPage = () => {
                       className="flex h-12 w-12 items-center justify-center bg-black text-white transition hover:bg-red-600">
                       <ShoppingBag size={18} />
                     </motion.button>
+                    </PermissionGate>
                   </div>
                 </div>
               </motion.article>
@@ -383,7 +403,7 @@ export const ProductPage = () => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.96, opacity: 0, y: 8 }}
               transition={{ duration: 0.26 }}
-              className="my-auto w-full max-w-5xl border border-black/10 bg-white shadow-[0_30px_90px_rgba(0,0,0,0.22)]"
+              className="my-auto w-[550px] max-w-5xl border border-black/10 bg-white shadow-[0_30px_90px_rgba(0,0,0,0.22)]"
             >
               <div className="flex items-center justify-between border-b border-black/10 px-8 py-6">
                 <div>
@@ -405,7 +425,10 @@ export const ProductPage = () => {
                 <div className="space-y-6 p-8">
                   <div className="border-b border-black/10 pb-5">
                     <p className="text-xs uppercase tracking-[0.25em] text-black/45">Precio</p>
-                    <p className="mt-2 text-4xl font-semibold text-red-600">S/{quickBuyProduct.price}</p>
+                    {product.previousPrice ? (
+                    <p className="text-sm text-black/40 line-through">S/{resolveProductPrice(product).precioOriginal.toFixed(2)}</p>
+                    ) : null}
+                    <p className="text-base font-semibold text-red-600">S/{resolveProductPrice(product).precioFinal.toFixed(2)}</p>
                   </div>
                   <div>
                     <label className="text-xs uppercase tracking-[0.22em] text-black/45">
@@ -462,12 +485,14 @@ export const ProductPage = () => {
                       </button>
                     </div>
                   </div>
+                  <PermissionGate permission={PERMISSIONS.salesCreate}>
                   <button
                     type="button"
                     onClick={handleQuickBuyConfirm}
                     className="mt-2 h-14 w-full bg-black text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-red-600"
                   >Agregar al carrito
                   </button>
+                  </PermissionGate>
                 </div>
               </div>
             </motion.div>

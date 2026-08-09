@@ -1,4 +1,6 @@
 ﻿import { motion } from 'framer-motion';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { PermissionGate } from './PermissionGate';
 
 export default function CartSummary({
   subtotal,
@@ -30,15 +32,16 @@ export default function CartSummary({
             placeholder="Ingresa tu cupón"
             className="w-full border border-neutral-300 bg-white px-4 py-3 text-black outline-none transition focus:border-black"
           />
+          <PermissionGate permission={PERMISSIONS.promoApply}>
           <motion.button
             type="button"
             onClick={onApplyPromo}
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.98 }}
             className="border border-black bg-black px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-red-600 hover:border-red-600"
-          >
-            Aplicar
+          >Aplicar
           </motion.button>
+          </PermissionGate>
         </div>
         {promoMessage ? (
           <p className={`mt-3 text-sm ${promoMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
@@ -60,6 +63,7 @@ export default function CartSummary({
                     : '(Envío gratis)'}
                 </p>
               </div>
+              <PermissionGate permission={PERMISSIONS.promoApply}>
               <motion.button
                 type="button"
                 onClick={removeAppliedPromo}
@@ -69,6 +73,7 @@ export default function CartSummary({
               >
                 Eliminar
               </motion.button>
+              </PermissionGate>
             </div>
           </div>
         ) : null}
@@ -78,15 +83,16 @@ export default function CartSummary({
         <div className="border-l-4 border-red-600 bg-neutral-50 p-5 text-sm">
           <p className="font-semibold text-black">¿Quieres unirte al programa mayorista?</p>
           <p className="mt-2 text-sm text-black/60">Elige un plan y continúa con el mismo flujo de registro compartido por toda la app.</p>
+          <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
           <motion.button
             type="button"
             onClick={() => setIsMembershipModalOpen(true)}
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.98 }}
             className="mt-5 w-full border border-black bg-black px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:border-red-600 hover:bg-red-600"
-          >
-            Quiero unirme
+          >Quiero unirme
           </motion.button>
+          </PermissionGate>
         </div>
       )}
 
@@ -141,6 +147,7 @@ export default function CartSummary({
             <span>Total final</span>
             <span>S/{discountedTotal.toFixed(2)}</span>
           </div>
+          <PermissionGate permission={PERMISSIONS.salesCreate}>
           <motion.button
             type="button"
             onClick={() => setCheckoutStep('checkout')}
@@ -150,6 +157,7 @@ export default function CartSummary({
           >
             Pagar ahora
           </motion.button>
+          </PermissionGate>
         </div>
       </div>
     </div>

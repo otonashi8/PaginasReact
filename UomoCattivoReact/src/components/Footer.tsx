@@ -77,7 +77,7 @@ export const Footer = () => {
 
             <div className="mt-6 flex justify-center lg:block">
               <img
-                src="https://scontent-lim1-1.xx.fbcdn.net/v/t39.30808-6/406240257_122122291490080645_5906321138546348594_n.jpg?stp=dst-jpg_tt6&cstp=mx1024x733&ctp=s1024x733&_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=0Okkm9cBBG0Q7kNvwHMyTFn&_nc_oc=AdozORhTPSf8MaIcREVPeqRBcUk1kPsJhtsmXQoCF7qtqSyHJa5upi_3SOyJknG7ns0&_nc_zt=23&_nc_ht=scontent-lim1-1.xx&_nc_gid=qBpEDUoEsiPVqdIXnAMT5A&_nc_ss=7b289&oh=00_AQB8IJX3Y0eb6v2xyR76Sl2_ESX3xNbAnjCyAzcsU92j4A&oe=6A6EC546"
+                src="./public/icon.jpg"
                 alt="Logo"
                 className="h-40 w-75 rounded-xl"
               />

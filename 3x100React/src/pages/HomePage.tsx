@@ -281,12 +281,12 @@ export const HomePage = () => {
                 className="rounded-[1.5rem] border border-zinc-200 bg-white p-6 text-center"
               >
                 <Link to={link.href} className="block">
-                  <div className={`mx-auto mb-4 flex h-36 w-36 items-center justify-center rounded-full border-2 transition-all ${isActive ? 'border-red-600 bg-red-600/10 text-red-600 shadow-[0_0_18px_rgba(239,68,68,0.24)]' : 'border-zinc-200 bg-zinc-50 text-black'}`}>
+                  <div className={`mx-auto mb-4 flex h-36 w-36 items-center justify-center rounded-full border-2 transition-all ${isActive ? 'border-orange-600 bg-orange-600/10 text-orange-600 shadow-[0_0_18px_rgba(239,68,68,0.24)]' : 'border-zinc-200 bg-zinc-50 text-black'}`}>
                     {link.image && (
                       <img src={link.image} alt={link.name} className="h-full w-full object-cover" />
                     )}
                   </div>
-                  <h3 className={`text-lg font-semibold uppercase tracking-[0.16em] transition-colors ${isActive ? 'text-red-600' : 'text-black'}`}>
+                  <h3 className={`text-lg font-semibold uppercase tracking-[0.16em] transition-colors ${isActive ? 'text-orange-600' : 'text-black'}`}>
                     {link.name}
                   </h3>
                 </Link>

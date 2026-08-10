@@ -287,9 +287,9 @@ export const StorePage = () => {
           <p className="text-sm uppercase tracking-[0.35em] text-black/45">Tienda</p>
           <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl space-y-3">
-              <TypewriterTitle as="h1" text="Colección masculina" className="text-3xl font-semibold uppercase tracking-[0.18em] text-black sm:text-4xl" />
+              <TypewriterTitle as="h1" text="Colección Outlet" className="text-3xl font-semibold uppercase tracking-[0.18em] text-black sm:text-4xl" />
               <p className="max-w-2xl text-sm leading-7 text-black/65 sm:text-base">
-                Explora piezas esenciales con una estética contemporánea y sofisticada.
+                Explora piezas esenciales con una estética contemporánea y adaptada.
               </p>
             </div>
           </div>
@@ -548,10 +548,6 @@ export const StorePage = () => {
                 >
                   {paginatedProducts.map((product, index) => {
                     const isFavorite = favorites.includes(product.id);
-                    const discountPercentage = product.previousPrice
-                      ? Math.max(1, Math.round((1 - product.price / product.previousPrice) * 100))
-                      : null;
-
                     const resultadoPrecio = resolveProductPrice(product);
                     const precioOriginal = resultadoPrecio.precioOriginal;
                     const precioFinal = resultadoPrecio.precioFinal;
@@ -569,11 +565,6 @@ export const StorePage = () => {
                       >
                         <Link to={`/producto/${product.slug}`} className="block">
                           <div className="relative aspect-[4/5] overflow-hidden bg-zinc-50">
-                            {discountPercentage ? (
-                              <span className="absolute left-4 top-4 z-10 rounded-sm bg-black px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-white shadow-[0_10px_25px_rgba(0,0,0,0.16)]">
-                                -{discountPercentage}%
-                              </span>
-                            ) : null}
                             <ProductHoverImage
                               product={product}
                               alt={product.name}

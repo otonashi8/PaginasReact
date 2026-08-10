@@ -3,49 +3,49 @@
   "description": "Al comprar en UOMO CATTIVO aceptas nuestras condiciones de venta, uso y privacidad.",
   "sections": [
     {
-      "title": "1. Aceptación de los Términos",
+      "title": "Aceptación de los Términos",
       "text": "Al acceder o realizar una compra en nuestro sitio web, reconoces que has leído, comprendido y aceptado estos Términos de Uso."
     },
     {
-      "title": "2. Productos y Disponibilidad",
+      "title": "Productos y Disponibilidad",
       "text": "Todos los productos mostrados en nuestro sitio web están sujetos a disponibilidad.",
       "text2":"Nos reservamos el derecho de modificar o descontinuar cualquier producto sin previo aviso."
     },
-    {"title":"3. Precios y Pagos",
+    {"title":"Precios y Pagos",
       "text":"Todos los precios se muestran en la moneda seleccionada e incluyen los impuestos aplicables, salvo que se indique lo contrario.",
       "text2":"Aceptamos diversos métodos de pago, procesados de forma segura a través de pasarelas de terceros confiables.",
       "text3":"Nos reservamos el derecho de cambiar los precios en cualquier momento sin previo aviso."
     },
-    {"title":"4. Pedidos y Envíos",
+    {"title":"Pedidos y Envíos",
       "text":"Una vez realizado un pedido, recibirás un correo electrónico de confirmación con los detalles del mismo.",
       "text2":"Los tiempos de envío pueden variar según la ubicación y la disponibilidad del producto.", 
       "text3":"Nos esforzamos por cumplir con los plazos estimados, pero no podemos garantizar entregas en fechas específicas.",
       "text4":"Se proporcionará información de seguimiento cuando esté disponible."
     },
-    {"title":"5. Devoluciones y Cambios",
+    {"title":"Devoluciones y Cambios",
       "text":"Se aceptan devoluciones y cambios dentro de los 14 días posteriores a la entrega, siempre que el artículo no haya sido usado y se encuentre en su estado original.",
       "text2":"Los artículos en oferta o liquidación pueden no ser elegibles para devolución, a menos que sean defectuosos.",
       "text3":"El cliente es responsable de los gastos de envío de la devolución, salvo que el producto sea incorrecto o defectuoso.",
       "text4":"Consulta nuestra POLITICA DE DEVOLUCIONES para obtener instrucciones detalladas."
     },
-    {"title":"6. Promociones y Descuentos",
+    {"title":"Promociones y Descuentos",
       "text":"Los códigos promocionales deben aplicarse durante el proceso de pago y no pueden añadirse después de realizar el pedido.",
       "text2":"Cada código promocional es válido por un tiempo limitado y puede utilizarse una sola vez, salvo que se indique lo contrario.",
       "text3":"Los descuentos no pueden combinarse con otras ofertas, a menos que se mencione explícitamente.",
       "text4":"Nos reservamos el derecho de cancelar cualquier campaña promocional o rechazar el uso indebido de códigos de descuento a nuestra discreción."
     },
-    {"title":"7. Política de Privacidad",
+    {"title":"Política de Privacidad",
       "text":"Estamos comprometidos con la protección de tu privacidad. Los datos personales recopilados a través de nuestro sitio web se manejarán de acuerdo con nuestra Política de Privacidad.",
       "text2":"Solo recopilamos los datos personales necesarios para procesar tus pedidos y mejorar tu experiencia.",
       "text3":"Tus datos nunca serán vendidos ni compartidos con terceros sin tu consentimiento, excepto para el cumplimiento del pedido.",
       "text4":"Usamos cookies para personalizar el contenido y analizar el tráfico. Puedes gestionar tus preferencias de cookies en la configuración de tu navegador."
     },
-    {"title":"8. Cuenta y Seguridad",
+    {"title":"Cuenta y Seguridad",
     "text":"Eres responsable de mantener la confidencialidad de tu cuenta y contraseña.",
     "text2":"Nos reservamos el derecho de suspender cuentas por actividad sospechosa o fraudulenta."
     },
-    {"title":"9. Propiedad Intelectual",
-    "text":"Si tienes preguntas sobre estos Términos de Uso, comunícate con nosotros en: contacto@3×100.pe"
+    {"title":"Propiedad Intelectual",
+    "text":"Si tienes preguntas sobre estos Términos de Uso, comunícate con nosotros en: contacto@uomocattivo.com"
     }
   ]
 }

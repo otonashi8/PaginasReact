@@ -143,20 +143,20 @@ export default function ComprarModal({ open, onClose, onComplete }: ComprarModal
             )}
 
             {step === 2 && (
-              <div className="step-panel form-grid">
-                <label>
+              <div className="step-panel form-grid grid grid-cols-2 gap-4">
+                <label className="flex flex-col">
                   Nombre completo
                   <input value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Tu nombre" />
                 </label>
-                <label>
+                <label className="flex flex-col">
                   Correo electrónico
                   <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="ejemplo@mail.com" type="email" />
                 </label>
-                <label>
+                <label className="flex flex-col">
                   Teléfono
                   <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+51 9XXXXXXXX" />
                 </label>
-                <label>
+                <label className="flex flex-col">
                   Dirección / Ubigeo
                   <input
                     value={locationText}

@@ -1,8 +1,5 @@
-import {Check,Minus} from "lucide-react";
-
-import type {AccionPermiso,ModuloSistema,Permiso} from "../TiposUsuarios";
-
-import {accionesDisponibles,modulosSistema} from "../TiposUsuarios";
+import type { Permiso } from "../TiposUsuarios";
+import { modulosSistema } from "../TiposUsuarios";
 
 type Props = {
     permisos: Permiso[];
@@ -12,76 +9,25 @@ export const MatrizPermisosRol = ({
     permisos
 }: Props) => {
 
-    function tienePermiso(
-        modulo: ModuloSistema,
-        accion: AccionPermiso
-    ) {
-        const permiso =
-            permisos.find(
-                p => p.modulo === modulo
-            );
-        if (!permiso) {return false;}
-        return permiso.acciones.includes(accion);
-    }
+    const accionesParaModulo = (mod: string) => {
+        const permiso = permisos.find((p) => p.modulo === (mod as any));
+        if (!permiso || !permiso.acciones.length) return '-';
+        return permiso.acciones.join(', ');
+    };
 
     return (
-        <div className="overflow-hidden rounded-none border border-zinc-200 bg-white">
-            <div className="overflow-x-auto">
-                <table className="min-w-full">
-                    <thead className="bg-zinc-100">
-                        <tr>
-                            <th className="px-5 py-4 text-left">Módulo</th>
-                            {
-                                accionesDisponibles.map(
-                                    accion => (
-                                        <th
-                                            key={accion}
-                                            className="px-5 py-4 text-center capitalize"
-                                        >{accion}
-                                        </th>
-                                    )
-                                )
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {
-                            modulosSistema.map(
-                                modulo => (
-                                    <tr
-                                        key={modulo}
-                                        className="border-t border-zinc-200"
-                                    >
-                                        <td className="px-5 py-4 font-medium capitalize">
-                                            {modulo}</td>
-                                        {
-                                            accionesDisponibles.map(
-                                                accion => (
-                                                    <td
-                                                        key={accion}
-                                                        className="px-5 py-4 text-center"
-                                                    >
-                                                        {
-                                                            tienePermiso(modulo,accion)
-                                                                ? <Check
-                                                                    size={18}
-                                                                    className="mx-auto text-green-600"
-                                                                />
-                                                                : <Minus
-                                                                    size={18}
-                                                                    className="mx-auto text-zinc-300"
-                                                                />
-                                                        }
-                                                    </td>
-                                                )
-                                           )
-                                       }
-                                    </tr>
-                                )
-                            )
-                        }
-                    </tbody>
-                </table>
+        <div className="w-full">
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                {modulosSistema.map((modulo) => (
+                    <>
+                        <div key={`m-${modulo}`} className="px-3 py-2 text-sm font-medium capitalize text-zinc-900">
+                            {modulo}
+                        </div>
+                        <div key={`a-${modulo}`} className="px-3 py-2 text-sm text-zinc-700">
+                            {accionesParaModulo(modulo)}
+                        </div>
+                    </>
+                ))}
             </div>
         </div>
     );

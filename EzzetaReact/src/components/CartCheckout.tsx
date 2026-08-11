@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { PermissionGate } from './PermissionGate';
 import { PERMISSIONS } from '../utils/permissionCodes';
 import useCheckoutDraft from '../hooks/useCheckoutDraft';
-import { getPeruDepartments, getPeruDistricts, getPeruProvinces } from '../services/peruUbigeoService';
+import { getPeruDistricts, getPeruProvinces } from '../services/peruUbigeoService';
 import { validarStockDelCarrito } from '../utils/cartHelpers';
 import type { Product } from '../types';
 import type { PurchaseItem } from '../types/auth';
@@ -18,6 +18,7 @@ type Props = {
   discountAmount: number;
   promoDiscountAmount: number;
   shipping: number;
+  shippingLabel?: string;
   discountedTotal: number;
   hasActivePlan: boolean;
   activePlan: { id: string; descuento: number } | null;
@@ -35,6 +36,7 @@ export default function CartCheckout({
   discountAmount,
   promoDiscountAmount,
   shipping,
+  shippingLabel,
   discountedTotal,
   hasActivePlan,
   activePlan,
@@ -71,7 +73,6 @@ export default function CartCheckout({
     };
   });
 
-  const departments = useMemo(() => getPeruDepartments(), []);
   const provinces = useMemo(
     () => (shippingAddress.departamento ? getPeruProvinces(shippingAddress.departamento) : []),
     [shippingAddress.departamento],
@@ -139,24 +140,16 @@ export default function CartCheckout({
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="block">
             <span className="text-black/60">Departamento</span>
-            <select
+            <input
+              type="text"
               value={shippingAddress.departamento}
-              onChange={(event) => setShippingAddress({
-                departamento: event.target.value,
-                provincia: '',
-                distrito: '',
-                codigoPostal: shippingAddress.codigoPostal,
-                referencia: shippingAddress.referencia,
-              })}
+              readOnly
+              placeholder="Departamento no seleccionado"
               className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-            >
-              <option value="">Selecciona un departamento</option>
-              {departments.map((department) => (
-                <option key={department.code} value={department.name}>
-                  {department.name}
-                </option>
-              ))}
-            </select>
+            />
+            <p className="mt-2 text-sm text-black/70">
+              {shippingLabel === 'GRATIS' ? '🎉 Envío gratis' : shipping !== undefined ? `S/${shipping.toFixed(2)} de envío` : 'Costo de envío por calcular'}
+            </p>
           </label>
 
           <label className="block">

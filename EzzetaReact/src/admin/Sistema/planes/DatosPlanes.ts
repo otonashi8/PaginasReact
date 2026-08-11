@@ -1,22 +1,10 @@
-import { storageManager } from './storage';
+import { storageManager } from '../../../storage';
+import type { SubscriptionPlan } from '../../../plans';
+import { registrarLog } from '../../../services/auditService';
 
-export type WholesalePlanId = 'bronze' | 'silver' | 'gold';
+const STORAGE_KEY = 'ezzeta.admin.plans';
 
-export interface SubscriptionPlan {
-  id: WholesalePlanId;
-  nombre: string;
-  precio: number;
-  descuento: number;
-  color: string;
-  icono: string;
-  duracion: string;
-  durationDays: number;
-  beneficios: string[];
-}
-
-const STORAGE_KEY = 'ezzeta.admin.subscription-plans';
-
-export const subscriptionPlans: SubscriptionPlan[] = [
+const defaultPlans: SubscriptionPlan[] = [
   {
     id: 'bronze',
     nombre: 'Bronce',
@@ -52,20 +40,11 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   },
 ];
 
-export const planCatalog: Record<WholesalePlanId, SubscriptionPlan> = subscriptionPlans.reduce(
-  (accumulator, plan) => {
-    accumulator[plan.id] = plan;
-    return accumulator;
-  },
-  {} as Record<WholesalePlanId, SubscriptionPlan>,
-);
-
-const readPlans = (): SubscriptionPlan[] => {
+const getStoredPlans = (): SubscriptionPlan[] => {
   const stored = storageManager.get<SubscriptionPlan[]>(STORAGE_KEY);
-
   if (!stored || !Array.isArray(stored) || stored.length === 0) {
-    writePlans(subscriptionPlans);
-    return subscriptionPlans;
+    writePlans(defaultPlans);
+    return defaultPlans;
   }
 
   return stored;
@@ -78,11 +57,23 @@ const writePlans = (plans: SubscriptionPlan[]) => {
   }
 };
 
-export const getPlanById = (id: WholesalePlanId): SubscriptionPlan => {
-  const stored = readPlans().find((plan) => plan.id === id);
-  return stored ?? planCatalog[id];
+export const obtenerPlanes = (): SubscriptionPlan[] => getStoredPlans();
+
+export const obtenerPlanPorId = (id: SubscriptionPlan['id']): SubscriptionPlan | undefined =>
+  getStoredPlans().find((plan) => plan.id === id);
+
+export const actualizarPlan = (plan: SubscriptionPlan): SubscriptionPlan => {
+  const planes = getStoredPlans().map((item) => (item.id === plan.id ? plan : item));
+  writePlans(planes);
+
+  registrarLog({
+    modulo: 'Sistema',
+    submodulo: 'Planes',
+    accion: 'Actualizó plan',
+    descripcion: `Se actualizó el plan ${plan.nombre} con precio S/ ${plan.precio} y descuento ${plan.descuento}%.`,
+    objetoAfectado: `Plan ${plan.nombre}`,
+    referencia: `plans.${plan.id}.update`,
+  });
+
+  return plan;
 };
-
-export const getPlanOptions = (): SubscriptionPlan[] => readPlans();
-
-export const getDefaultPlanId = (): WholesalePlanId => 'bronze';

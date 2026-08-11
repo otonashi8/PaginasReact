@@ -4,6 +4,9 @@ import { usePedidos } from '../../pedidos/hooks/usePedidos';
 import { useProductos } from '../../../Inventario/productos/hooks/useProductos';
 import { useSalesAnalyticsFilters } from '../hooks/useSalesAnalyticsFilters';
 import { buildSalesAnalytics, type SalesView } from '../utils/analytics';
+import { ExportButton } from '../../../componentes/ExportButton';
+import { buildCsv, downloadCsv, formatFilenameDateRange } from '../../../utils/exportCsv';
+import { registrarExportacion } from '../../../../services/auditService';
 
 const viewOptions: Array<{ value: SalesView; label: string }> = [
   { value: 'general', label: 'General' },
@@ -149,11 +152,41 @@ export const SalesAnalyticsPanel = () => {
         </div>
 
         <div className="rounded-none border border-zinc-200 bg-zinc-50 p-4">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-zinc-900">{viewOptions.find((option) => option.value === view)?.label}</p>
               <p className="text-sm text-zinc-500">Resumen dinámico a partir de pedidos y productos reales.</p>
             </div>
+            <ExportButton
+              onExport={() => {
+                if (analytics.rows.length === 0) {
+                  window.alert('No hay datos para exportar con los filtros actuales.');
+                  return;
+                }
+
+                const filenameRange = formatFilenameDateRange(filters.fechaInicio, filters.fechaFin);
+                const filename = `ventas_productos${filenameRange ? `_${filenameRange}` : `_${new Date().toISOString().slice(0, 10)}`}`;
+                const csv = buildCsv<typeof analytics.rows[number]>(analytics.rows, [
+                  { label: 'Etiqueta', value: (row) => row.label },
+                  { label: 'Categoría', value: (row) => row.categoria ?? '' },
+                  { label: 'Subcategoría', value: (row) => row.subcategoria ?? '' },
+                  { label: 'Género', value: (row) => row.genero ?? '' },
+                  { label: 'Talla', value: (row) => row.talla ?? '' },
+                  { label: 'Cantidad vendida', value: (row) => row.cantidadVendida },
+                  { label: 'Ingresos', value: (row) => row.ingresos },
+                  { label: 'Pedidos', value: (row) => row.pedidos },
+                  { label: 'Participación', value: (row) => row.participacion },
+                ]);
+                downloadCsv(`${filename}.csv`, csv);
+                registrarExportacion(
+                  'Ventas',
+                  'Analytics',
+                  'Ventas por producto',
+                  `Se exportaron ${analytics.rows.length} filas de analytics de ventas.`,
+                  'sales.analytics.export',
+                );
+              }}
+            />
           </div>
 
           <div className="mb-4 rounded-none border border-zinc-200 bg-white p-4">

@@ -83,13 +83,66 @@ const rolesIniciales: Rol[] = [
 
 /* OBTENER*/
 
+const normalizarModulo = (modulo: string) =>
+    modulo
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .replace(/[^a-z0-9\s-]/gi, '')
+        .trim()
+        .toLowerCase();
+
+const accionesTotales: Rol['permisos'][number]['acciones'] = [
+    'ver',
+    'crear',
+    'editar',
+    'eliminar',
+    'exportar',
+];
+
+const migrarRol = (rol: Rol): Rol => {
+    const modulosExistentes = new Set(
+        rol.permisos.map((permiso) => normalizarModulo(permiso.modulo)),
+    );
+
+    const permisosFaltantes = generarPermisosVacios().filter(
+        (permiso) => !modulosExistentes.has(normalizarModulo(permiso.modulo)),
+    );
+
+    if (permisosFaltantes.length === 0) {
+        return rol;
+    }
+
+    const permisosAdicionales = permisosFaltantes.map((permiso) => ({
+        ...permiso,
+        acciones: rol.codigo === 'ADMIN' || rol.protegido ? accionesTotales : [],
+    }));
+
+    return {
+        ...rol,
+        permisos: [...rol.permisos, ...permisosAdicionales],
+    };
+};
+
 export function obtenerRoles(): Rol[] {
     const datos = storageManager.get<string>(CLAVE_ROLES) as string | null;
     if (!datos) {
         guardarRoles(rolesIniciales);
         return rolesIniciales;
     }
-    return JSON.parse(String(datos));
+
+    const roles = JSON.parse(String(datos)) as Rol[];
+    const rolesMigrados = roles.map(migrarRol);
+
+    const necesitaGuardar =
+        rolesMigrados.length !== roles.length ||
+        rolesMigrados.some((rol, index) => JSON.stringify(rol) !== JSON.stringify(roles[index]));
+
+    if (necesitaGuardar) {
+        guardarRoles(rolesMigrados);
+        return rolesMigrados;
+    }
+
+    return roles;
 }
 
 /* GUARDAR */

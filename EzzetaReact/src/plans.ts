@@ -15,6 +15,7 @@ export interface SubscriptionPlan {
 }
 
 const STORAGE_KEY = 'ezzeta.admin.subscription-plans';
+const ADMIN_STORAGE_KEY = 'ezzeta.admin.plans';
 
 export const subscriptionPlans: SubscriptionPlan[] = [
   {
@@ -61,6 +62,11 @@ export const planCatalog: Record<WholesalePlanId, SubscriptionPlan> = subscripti
 );
 
 const readPlans = (): SubscriptionPlan[] => {
+  const adminStored = storageManager.get<SubscriptionPlan[]>(ADMIN_STORAGE_KEY);
+  if (adminStored && Array.isArray(adminStored) && adminStored.length > 0) {
+    return adminStored;
+  }
+
   const stored = storageManager.get<SubscriptionPlan[]>(STORAGE_KEY);
 
   if (!stored || !Array.isArray(stored) || stored.length === 0) {
@@ -73,6 +79,11 @@ const readPlans = (): SubscriptionPlan[] => {
 
 const writePlans = (plans: SubscriptionPlan[]) => {
   storageManager.set(STORAGE_KEY, plans);
+  try {
+    storageManager.set(ADMIN_STORAGE_KEY, plans);
+  } catch {
+  }
+
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('maxeta:plans-changed'));
   }

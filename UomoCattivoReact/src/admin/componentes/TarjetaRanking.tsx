@@ -6,7 +6,7 @@ type Props = {
 
 export const TarjetaRanking = ({ ranking }: Props) => {
     return (
-        <article className="rounded-none border border-zinc-200 bg-bone p-5 shadow-sm">
+        <article className="rounded-none border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
                 <span className="text-2xl font-semibold text-zinc-900">{ranking.posicion}</span>
                 <span className="px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-700">

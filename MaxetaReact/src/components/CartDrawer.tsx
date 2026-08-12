@@ -6,25 +6,44 @@ import { Link } from 'react-router-dom';
 import { ImagePlaceholder } from './ImagePlaceholder';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
+import useCart from '../hooks/useCart';
+import useCheckoutDraft, { CHECKOUT_DRAFT_CHANGED } from '../hooks/useCheckoutDraft';
 import type { Product } from '../types';
 import { getPlanById, type SubscriptionPlan } from '../plans';
 import { getProducts } from '../services/contentService';
-import { promoCodes, type PromoCode } from '../data/promoCodes';
-import { MembershipModal } from './MembershipModal';
-import { ProductHoverImage } from '../components/ProductHoverImage';
+import { resolveProductPrice, resolveCartCoupon, usePricingRules } from '../services/pricingService';
+import PriceDisplay from '../components/PriceDisplay';
+import { obtenerPromoCodes } from '../data/promoCodes';
+import { storageManager, StorageKeys } from '../storage';
+import CartCheckout from './CartCheckout';
 import CartItemsList from './CartItemsList';
 import CartSummary from './CartSummary';
-import CartCheckout from './CartCheckout';
-import { PriceDisplay } from './PriceDisplay';
-import { PERMISSIONS } from '../utils/permissionCodes';
+import { MembershipModal } from './MembershipModal';
+import { ProductHoverImage } from '../components/ProductHoverImage';
 import { PermissionGate } from './PermissionGate';
-import { resolveProductPrice } from '../services/pricingService';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { calcularCostoEnvio, obtenerConfiguracionEnvioActual } from '../utils/envioHelpers';
+import { SHIPPING_CONFIG_EVENT } from '../admin/Sistema/envio/DatosEnvio';
 
 type CartProduct = Product & { quantity: number; size: string };
 
+type AppliedCouponType = 'percentage' | 'fixed' | 'shipping' | 'price_fixed';
+
+type AppliedCoupon = {
+  id?: number;
+  code: string;
+  type: AppliedCouponType;
+  value: number;
+  minPurchase: number;
+  active: boolean;
+  freeShipping?: boolean;
+  source: 'static' | 'admin';
+};
+
 export const CartDrawer = () => {
   const { isAuthenticated, user, recordPurchase } = useAuth();
-  const { cart, favorites, isCartOpen, closeCart, removeFromCart, updateQuantity, changeItemSize, toggleFavorite, addToCart, clearCart } = useWishlist();
+  const { favorites, toggleFavorite } = useWishlist();
+  const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, changeItemSize, addToCart, clearCart } = useCart();
   const products = getProducts();
   const [deleteConfirm, setDeleteConfirm] = useState<{ productId: number; size: string } | null>(null);
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'checkout' | 'payment'>('cart');
@@ -33,38 +52,134 @@ export const CartDrawer = () => {
   const { value: recommendedQuantity, setValue: setRecommendedQuantity, start: startRecommendedChange } = useHoldNumber(1, { min: 1, step: 1, interval: 120 });
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan['id']>(user?.plan ?? 'bronze');
+  const [plansVersion, setPlansVersion] = useState(0);
   const [promoCodeInput, setPromoCodeInput] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(() => {
+    try {
+      return storageManager.cart.appliedCoupon.get() as AppliedCoupon | null;
+    } catch {
+      return null;
+    }
+  });
   const [promoMessage, setPromoMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const pricingRules = usePricingRules();
 
   const selectedProducts: CartProduct[] = cart
     .map((item) => {
       const product = products.find((entry) => entry.id === item.productId);
-      if (!product) return null;
-      return { ...product, quantity: item.quantity, size: item.size };
+
+      if (!product) {
+        return null;
+      }
+
+      const precio = resolveProductPrice(product, { cantidad: item.quantity });
+
+      return { ...product, price: precio.precioFinal, quantity: item.quantity, size: item.size };
     })
     .filter((item): item is CartProduct => item !== null);
 
-  const subtotal = selectedProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const baseShipping = subtotal >= 300 ? 0 : 15;
-  const activePlan = useMemo(() => getPlanById(selectedPlanId), [selectedPlanId]);
-  const hasActivePlan = isAuthenticated && user?.plan !== undefined && user?.plan !== null;
-  const discountRate = hasActivePlan ? activePlan.descuento / 100 : 0;
-  const discountAmount = Number((subtotal * discountRate).toFixed(2));
+  const { getDraft, setDraft } = useCheckoutDraft();
+  const initialDraft = getDraft();
+  const [checkoutDepartamento, setCheckoutDepartamento] = useState(initialDraft.departamento ?? '');
+  const [departamentoError, setDepartamentoError] = useState(false);
+
+  const handleDepartamentoChange = (departamento: string) => {
+    setDepartamentoError(false);
+    const nextDraft = {
+      ...getDraft(),
+      departamento,
+      provincia: '',
+      distrito: '',
+    };
+
+    setDraft(nextDraft);
+    setCheckoutDepartamento(departamento);
+  };
+
+  const handleProceedToCheckout = () => {
+    if (!checkoutDepartamento.trim()) {
+      setDepartamentoError(true);
+      return;
+    }
+
+    if (shippingResult.shippingCalculable) {
+      setCheckoutStep('checkout');
+    }
+  };
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === StorageKeys.CHECKOUT) {
+        const nextDraft = getDraft();
+        setCheckoutDepartamento(nextDraft.departamento ?? '');
+      }
+    };
+
+    const handleDraftChange = () => {
+      const nextDraft = getDraft();
+      setCheckoutDepartamento(nextDraft.departamento ?? '');
+    };
+
+    const handleShippingConfigChange = () => {
+      const currentDraft = getDraft();
+      setCheckoutDepartamento(currentDraft.departamento ?? '');
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener(CHECKOUT_DRAFT_CHANGED, handleDraftChange);
+    window.addEventListener(SHIPPING_CONFIG_EVENT, handleShippingConfigChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener(CHECKOUT_DRAFT_CHANGED, handleDraftChange);
+      window.removeEventListener(SHIPPING_CONFIG_EVENT, handleShippingConfigChange);
+    };
+  }, [getDraft]);
+
+  const selectedProductsSubtotal = selectedProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const configuracionEnvio = obtenerConfiguracionEnvioActual();
+  const effectivePlanId = (user?.plan ?? selectedPlanId) as SubscriptionPlan['id'];
+  const activePlan = useMemo(() => getPlanById(effectivePlanId), [effectivePlanId, plansVersion]);
+  const hasActivePlan = Boolean(user?.plan) || selectedPlanId !== 'bronze';
+  const discountRate = hasActivePlan
+    ? activePlan.descuento / 100
+    : 0;
+  const discountAmount = Number(
+    (selectedProductsSubtotal * discountRate).toFixed(2)
+  );
 
   const promoDiscountAmount = useMemo(() => {
-    if (!appliedPromo) return 0;
-    if (appliedPromo.type === 'percentage') {
-      return Number(Math.min(subtotal, subtotal * (appliedPromo.value / 100)).toFixed(2));
-    }
-    if (appliedPromo.type === 'fixed') {
-      return Number(Math.min(subtotal, appliedPromo.value).toFixed(2));
-    }
-    return 0;
-  }, [appliedPromo, subtotal]);
+    if (!appliedCoupon) return 0;
 
-  const shipping = appliedPromo?.type === 'shipping' ? 0 : baseShipping;
-  const discountedSubtotal = Number(Math.max(0, subtotal - discountAmount - promoDiscountAmount).toFixed(2));
+    if (appliedCoupon.type === 'percentage') {
+      return Number(
+        Math.min(selectedProductsSubtotal, selectedProductsSubtotal * (appliedCoupon.value / 100)).toFixed(2)
+      );
+    }
+
+    if (appliedCoupon.type === 'fixed') {
+      return Number(Math.min(selectedProductsSubtotal, appliedCoupon.value).toFixed(2));
+    }
+
+    if (appliedCoupon.type === 'price_fixed') {
+      return Number(Math.min(selectedProductsSubtotal, Math.max(0, selectedProductsSubtotal - appliedCoupon.value)).toFixed(2));
+    }
+
+    return 0;
+  }, [appliedCoupon, selectedProductsSubtotal]);
+
+  const freeShippingCoupon = appliedCoupon?.freeShipping || appliedCoupon?.type === 'shipping';
+  const shippingResult = calcularCostoEnvio({
+    subtotal: selectedProductsSubtotal,
+    departamento: checkoutDepartamento,
+    configuracion: configuracionEnvio,
+    freeShippingCoupon,
+  });
+
+  const canProceedToCheckout = checkoutDepartamento.trim().length > 0 && shippingResult.shippingCalculable;
+
+  const shipping = shippingResult.shippingAmount ?? 0;
+  const discountedSubtotal = Number(Math.max(0, selectedProductsSubtotal - discountAmount - promoDiscountAmount).toFixed(2));
   const discountedTotal = Number(Math.max(0, discountedSubtotal + shipping).toFixed(2));
 
   useEffect(() => {
@@ -74,14 +189,21 @@ export const CartDrawer = () => {
   }, [user?.plan]);
 
   useEffect(() => {
-    if (appliedPromo && subtotal < appliedPromo.minPurchase) {
-      setAppliedPromo(null);
+    const onPlansChanged = () => setPlansVersion((v) => v + 1);
+    window.addEventListener('maxeta:plans-changed', onPlansChanged);
+    return () => window.removeEventListener('maxeta:plans-changed', onPlansChanged);
+  }, []);
+
+  useEffect(() => {
+    if (appliedCoupon && selectedProductsSubtotal < appliedCoupon.minPurchase) {
+      setAppliedCoupon(null);
+      storageManager.cart.appliedCoupon.clear();
       setPromoMessage({
-        text: `✕ El cupón ${appliedPromo.code} requiere compra mínima de S/${appliedPromo.minPurchase}.`,
+        text: `✕ El cupón ${appliedCoupon.code} requiere compra mínima de S/${appliedCoupon.minPurchase}.`,
         type: 'error',
       });
     }
-  }, [subtotal, appliedPromo]);
+  }, [selectedProductsSubtotal, appliedCoupon]);
 
   const handleConfirmDelete = () => {
     if (deleteConfirm) {
@@ -89,6 +211,17 @@ export const CartDrawer = () => {
       setDeleteConfirm(null);
     }
   };
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === StorageKeys.PROMO_CODES) {
+        setPromoMessage({ text: 'Los códigos promocionales se actualizaron. Vuelve a aplicar tu cupón.', type: 'success' });
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const applyPromoCode = () => {
     const normalizedCode = promoCodeInput.trim().toUpperCase();
@@ -98,12 +231,39 @@ export const CartDrawer = () => {
       return;
     }
 
-    if (appliedPromo) {
+    if (appliedCoupon) {
       setPromoMessage({ text: '✕ Solo se permite un cupón a la vez.', type: 'error' });
       return;
     }
 
-    const foundPromo = promoCodes.find((promo) => promo.code.toUpperCase() === normalizedCode);
+    const couponFromRules = resolveCartCoupon(selectedProductsSubtotal, normalizedCode, pricingRules);
+
+    if (couponFromRules.rule) {
+      const tipoDescuento = couponFromRules.rule.configuracion?.tipoDescuento;
+      const couponType: AppliedCouponType =
+        tipoDescuento === 'fijo'
+          ? 'fixed'
+          : tipoDescuento === 'precio_fijo'
+          ? 'price_fixed'
+          : 'percentage';
+
+      const coupon: AppliedCoupon = {
+        code: normalizedCode,
+        type: couponType,
+        value: Number(couponFromRules.rule.configuracion?.valor ?? 0),
+        minPurchase: Number(couponFromRules.rule.configuracion?.subtotalMinimo ?? 0),
+        active: true,
+        freeShipping: couponFromRules.freeShipping,
+        source: 'admin',
+      };
+
+      setAppliedCoupon(coupon);
+      storageManager.cart.appliedCoupon.set(coupon);
+      setPromoMessage({ text: '✓ Código aplicado correctamente', type: 'success' });
+      return;
+    }
+
+    const foundPromo = obtenerPromoCodes().find((promo) => promo.code.toUpperCase() === normalizedCode);
 
     if (!foundPromo) {
       setPromoMessage({ text: '✕ Código inválido', type: 'error' });
@@ -115,17 +275,20 @@ export const CartDrawer = () => {
       return;
     }
 
-    if (subtotal < foundPromo.minPurchase) {
+    if (selectedProductsSubtotal < foundPromo.minPurchase) {
       setPromoMessage({ text: `✕ Compra mínima de S/${foundPromo.minPurchase}`, type: 'error' });
       return;
     }
 
-    setAppliedPromo(foundPromo);
+    const coupon: AppliedCoupon = { ...foundPromo, source: 'static' };
+    setAppliedCoupon(coupon);
+    storageManager.cart.appliedCoupon.set(coupon);
     setPromoMessage({ text: '✓ Código aplicado correctamente', type: 'success' });
   };
 
   const removeAppliedPromo = () => {
-    setAppliedPromo(null);
+    setAppliedCoupon(null);
+    storageManager.cart.appliedCoupon.clear();
     setPromoCodeInput('');
     setPromoMessage({ text: 'Cupón eliminado', type: 'success' });
   };
@@ -186,41 +349,52 @@ export const CartDrawer = () => {
 
               {checkoutStep === 'cart' && (
                 <CartSummary
-                  subtotal={subtotal}
-                  discountAmount={discountAmount}
+                  subtotal={selectedProductsSubtotal}
                   promoDiscountAmount={promoDiscountAmount}
                   shipping={shipping}
+                  shippingLabel={shippingResult.shippingLabel}
+                  montoMinimoEnvioGratis={shippingResult.montoMinimoEnvioGratis}
+                  shippingCalculable={shippingResult.shippingCalculable}
+                  shippingNotConfigured={shippingResult.shippingNotConfigured}
+                  checkoutDepartamento={checkoutDepartamento}
+                  onDepartamentoChange={handleDepartamentoChange}
+                  departamentoError={departamentoError}
                   discountedSubtotal={discountedSubtotal}
                   discountedTotal={discountedTotal}
+                    onProceedToCheckout={handleProceedToCheckout}
                   hasActivePlan={hasActivePlan}
                   activePlan={activePlan}
                   onApplyPromo={applyPromoCode}
                   promoMessage={promoMessage}
-                  appliedPromo={appliedPromo}
+                  appliedCoupon={appliedCoupon}
                   promoCodeInput={promoCodeInput}
                   setPromoCodeInput={setPromoCodeInput}
                   removeAppliedPromo={removeAppliedPromo}
                   setIsMembershipModalOpen={setIsMembershipModalOpen}
                   setCheckoutStep={setCheckoutStep}
+                  isCheckoutDisabled={!canProceedToCheckout}
                 />
               )}
 
-              <CartCheckout
-                selectedProducts={selectedProducts}
-                subtotal={subtotal}
-                discountAmount={discountAmount}
-                promoDiscountAmount={promoDiscountAmount}
-                shipping={shipping}
-                discountedSubtotal={discountedSubtotal}
-                hasActivePlan={hasActivePlan}
-                activePlan={activePlan}
-                checkoutStep={checkoutStep}
-                setCheckoutStep={setCheckoutStep}
-                clearCart={clearCart}
-                isAuthenticated={isAuthenticated}
-                user={user}
-                recordPurchase={recordPurchase}
-              />
+              {checkoutStep === 'checkout' || checkoutStep === 'payment' ? (
+                <CartCheckout
+                  selectedProducts={selectedProducts}
+                  subtotal={selectedProductsSubtotal}
+                  discountAmount={discountAmount}
+                  promoDiscountAmount={promoDiscountAmount}
+                  shipping={shipping}
+                  shippingLabel={shippingResult.shippingLabel}
+                  discountedTotal={discountedTotal}
+                  hasActivePlan={hasActivePlan}
+                  activePlan={activePlan}
+                  checkoutStep={checkoutStep}
+                  setCheckoutStep={setCheckoutStep}
+                  clearCart={clearCart}
+                  isAuthenticated={isAuthenticated}
+                  user={user}
+                  recordPurchase={recordPurchase}
+                />
+              ) : null}
 
               <div className="mt-6 border-t-2 border-black bg-white pt-6">
                 <p className="text-base font-bold uppercase tracking-[0.18em] text-black">Nuestras Recomendaciones</p>

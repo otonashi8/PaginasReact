@@ -16,7 +16,7 @@ export const FiltrosCarritosPerdidos = ({
     onEstadoChange
 }: Props) => {
     return (
-        <div className="grid gap-4 rounded-none border border-zinc-200 bg-bone p-5 lg:grid-cols-[1fr_240px]">
+        <div className="grid gap-4 rounded-none border border-zinc-200 bg-white p-5 lg:grid-cols-[1fr_240px]">
             <div className="relative">
                 <Search
                     size={18}

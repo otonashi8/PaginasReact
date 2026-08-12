@@ -16,7 +16,7 @@ export const TarjetaRol = ({
     } = obtenerPermisosRol(rol);
 
     return (
-        <article className="rounded-none border border-zinc-200 bg-bone p-5 shadow-sm">
+        <article className="rounded-none border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between">
                 <div>
                     <div className={`mb-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${obtenerColorRol(rol)}`}

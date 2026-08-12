@@ -1,7 +1,6 @@
 export * from "./InformacionGeneral";
 export * from "./HistorialPedidos";
 export * from "./HistorialPagos";
-export * from "./CarritoCliente";
 export * from "./WishlistCliente";
 export * from "./PlanCliente";
 export * from "./EstadoCliente";

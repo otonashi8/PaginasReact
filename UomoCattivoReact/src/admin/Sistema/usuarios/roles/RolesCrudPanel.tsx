@@ -4,7 +4,6 @@ import { useRoles } from "../hooks/useRoles";
 import { TablaRoles } from "./TablaRoles";
 import { ModalRol } from "./ModalRol";
 import { FiltrosRoles } from "./FiltrosRoles";
-import { ResumenRoles } from "./ResumenRoles";
 
 type Props = {
     access: PermissionAccess;
@@ -44,10 +43,7 @@ export const RolesCrudPanel = ({
                 ><Plus size={18} />Nuevo rol
                 </button>
             </div>
-            {/* Próximamente */}
-            <ResumenRoles
-                roles={rolesFiltrados}
-            />
+
             <FiltrosRoles
                 busqueda={busqueda}
                 onBusquedaChange={setBusqueda}

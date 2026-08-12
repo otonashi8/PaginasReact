@@ -196,7 +196,7 @@ export default function CartCheckout({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="text-black/60">Código postal opcional</span>
+            <span className="text-black/60">Código postal</span>
             <input
               type="text"
               value={shippingAddress.codigoPostal}
@@ -206,7 +206,7 @@ export default function CartCheckout({
           </label>
 
           <label className="block">
-            <span className="text-black/60">Referencia opcional</span>
+            <span className="text-black/60">Referencia</span>
             <input
               type="text"
               value={shippingAddress.referencia}

@@ -62,7 +62,7 @@ export const ExtrasProducto = ({
 	};
 
 	return (
-		<section className="rounded-none border border-zinc-200 bg-bone p-4 shadow-sm sm:p-4">
+		<section className="rounded-none border border-zinc-200 bg-white p-4 shadow-sm sm:p-4">
 			<div className="mb-3">
 				<h3 className="text-base font-semibold text-zinc-950">Beneficios del producto</h3>
 				<p className="mt-1 text-sm text-zinc-500">
@@ -95,7 +95,7 @@ export const ExtrasProducto = ({
 							type="button"
 							key={beneficio}
 							onClick={() => agregarBeneficioSugerido(beneficio)}
-							className={`rounded-none border px-3 py-2 text-sm transition ${activo ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-300 bg-bone text-zinc-700 hover:border-zinc-500'}`}
+							className={`rounded-none border px-3 py-2 text-sm transition ${activo ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-300 bg-white text-zinc-700 hover:border-zinc-500'}`}
 						>
 							{beneficio}
 						</button>

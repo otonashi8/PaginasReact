@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react';
 import { PageSection } from '../components/PageSection';
 import { SectionTitle } from '../components/SectionTitle';
 import { MembershipModal } from '../components/MembershipModal';
-import { getPlanOptions, type SubscriptionPlan } from '../plans';
 import { PermissionGate } from '../components/PermissionGate';
+import { getPlanOptions, type SubscriptionPlan } from '../plans';
 import { PERMISSIONS } from '../utils/permissionCodes';
 
 type FaqItem = {

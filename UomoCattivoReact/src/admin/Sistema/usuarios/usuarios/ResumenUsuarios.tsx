@@ -53,7 +53,7 @@ export const ResumenUsuarios = ({
                     tarjeta => (
                         <article
                             key={tarjeta.titulo}
-                            className={`rounded-none border-l-4 ${tarjeta.color} border border-zinc-200 bg-bone p-5 shadow-sm`}
+                            className={`rounded-none border-l-4 ${tarjeta.color} border border-zinc-200 bg-white p-5 shadow-sm`}
                         >
                             <p className="text-sm text-zinc-500">{tarjeta.titulo}</p>
                             <h2 className="mt-2 text-3xl font-bold">{tarjeta.valor}</h2>

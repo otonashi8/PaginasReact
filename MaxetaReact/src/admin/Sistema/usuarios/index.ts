@@ -27,7 +27,6 @@ export * from "./roles/PermisosRol";
 export * from "./roles/MatrizPermisosRol";
 
 export * from "./roles/FiltrosRoles";
-export * from "./roles/ResumenRoles";
 
 export * from "./roles/EstadoRolBadge";
 export * from "./roles/AccionesRol";

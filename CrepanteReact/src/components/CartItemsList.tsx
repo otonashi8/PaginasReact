@@ -8,19 +8,17 @@ import { PERMISSIONS } from '../utils/permissionCodes';
 
 type CartProduct = Product & { quantity: number; size: string };
 
-type Props = {
-  items: CartProduct[];
-  changeItemSize: (id: number, oldSize: string, newSize: string) => void;
-  updateQuantity: (id: number, size: string, q: number) => void;
-  setDeleteConfirm: (payload: { productId: number; size: string } | null) => void;
-};
-
 export default function CartItemsList({
   items,
   changeItemSize,
   updateQuantity,
   setDeleteConfirm,
-}: Props) {
+}: {
+  items: CartProduct[];
+  changeItemSize: (id: number, oldSize: string, newSize: string) => void;
+  updateQuantity: (id: number, size: string, q: number) => void;
+  setDeleteConfirm: (payload: { productId: number; size: string } | null) => void;
+}) {
   return (
     <div className="space-y-5">
       {items.map((item) => {

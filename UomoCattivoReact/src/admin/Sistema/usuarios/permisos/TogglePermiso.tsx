@@ -22,7 +22,7 @@ export const TogglePermiso = ({
                 ${
                     activo
                         ? "border-black bg-black text-white"
-                        : "border-zinc-300 bg-bone text-zinc-700 hover:bg-zinc-100"
+                        : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100"
                 }
             `}
         >{accion}

@@ -4,6 +4,9 @@ import { usePedidos } from '../../pedidos/hooks/usePedidos';
 import { useProductos } from '../../../Inventario/productos/hooks/useProductos';
 import { useSalesAnalyticsFilters } from '../hooks/useSalesAnalyticsFilters';
 import { buildSalesAnalytics, type SalesView } from '../utils/analytics';
+import { ExportButton } from '../../../componentes/ExportButton';
+import { buildCsv, downloadCsv, formatFilenameDateRange } from '../../../utils/exportCsv';
+import { registrarExportacion } from '../../../../services/auditService';
 
 const viewOptions: Array<{ value: SalesView; label: string }> = [
   { value: 'general', label: 'General' },
@@ -66,7 +69,7 @@ export const SalesAnalyticsPanel = () => {
         <TarjetaEstadistica titulo="Categoría más vendida" valor={analytics.kpis.categoriaMasVendida} descripcion="Categoría con mayor volumen" />
       </div>
 
-      <div className="rounded-none border border-zinc-200 bg-bone p-4 shadow-sm">
+      <div className="rounded-none border border-zinc-200 bg-white p-4 shadow-sm">
         <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <label className="text-sm text-zinc-600">
             <span className="mb-1 block">Desde</span>
@@ -132,7 +135,7 @@ export const SalesAnalyticsPanel = () => {
               setFilters(initialFilters);
               setView('general');
             }}
-            className="rounded-none border border-zinc-300 bg-bone px-3 py-2 text-sm text-zinc-700 hover:border-zinc-900"
+            className="rounded-none border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 hover:border-zinc-900"
           >
             Quitar filtros
           </button>
@@ -141,7 +144,7 @@ export const SalesAnalyticsPanel = () => {
               key={option.value}
               type="button"
               onClick={() => setView(option.value)}
-              className={`rounded-none border px-3 py-2 text-sm transition ${view === option.value ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-300 bg-bone text-zinc-700 hover:border-zinc-900'}`}
+              className={`rounded-none border px-3 py-2 text-sm transition ${view === option.value ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-300 bg-white text-zinc-700 hover:border-zinc-900'}`}
             >
               {option.label}
             </button>
@@ -149,14 +152,44 @@ export const SalesAnalyticsPanel = () => {
         </div>
 
         <div className="rounded-none border border-zinc-200 bg-zinc-50 p-4">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-zinc-900">{viewOptions.find((option) => option.value === view)?.label}</p>
               <p className="text-sm text-zinc-500">Resumen dinámico a partir de pedidos y productos reales.</p>
             </div>
+            <ExportButton
+              onExport={() => {
+                if (analytics.rows.length === 0) {
+                  window.alert('No hay datos para exportar con los filtros actuales.');
+                  return;
+                }
+
+                const filenameRange = formatFilenameDateRange(filters.fechaInicio, filters.fechaFin);
+                const filename = `ventas_productos${filenameRange ? `_${filenameRange}` : `_${new Date().toISOString().slice(0, 10)}`}`;
+                const csv = buildCsv<typeof analytics.rows[number]>(analytics.rows, [
+                  { label: 'Etiqueta', value: (row) => row.label },
+                  { label: 'Categoría', value: (row) => row.categoria ?? '' },
+                  { label: 'Subcategoría', value: (row) => row.subcategoria ?? '' },
+                  { label: 'Género', value: (row) => row.genero ?? '' },
+                  { label: 'Talla', value: (row) => row.talla ?? '' },
+                  { label: 'Cantidad vendida', value: (row) => row.cantidadVendida },
+                  { label: 'Ingresos', value: (row) => row.ingresos },
+                  { label: 'Pedidos', value: (row) => row.pedidos },
+                  { label: 'Participación', value: (row) => row.participacion },
+                ]);
+                downloadCsv(`${filename}.csv`, csv);
+                registrarExportacion(
+                  'Ventas',
+                  'Analytics',
+                  'Ventas por producto',
+                  `Se exportaron ${analytics.rows.length} filas de analytics de ventas.`,
+                  'sales.analytics.export',
+                );
+              }}
+            />
           </div>
 
-          <div className="mb-4 rounded-none border border-zinc-200 bg-bone p-4">
+          <div className="mb-4 rounded-none border border-zinc-200 bg-white p-4">
             <p className="mb-2 text-sm font-semibold text-zinc-900">Progreso de ingresos</p>
             <div className="flex h-40 items-end gap-3">
               {analytics.chartSeries.length > 0 ? (
@@ -183,7 +216,7 @@ export const SalesAnalyticsPanel = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 bg-bone text-left text-zinc-700">
+                <tr className="border-b border-zinc-200 bg-white text-left text-zinc-700">
                   <th className="px-3 py-2">{view === 'producto' ? 'Producto' : view === 'categoria' ? 'Categoría' : view === 'subcategoria' ? 'Subcategoría' : view === 'genero' ? 'Género' : view === 'talla' ? 'Talla' : 'Producto'}</th>
                   {view === 'producto' && <th className="px-3 py-2">Talla</th>}
                   <th className="px-3 py-2">Cantidad</th>
@@ -194,7 +227,7 @@ export const SalesAnalyticsPanel = () => {
               </thead>
               <tbody>
                 {analytics.rows.map((row) => (
-                  <tr key={row.id} className="border-b border-zinc-200 bg-bone text-zinc-700">
+                  <tr key={row.id} className="border-b border-zinc-200 bg-white text-zinc-700">
                     <td className="px-3 py-3 font-medium text-zinc-900">{row.label}</td>
                     {view === 'producto' && <td className="px-3 py-3">{row.talla ?? 'Sin talla'}</td>}
                     <td className="px-3 py-3">{row.cantidadVendida}</td>

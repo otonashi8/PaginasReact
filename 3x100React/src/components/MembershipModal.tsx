@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getPlanById, getPlanOptions, type SubscriptionPlan } from '../plans';
 import type { RegisterUserInput } from '../types/auth';
-import { PermissionGate } from './PermissionGate';
 import { PERMISSIONS } from '../utils/permissionCodes';
+import { PermissionGate } from './PermissionGate';
 
 type MembershipModalProps = {
   isOpen: boolean;
@@ -74,7 +74,8 @@ export const MembershipModal = ({
 }: MembershipModalProps) => {
   const { user: authUser, isAuthenticated, register, updateSubscription } = useAuth();
   const navigate = useNavigate();
-  const plans = useMemo(() => getPlanOptions(), []);
+  const [plans, setPlans] = useState(() => getPlanOptions());
+  const [plansVersion, setPlansVersion] = useState(0);
   const [view, setView] = useState<'select' | 'details'>(mode);
   const [flowStep, setFlowStep] = useState<FlowStep>(initialFlowStep);
   const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan['id']>(initialPlanId ?? user?.plan ?? plans[0]?.id ?? 'bronze');
@@ -85,12 +86,37 @@ export const MembershipModal = ({
 
   const profileName = authUser?.username ?? user?.name ?? '';
   const profileEmail = authUser?.email ?? user?.email ?? '';
-  const currentPlan = useMemo(() => getPlanById(user?.plan ?? selectedPlanId), [selectedPlanId, user?.plan]);
-  const selectedPlan = useMemo(() => getPlanById(selectedPlanId), [selectedPlanId]);
+  const currentPlan = useMemo(() => getPlanById(user?.plan ?? selectedPlanId), [selectedPlanId, user?.plan, plansVersion]);
+  const selectedPlan = useMemo(() => getPlanById(selectedPlanId), [selectedPlanId, plansVersion]);
 
   useEffect(() => {
     setView(mode);
   }, [mode]);
+
+  useEffect(() => {
+    const onPlansChanged = () => {
+      setPlans(getPlanOptions());
+      setPlansVersion((v) => v + 1);
+    };
+
+    const onStorage = (e: StorageEvent) => {
+      try {
+        const key = String(e.key ?? '');
+        if (key.includes('plans')) {
+          onPlansChanged();
+        }
+      } catch {
+      }
+    };
+
+    window.addEventListener('maxeta:plans-changed', onPlansChanged);
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener('maxeta:plans-changed', onPlansChanged);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -104,14 +130,10 @@ export const MembershipModal = ({
       return;
     }
 
-    const preferredPlanId = initialPlanId ?? user?.plan ?? plans[0]?.id ?? 'bronze';
-
     if (initialPlanId) {
       setSelectedPlanId(initialPlanId);
     } else if (user?.plan) {
       setSelectedPlanId(user.plan);
-    } else {
-      setSelectedPlanId(preferredPlanId);
     }
 
     setFlowStep(initialFlowStep);
@@ -120,10 +142,10 @@ export const MembershipModal = ({
       ...current,
       username: current.username || profileName,
       email: current.email || profileEmail,
-      plan: current.plan || preferredPlanId,
+      plan: current.plan || selectedPlanId,
       autoRenew: current.autoRenew ?? true,
     }));
-  }, [initialFlowStep, initialPlanId, isOpen, mode, plans, profileEmail, profileName, user?.email, user?.plan]);
+  }, [initialFlowStep, initialPlanId, isOpen, mode, plans, profileEmail, profileName, selectedPlanId, user?.email, user?.plan]);
 
   const handlePlanSelect = (plan: SubscriptionPlan) => {
     setSelectedPlanId(plan.id);
@@ -131,11 +153,6 @@ export const MembershipModal = ({
   };
 
   const handleContinueToAccount = () => {
-    if (isAuthenticated) {
-      setFlowStep('payment');
-      return;
-    }
-
     setFlowStep('account');
   };
 
@@ -200,7 +217,11 @@ export const MembershipModal = ({
         paymentMethod: paymentForm.paymentMethod,
       });
 
-      setFlowStep('success');
+      const welcomeName = registerForm.username.trim() || authUser?.username || profileName || 'cliente mayorista';
+      const planIcon = selectedPlan.icono;
+      onClose();
+      navigate('/');
+      window.alert(`¡Bienvenido, ${welcomeName}! Tu membresía ${planIcon} ${selectedPlan.nombre} ya está activa.`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'No se pudo completar la suscripción.');
     } finally {
@@ -211,7 +232,7 @@ export const MembershipModal = ({
   const handleComplete = () => {
     onClose();
     navigate('/');
-    window.alert('¡Bienvenido a 3x100! Tu membresía mayorista ya está activa.');
+    window.alert('¡Bienvenido a EZZETA! Tu membresía mayorista ya está activa.');
   };
 
   if (!isOpen) {
@@ -596,12 +617,6 @@ export const MembershipModal = ({
                   </label>
                 ) : null}
 
-                {paymentForm.paymentMethod === 'paypal' ? (
-                  <div className="rounded-[1.2rem] border border-white/10 bg-[#1A1A1A] p-4 text-sm text-white/70">
-                    Serás redirigido a PayPal al confirmar el pedido.
-                  </div>
-                ) : null}
-
                 {paymentForm.paymentMethod === 'cash' ? (
                   <div className="rounded-[1.2rem] border border-white/10 bg-[#1A1A1A] p-4 text-sm text-white/70">
                     Puedes pagar al recibir el pedido en la dirección indicada.
@@ -643,14 +658,12 @@ export const MembershipModal = ({
                         <span className="text-white/50">Plan</span>
                         <span className="text-white">{selectedPlan.nombre}</span>
                     </div>
-
                     <div className="flex justify-between">
                         <span className="text-white/50">Descuento</span>
                         <span className="text-orange-500">
                             {selectedPlan.descuento}%
                         </span>
                     </div>
-
                     <div className="flex justify-between">
                         <span className="text-white/50">Duración</span>
                         <span className="text-white">
@@ -663,7 +676,6 @@ export const MembershipModal = ({
                 Volver al inicio
               </motion.button>
             </motion.div>
-            
           ) : null}
           
           </AnimatePresence>

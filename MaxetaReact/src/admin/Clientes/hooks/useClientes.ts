@@ -257,6 +257,7 @@ export const useClientes = () => {
     return {
         clientes,
         clientesFiltrados,
+        clientesOrdenados,
         clientesPagina,
         clienteSeleccionado,
         clienteEnEdicion,

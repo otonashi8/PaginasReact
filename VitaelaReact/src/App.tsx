@@ -374,7 +374,7 @@ function App() {
               <div className="producto-visual reveal">
                 <div className="anillo" />
                 <img
-                  src="https://ezzetacompany.com/wp-content/uploads/2026/07/Gemini_Generated_Image_xmo2xsxmo2xsxmo2.png"
+                  src="https://ezzetacompany.com/wp-content/uploads/2026/07/Gemini_Generated_Image_9xkraj9xkraj9xkr.png"
                   alt="Colágeno Hidrolizado Vitaella"
                   className="producto-img"
                 />
@@ -399,7 +399,6 @@ function App() {
                 </ul>
                 <div className="precio-box">
                   <span className="precio-actual">S/ 89.90</span>
-                  <span className="precio-antes">S/ 129.90</span>
                 </div>
                 <div className="hero-acciones">
                   <button type="button" className="btn btn-dorado" onClick={handleOpenPayment}>

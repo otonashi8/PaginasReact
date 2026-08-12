@@ -30,7 +30,7 @@ export const SelectorEstado = ({
                     e.target.value as EstadoUsuario | EstadoRol
                 )
             }
-            className="w-full rounded-lg border border-zinc-300 bg-bone px-4 py-3 transition
+            className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 transition
             focus:border-black focus:outline-none"
         >
             {

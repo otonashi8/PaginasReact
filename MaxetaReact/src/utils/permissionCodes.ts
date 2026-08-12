@@ -12,4 +12,5 @@ export const PERMISSIONS = {
   subscriptionCreate: 'subscription.create',
   subscriptionUpdate: 'subscription.update',
   affiliateCreate: 'affiliate.create',
+  plansManage: 'plans.manage',
 } as const;

@@ -6,10 +6,14 @@ import { FiltrosClientes } from "./componentes/FiltrosClientes";
 import { PaginacionClientes } from "../componentes/Paginacion";
 import { ModalClienteInfo } from "./componentes/ModalClienteInfo";
 import { ModalEditarCliente } from "./componentes/ModalEditarCliente";
+import { ExportButton } from "../componentes/ExportButton";
+import { buildCsv, downloadCsv, formatFilenameDateRange } from "../utils/exportCsv";
+import { registrarExportacion } from "../../services/auditService";
 
 export const ClientesCrudPanel = () => {
     const {
         clientes,
+        clientesOrdenados,
         clientesPagina,
         clienteSeleccionado,
         clienteEnEdicion,
@@ -29,8 +33,7 @@ export const ClientesCrudPanel = () => {
         abrirPerfilCliente,
         editarCliente,
         guardarEdicionCliente,
-        eliminarCliente
-        ,
+        eliminarCliente,
         cerrarPerfilCliente,
         cerrarEdicionCliente
     } = useClientes();
@@ -51,6 +54,48 @@ export const ClientesCrudPanel = () => {
                 rankings={rankings}
                 planCounts={planCounts}
             />
+
+            <div className="flex items-center justify-end">
+                <ExportButton
+                    onExport={() => {
+                        if (clientesOrdenados.length === 0) {
+                            window.alert('No hay datos para exportar con los filtros actuales.');
+                            return;
+                        }
+
+                        const filenameRange = formatFilenameDateRange();
+                        const filename = `clientes${filenameRange ? `_${filenameRange}` : `_${new Date().toISOString().slice(0, 10)}`}`;
+                        const csv = buildCsv(clientesOrdenados, [
+                            { label: 'ID', value: (row) => row.id },
+                            { label: 'Tipo registro', value: (row) => row.tipoRegistro },
+                            { label: 'Nombres', value: (row) => row.nombres },
+                            { label: 'Apellidos', value: (row) => row.apellidos },
+                            { label: 'Usuario', value: (row) => row.usuario ?? '' },
+                            { label: 'Correo', value: (row) => row.correo },
+                            { label: 'Teléfono', value: (row) => row.telefono },
+                            { label: 'Documento', value: (row) => row.documento ?? '' },
+                            { label: 'Estado', value: (row) => row.estado },
+                            { label: 'Plan actual', value: (row) => row.planActual ?? '' },
+                            { label: 'Fecha registro', value: (row) => row.fechaRegistro },
+                            { label: 'Último pedido', value: (row) => row.ultimoPedido ?? '' },
+                            { label: 'Total gastado', value: (row) => row.totalGastado },
+                            { label: 'Pedidos completados', value: (row) => row.pedidosCompletados },
+                            { label: 'Ciudad', value: (row) => row.ciudad },
+                            { label: 'Dirección', value: (row) => row.direccion },
+                            { label: 'Actividad reciente', value: (row) => row.actividadReciente },
+                        ]);
+                        downloadCsv(`${filename}.csv`, csv);
+                        registrarExportacion(
+                            'Clientes',
+                            'Exportación',
+                            'Listado de clientes',
+                            `Se exportó el listado de clientes con ${clientesOrdenados.length} registros.`,
+                            'customers.export',
+                        );
+                    }}
+                    className="mb-3"
+                />
+            </div>
 
             <div className="space-y-4">
                 <FiltrosClientes

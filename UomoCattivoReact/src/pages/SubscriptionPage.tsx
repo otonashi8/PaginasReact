@@ -3,11 +3,11 @@ import { ArrowRight, Check, CreditCard, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { MembershipModal } from '../components/MembershipModal';
+import { PermissionGate } from '../components/PermissionGate';
 import { useAuth } from '../context/AuthContext';
 import { getDefaultPlanId, getPlanOptions, type SubscriptionPlan, type WholesalePlanId } from '../plans';
 import type { RegisterUserInput } from '../types/auth';
 import { PERMISSIONS } from '../utils/permissionCodes';
-import { PermissionGate } from '../components/PermissionGate';
 
 type SubscriptionStep = 'plan' | 'register' | 'payment' | 'confirmation';
 
@@ -302,10 +302,6 @@ export const SubscriptionPage = () => {
                     <span className="mb-1 block">Número Yape</span>
                     <input name="yapePhone" value={paymentForm.yapePhone} onChange={handlePaymentChange} className="w-full rounded-full border border-white/10 bg-white px-4 py-3 text-sm text-black outline-none" placeholder="987654321" required />
                   </label>
-                )}
-
-                {paymentForm.paymentMethod === 'paypal' && (
-                  <p className="rounded-[1rem] border border-white/10 bg-black/20 p-3 text-sm text-white/70">Se abrirá una pantalla de confirmación ficticia al completar el flujo.</p>
                 )}
 
                 {paymentForm.paymentMethod === 'cash' && (

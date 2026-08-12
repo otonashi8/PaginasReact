@@ -7,14 +7,56 @@ import { ResumenCarritosPerdidos } from "./detalle/ResumenCarritosPerdidos";
 import { useCarritosPerdidos } from "./hooks/useCarritosPerdidos";
 import type { CarritoPerdido } from "./tipos/TiposCarritosPerdidos";
 import { storageManager, StorageKeys } from "../../../storage";
+import { ExportButton } from "../../componentes/ExportButton";
+import { buildCsv, downloadCsv, formatFilenameDateRange } from "../../utils/exportCsv";
+import { registrarExportacion } from "../../../services/auditService";
+import { getProducts } from "../../../services/contentService";
+import type { WholesaleUser } from "../../../types/auth";
 
 type Props = {
     access?: unknown;
 };
 
+const obtenerUsuarioRegistradoPorId = (id?: string): WholesaleUser | null => {
+    if (!id) return null;
+    const users = storageManager.get<WholesaleUser[]>(StorageKeys.USERS) || [];
+    return users.find((user) => user.id === id) ?? null;
+};
+
+const buildProductosCsvValue = (productos: CarritoPerdido['productos']): string => {
+    const catalogo = getProducts();
+    return productos
+        .map((product) => {
+            const info = catalogo.find((item) => Number(item.id) === Number(product.productId));
+            const nombre = info?.name ?? `Producto #${product.productId}`;
+            return `${nombre} (${product.quantity}x, talla ${product.size})`;
+        })
+        .join('; ');
+};
+
+const obtenerNombreCliente = (carrito: CarritoPerdido): string => {
+    const usuario = obtenerUsuarioRegistradoPorId(carrito.userId);
+    if (carrito.origen !== 'guest' && usuario) {
+        return usuario.username ?? usuario.email ?? carrito.checkoutEmail ?? carrito.userId ?? 'Registrado';
+    }
+
+    return carrito.checkoutEmail ?? carrito.guestId ?? 'Guest';
+};
+
+const obtenerNombreUsuario = (carrito: CarritoPerdido): string => {
+    const usuario = obtenerUsuarioRegistradoPorId(carrito.userId);
+    return usuario?.username ?? '';
+};
+
+const obtenerEmailRegistrado = (carrito: CarritoPerdido): string => {
+    const usuario = obtenerUsuarioRegistradoPorId(carrito.userId);
+    return usuario?.email ?? '';
+};
+
 export const CarritosPerdidosCrudPanel = ({ access: _ }: Props) => {
     const {
         carritos,
+        carritosFiltrados,
         carritosPagina,
         paginaActual,
         paginaTope,
@@ -66,6 +108,46 @@ export const CarritosPerdidosCrudPanel = ({ access: _ }: Props) => {
             </div>
 
             <ResumenCarritosPerdidos carritos={carritos} />
+
+            <div className="flex items-center justify-end">
+                <ExportButton
+                    onExport={() => {
+                        if (carritosFiltrados.length === 0) {
+                            window.alert('No hay datos para exportar con los filtros actuales.');
+                            return;
+                        }
+
+                                const filenameRange = formatFilenameDateRange();
+                        const filename = `carritos_perdidos${filenameRange ? `_${filenameRange}` : `_${new Date().toISOString().slice(0, 10)}`}`;
+                        const csv = buildCsv<typeof carritosFiltrados[number]>(carritosFiltrados, [
+                            { label: 'Nombre cliente', value: (row) => obtenerNombreCliente(row) },
+                            { label: 'Nombre usuario', value: (row) => obtenerNombreUsuario(row) },
+                            { label: 'Correo registrado', value: (row) => obtenerEmailRegistrado(row) },
+                            { label: 'Correo checkout', value: (row) => row.checkoutEmail ?? '' },
+                            { label: 'Teléfono', value: (row) => row.checkoutPhone ?? '' },
+                            { label: 'Cantidad items', value: (row) => row.cantidadItems },
+                            { label: 'Total', value: (row) => row.total },
+                            { label: 'Estado', value: (row) => row.estado },
+                            { label: 'Fecha', value: (row) => row.fecha },
+                            { label: 'Última actividad', value: (row) => row.ultimaActividad ?? '' },
+                            { label: 'Cupón', value: (row) => row.couponCode ?? '' },
+                            {
+                                label: 'Productos',
+                                value: (row) => buildProductosCsvValue(row.productos),
+                            },
+                        ]);
+                        downloadCsv(`${filename}.csv`, csv);
+                        registrarExportacion(
+                            'Carritos perdidos',
+                            'Exportación',
+                            'Carritos perdidos',
+                            `Se exportaron ${carritosFiltrados.length} carritos perdidos.`,
+                            'carts.export',
+                        );
+                    }}
+                    className="mb-3"
+                />
+            </div>
 
             <FiltrosCarritosPerdidos
                 busqueda={busqueda}

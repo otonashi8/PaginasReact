@@ -59,7 +59,7 @@ export const ResumenPedidos = ({
                     return (
                         <article
                             key={tarjeta.titulo}
-                            className="rounded-none border border-zinc-200 bg-bone p-5 shadow-sm"
+                            className="rounded-none border border-zinc-200 bg-white p-5 shadow-sm"
                         >
                             <div className="flex items-center justify-between">
                                 <div>

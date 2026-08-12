@@ -32,7 +32,7 @@ export const DireccionPedido = ({
                 <h3 className="text-lg font-semibold">Dirección de entrega</h3>
                 <p className="text-sm text-zinc-500">Información utilizada para el envío.</p>
             </div>
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-3">
                 <div>
                     <label className="mb-2 block font-medium">Departamento</label>
                     <input

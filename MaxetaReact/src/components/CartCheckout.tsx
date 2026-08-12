@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { PermissionGate } from './PermissionGate';
 import { PERMISSIONS } from '../utils/permissionCodes';
 import useCheckoutDraft from '../hooks/useCheckoutDraft';
-import { getPeruDepartments, getPeruDistricts, getPeruProvinces } from '../services/peruUbigeoService';
+import { getPeruDistricts, getPeruProvinces } from '../services/peruUbigeoService';
 import { validarStockDelCarrito } from '../utils/cartHelpers';
 import type { Product } from '../types';
 import type { PurchaseItem } from '../types/auth';
@@ -18,7 +18,8 @@ type Props = {
   discountAmount: number;
   promoDiscountAmount: number;
   shipping: number;
-  discountedSubtotal: number;
+  shippingLabel?: string;
+  discountedTotal: number;
   hasActivePlan: boolean;
   activePlan: { id: string; descuento: number } | null;
   checkoutStep: 'cart' | 'checkout' | 'payment';
@@ -35,7 +36,8 @@ export default function CartCheckout({
   discountAmount,
   promoDiscountAmount,
   shipping,
-  discountedSubtotal,
+  shippingLabel,
+  discountedTotal,
   hasActivePlan,
   activePlan,
   checkoutStep,
@@ -71,7 +73,6 @@ export default function CartCheckout({
     };
   });
 
-  const departments = useMemo(() => getPeruDepartments(), []);
   const provinces = useMemo(
     () => (shippingAddress.departamento ? getPeruProvinces(shippingAddress.departamento) : []),
     [shippingAddress.departamento],
@@ -138,23 +139,18 @@ export default function CartCheckout({
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="block">
                 <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Departamento</span>
-                <select
+                <input
+                  type="text"
                   value={shippingAddress.departamento}
-                  onChange={(event) => setShippingAddress({
-                    departamento: event.target.value,
-                    provincia: '',
-                    distrito: '',
-                    codigoPostal: shippingAddress.codigoPostal,
-                    referencia: shippingAddress.referencia,
-                  })}
+                  readOnly
+                  placeholder="Departamento no seleccionado"
                   className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                >
-                  <option value="">Selecciona un departamento</option>
-                  {departments.map((department) => (
-                    <option key={department.code} value={department.name}>{department.name}</option>
-                  ))}
-                </select>
+                />
+                <p className="mt-2 text-sm text-black/70">
+                  {shippingLabel === 'GRATIS' ? '🎉 Envío gratis' : shipping !== undefined ? `S/${shipping.toFixed(2)} de envío` : 'Costo de envío por calcular'}
+                </p>
               </label>
+
               <label className="block">
                 <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Provincia</span>
                 <select
@@ -191,7 +187,7 @@ export default function CartCheckout({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Código postal opcional</span>
+                <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Código postal</span>
                 <input
                   type="text"
                   value={shippingAddress.codigoPostal}
@@ -200,7 +196,7 @@ export default function CartCheckout({
                 />
               </label>
               <label className="block">
-                <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Referencia opcional</span>
+                <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Referencia</span>
                 <input
                   type="text"
                   value={shippingAddress.referencia}
@@ -249,8 +245,6 @@ export default function CartCheckout({
               >
                 <option value="yape">Yape</option>
                 <option value="card">Tarjeta - Mercado Pago</option>
-                <option value="paypal">PayPal</option>
-                <option value="cash">Contra entrega</option>
               </select>
             </label>
 
@@ -268,7 +262,7 @@ export default function CartCheckout({
                   />
                 </label>
               </div>
-            ) : paymentInfo.paymentMethod === 'card' ? (
+            ) : (
               <div className="rounded-[1rem] border border-dashed border-black/15 bg-black/[0.02] p-4">
                 <p className="font-semibold text-black">Bloque preparado para Mercado Pago</p>
                 <p className="mt-1 text-black/60">simula tarjeta falta api</p>
@@ -312,10 +306,6 @@ export default function CartCheckout({
                   </label>
                 </div>
               </div>
-            ) : paymentInfo.paymentMethod === 'paypal' ? (
-              <p className="border-l-4 border-red-600 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">Serás redirigido a PayPal tras confirmar.</p>
-            ) : (
-              <p className="border-l-4 border-red-600 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">Pagarás al recibir el pedido.</p>
             )}
 
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -385,8 +375,10 @@ export default function CartCheckout({
                           items,
                           subtotal,
                           discount: discountAmount,
-                          total: discountedSubtotal + shipping,
+                          total: discountedTotal+shipping,
                           paymentMethod: paymentInfo.paymentMethod,
+                        }).catch((error) => {
+                          console.warn('No se pudo sincronizar la compra en el perfil:', error);
                         });
                       }
                       clearCart();

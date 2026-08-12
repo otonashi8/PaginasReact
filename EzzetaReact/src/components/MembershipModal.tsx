@@ -74,7 +74,8 @@ export const MembershipModal = ({
 }: MembershipModalProps) => {
   const { user: authUser, isAuthenticated, register, updateSubscription } = useAuth();
   const navigate = useNavigate();
-  const plans = useMemo(() => getPlanOptions(), []);
+  const [plans, setPlans] = useState(() => getPlanOptions());
+  const [plansVersion, setPlansVersion] = useState(0);
   const [view, setView] = useState<'select' | 'details'>(mode);
   const [flowStep, setFlowStep] = useState<FlowStep>(initialFlowStep);
   const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan['id']>(initialPlanId ?? user?.plan ?? plans[0]?.id ?? 'bronze');
@@ -85,12 +86,37 @@ export const MembershipModal = ({
 
   const profileName = authUser?.username ?? user?.name ?? '';
   const profileEmail = authUser?.email ?? user?.email ?? '';
-  const currentPlan = useMemo(() => getPlanById(user?.plan ?? selectedPlanId), [selectedPlanId, user?.plan]);
-  const selectedPlan = useMemo(() => getPlanById(selectedPlanId), [selectedPlanId]);
+  const currentPlan = useMemo(() => getPlanById(user?.plan ?? selectedPlanId), [selectedPlanId, user?.plan, plansVersion]);
+  const selectedPlan = useMemo(() => getPlanById(selectedPlanId), [selectedPlanId, plansVersion]);
 
   useEffect(() => {
     setView(mode);
   }, [mode]);
+
+  useEffect(() => {
+    const onPlansChanged = () => {
+      setPlans(getPlanOptions());
+      setPlansVersion((v) => v + 1);
+    };
+
+    const onStorage = (e: StorageEvent) => {
+      try {
+        const key = String(e.key ?? '');
+        if (key.includes('plans')) {
+          onPlansChanged();
+        }
+      } catch {
+      }
+    };
+
+    window.addEventListener('maxeta:plans-changed', onPlansChanged);
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener('maxeta:plans-changed', onPlansChanged);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -578,12 +604,6 @@ export const MembershipModal = ({
                     <span className="mb-1 block font-medium">Número Yape</span>
                     <input name="yapePhone" value={paymentForm.yapePhone} onChange={handlePaymentChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="987654321" required />
                   </label>
-                ) : null}
-
-                {paymentForm.paymentMethod === 'paypal' ? (
-                  <div className="rounded-[1.2rem] border border-black/10 bg-white p-4 text-sm text-black/70">
-                    Serás redirigido a PayPal al confirmar el pedido.
-                  </div>
                 ) : null}
 
                 {paymentForm.paymentMethod === 'cash' ? (

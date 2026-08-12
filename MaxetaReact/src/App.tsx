@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { MainLayout } from './layouts/MainLayout';
+import { AdminDashboardPage } from './admin/AdminDashboardPage';
 
 const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })));
 const StorePage = lazy(() => import('./pages/StorePage').then((module) => ({ default: module.StorePage })));
@@ -37,6 +38,7 @@ function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/registro" element={<RegisterPage />} />
+              <Route path="/D-Admin/*" element={<AdminDashboardPage />} />
               <Route element={<MainLayout />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/tienda" element={<StorePage />} />

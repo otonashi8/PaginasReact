@@ -1,9 +1,12 @@
 export const COLORS = {
-  black: '#111111',
-  white: '#f7f3ec',
+  black: '#000000',
+  white: '#ffffff',
   gray: '#6b7280',
-  red: '#b91c1c',
-  bone: '#ffffff',
+  red: '#dc2626',
+  green: '#16a34a',
+  yellow: '#d97706',
+  border: '#e5e7eb',
+  surface: '#f8f8f8',
 } as const;
 
 export const BREAKPOINTS = {

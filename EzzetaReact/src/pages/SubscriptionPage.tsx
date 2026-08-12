@@ -304,10 +304,6 @@ export const SubscriptionPage = () => {
                   </label>
                 )}
 
-                {paymentForm.paymentMethod === 'paypal' && (
-                  <p className="rounded-[1rem] border border-white/10 bg-black/20 p-3 text-sm text-white/70">Se abrirá una pantalla de confirmación ficticia al completar el flujo.</p>
-                )}
-
                 {paymentForm.paymentMethod === 'cash' && (
                   <p className="rounded-[1rem] border border-white/10 bg-black/20 p-3 text-sm text-white/70">La activación se confirmará al finalizar el proceso simulado.</p>
                 )}

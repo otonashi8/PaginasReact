@@ -7,6 +7,7 @@ import { ImagePlaceholder } from './ImagePlaceholder';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import useCart from '../hooks/useCart';
+import useCheckoutDraft, { CHECKOUT_DRAFT_CHANGED } from '../hooks/useCheckoutDraft';
 import type { Product } from '../types';
 import { getPlanById, type SubscriptionPlan } from '../plans';
 import { getProducts } from '../services/contentService';
@@ -21,7 +22,8 @@ import { MembershipModal } from './MembershipModal';
 import { ProductHoverImage } from '../components/ProductHoverImage';
 import { PermissionGate } from './PermissionGate';
 import { PERMISSIONS } from '../utils/permissionCodes';
-
+import { calcularCostoEnvio, obtenerConfiguracionEnvioActual } from '../utils/envioHelpers';
+import { SHIPPING_CONFIG_EVENT } from '../admin/Sistema/envio/DatosEnvio';
 
 type CartProduct = Product & { quantity: number; size: string };
 
@@ -50,6 +52,7 @@ export const CartDrawer = () => {
   const { value: recommendedQuantity, setValue: setRecommendedQuantity, start: startRecommendedChange } = useHoldNumber(1, { min: 1, step: 1, interval: 120 });
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan['id']>(user?.plan ?? 'bronze');
+  const [plansVersion, setPlansVersion] = useState(0);
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(() => {
     try {
@@ -75,18 +78,74 @@ export const CartDrawer = () => {
     })
     .filter((item): item is CartProduct => item !== null);
 
-  const subtotal = selectedProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const baseShipping = subtotal >= 300 ? 0 : 15;
-  const activePlan = useMemo(() => getPlanById(selectedPlanId), [selectedPlanId]);
-  const hasActivePlan =
-  isAuthenticated &&
-  user?.plan !== undefined &&
-  user?.plan !== null;
+  const { getDraft, setDraft } = useCheckoutDraft();
+  const initialDraft = getDraft();
+  const [checkoutDepartamento, setCheckoutDepartamento] = useState(initialDraft.departamento ?? '');
+  const [departamentoError, setDepartamentoError] = useState(false);
+
+  const handleDepartamentoChange = (departamento: string) => {
+    setDepartamentoError(false);
+    const nextDraft = {
+      ...getDraft(),
+      departamento,
+      provincia: '',
+      distrito: '',
+    };
+
+    setDraft(nextDraft);
+    setCheckoutDepartamento(departamento);
+  };
+
+  const handleProceedToCheckout = () => {
+    if (!checkoutDepartamento.trim()) {
+      setDepartamentoError(true);
+      return;
+    }
+
+    if (shippingResult.shippingCalculable) {
+      setCheckoutStep('checkout');
+    }
+  };
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === StorageKeys.CHECKOUT) {
+        const nextDraft = getDraft();
+        setCheckoutDepartamento(nextDraft.departamento ?? '');
+      }
+    };
+
+    const handleDraftChange = () => {
+      const nextDraft = getDraft();
+      setCheckoutDepartamento(nextDraft.departamento ?? '');
+    };
+
+    const handleShippingConfigChange = () => {
+      const currentDraft = getDraft();
+      setCheckoutDepartamento(currentDraft.departamento ?? '');
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener(CHECKOUT_DRAFT_CHANGED, handleDraftChange);
+    window.addEventListener(SHIPPING_CONFIG_EVENT, handleShippingConfigChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener(CHECKOUT_DRAFT_CHANGED, handleDraftChange);
+      window.removeEventListener(SHIPPING_CONFIG_EVENT, handleShippingConfigChange);
+    };
+  }, [getDraft]);
+
+  const selectedProductsSubtotal = selectedProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const configuracionEnvio = obtenerConfiguracionEnvioActual();
+  const effectivePlanId = (user?.plan ?? selectedPlanId) as SubscriptionPlan['id'];
+  const activePlan = useMemo(() => getPlanById(effectivePlanId), [effectivePlanId, plansVersion]);
+  const hasActivePlan = Boolean(user?.plan) || selectedPlanId !== 'bronze';
   const discountRate = hasActivePlan
-  ? activePlan.descuento / 100
-  : 0;
+    ? activePlan.descuento / 100
+    : 0;
   const discountAmount = Number(
-    (subtotal * discountRate).toFixed(2)
+    (selectedProductsSubtotal * discountRate).toFixed(2)
   );
 
   const promoDiscountAmount = useMemo(() => {
@@ -94,24 +153,34 @@ export const CartDrawer = () => {
 
     if (appliedCoupon.type === 'percentage') {
       return Number(
-        Math.min(subtotal, subtotal * (appliedCoupon.value / 100)).toFixed(2)
+        Math.min(selectedProductsSubtotal, selectedProductsSubtotal * (appliedCoupon.value / 100)).toFixed(2)
       );
     }
 
     if (appliedCoupon.type === 'fixed') {
-      return Number(Math.min(subtotal, appliedCoupon.value).toFixed(2));
+      return Number(Math.min(selectedProductsSubtotal, appliedCoupon.value).toFixed(2));
     }
 
     if (appliedCoupon.type === 'price_fixed') {
-      return Number(Math.min(subtotal, Math.max(0, subtotal - appliedCoupon.value)).toFixed(2));
+      return Number(Math.min(selectedProductsSubtotal, Math.max(0, selectedProductsSubtotal - appliedCoupon.value)).toFixed(2));
     }
 
     return 0;
-  }, [appliedCoupon, subtotal]);
+  }, [appliedCoupon, selectedProductsSubtotal]);
 
-  const shipping = appliedCoupon?.freeShipping || appliedCoupon?.type === 'shipping' ? 0 : baseShipping;
+  const freeShippingCoupon = appliedCoupon?.freeShipping || appliedCoupon?.type === 'shipping';
+  const shippingResult = calcularCostoEnvio({
+    subtotal: selectedProductsSubtotal,
+    departamento: checkoutDepartamento,
+    configuracion: configuracionEnvio,
+    freeShippingCoupon,
+  });
+
+  const canProceedToCheckout = checkoutDepartamento.trim().length > 0 && shippingResult.shippingCalculable;
+
+  const shipping = shippingResult.shippingAmount ?? 0;
   const discountedSubtotal = Number(
-    Math.max(0, subtotal - discountAmount - promoDiscountAmount).toFixed(2)
+    Math.max(0, selectedProductsSubtotal - discountAmount - promoDiscountAmount).toFixed(2)
   );
 
   const discountedTotal = Number(
@@ -125,7 +194,13 @@ export const CartDrawer = () => {
   }, [user?.plan]);
 
   useEffect(() => {
-    if (appliedCoupon && subtotal < appliedCoupon.minPurchase) {
+    const onPlansChanged = () => setPlansVersion((v) => v + 1);
+    window.addEventListener('maxeta:plans-changed', onPlansChanged);
+    return () => window.removeEventListener('maxeta:plans-changed', onPlansChanged);
+  }, []);
+
+  useEffect(() => {
+    if (appliedCoupon && selectedProductsSubtotal < appliedCoupon.minPurchase) {
       setAppliedCoupon(null);
       storageManager.cart.appliedCoupon.clear();
       setPromoMessage({
@@ -133,7 +208,7 @@ export const CartDrawer = () => {
         type: 'error',
       });
     }
-  }, [subtotal, appliedCoupon]);
+  }, [selectedProductsSubtotal, appliedCoupon]);
 
   const handleConfirmDelete = () => {
     if (deleteConfirm) {
@@ -166,7 +241,7 @@ export const CartDrawer = () => {
       return;
     }
 
-    const couponFromRules = resolveCartCoupon(subtotal, normalizedCode, pricingRules);
+    const couponFromRules = resolveCartCoupon(selectedProductsSubtotal, normalizedCode, pricingRules);
 
     if (couponFromRules.rule) {
       const tipoDescuento = couponFromRules.rule.configuracion?.tipoDescuento;
@@ -205,7 +280,7 @@ export const CartDrawer = () => {
       return;
     }
 
-    if (subtotal < foundPromo.minPurchase) {
+if (selectedProductsSubtotal < foundPromo.minPurchase) {
       setPromoMessage({ text: `✕ Compra mínima de S/${foundPromo.minPurchase}`, type: 'error' });
       return;
     }
@@ -273,11 +348,19 @@ export const CartDrawer = () => {
 
               {checkoutStep === 'cart' && (
                 <CartSummary
-                  subtotal={subtotal}
+                  subtotal={selectedProductsSubtotal}
                   promoDiscountAmount={promoDiscountAmount}
                   shipping={shipping}
+                  shippingLabel={shippingResult.shippingLabel}
+                  montoMinimoEnvioGratis={shippingResult.montoMinimoEnvioGratis}
+                  shippingCalculable={shippingResult.shippingCalculable}
+                  shippingNotConfigured={shippingResult.shippingNotConfigured}
+                  checkoutDepartamento={checkoutDepartamento}
+                  onDepartamentoChange={handleDepartamentoChange}
+                  departamentoError={departamentoError}
                   discountedSubtotal={discountedSubtotal}
                   discountedTotal={discountedTotal}
+                    onProceedToCheckout={handleProceedToCheckout}
                   hasActivePlan={hasActivePlan}
                   activePlan={activePlan}
                   onApplyPromo={applyPromoCode}
@@ -288,16 +371,18 @@ export const CartDrawer = () => {
                   removeAppliedPromo={removeAppliedPromo}
                   setIsMembershipModalOpen={setIsMembershipModalOpen}
                   setCheckoutStep={setCheckoutStep}
+                  isCheckoutDisabled={!canProceedToCheckout}
                 />
               )}
 
               {checkoutStep === 'checkout' || checkoutStep === 'payment' ? (
                 <CartCheckout
                   selectedProducts={selectedProducts}
-                  subtotal={subtotal}
+                  subtotal={selectedProductsSubtotal}
                   discountAmount={discountAmount}
                   promoDiscountAmount={promoDiscountAmount}
                   shipping={shipping}
+                  shippingLabel={shippingResult.shippingLabel}
                   discountedTotal={discountedTotal}
                   hasActivePlan={hasActivePlan}
                   activePlan={activePlan}

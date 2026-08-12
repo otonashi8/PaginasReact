@@ -92,7 +92,7 @@ export const PedidosCrudPanel = ({
                 </div>
             </div>
 
-            {/* Resumen (próximamente) */}
+            {/* Resumen */}
             <ResumenPedidos pedidos={pedidos} />
 
             {/* Buscador */}

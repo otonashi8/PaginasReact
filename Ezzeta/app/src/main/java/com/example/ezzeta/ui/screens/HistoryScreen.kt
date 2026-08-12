@@ -1,0 +1,152 @@
+package com.example.ezzeta.ui.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.example.ezzeta.data.model.Product
+import com.example.ezzeta.ui.components.*
+import com.example.ezzeta.ui.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HistoryScreen(viewModel: MainViewModel, onBack: () -> Unit, onProductClick: (String) -> Unit) {
+    val history by viewModel.browsingHistory.collectAsState()
+    val context = LocalContext.current
+    
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val showScrollToTop by remember {
+        derivedStateOf { listState.firstVisibleItemIndex > 0 }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Mi Historial") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            ScrollToTopButton(
+                isVisible = showScrollToTop,
+                onClick = {
+                    scope.launch { listState.animateScrollToItem(0) }
+                }
+            )
+        }
+    ) { padding ->
+        if (history.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Aún no has visitado productos")
+            }
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                items(
+                    items = history,
+                    key = { it.id }
+                ) { product ->
+                    LaunchedEffect(product.id) {
+                        viewModel.prefetchProduct(product.id)
+                    }
+                    HistoryItem(
+                        product = product,
+                        onFavoriteClick = { viewModel.toggleProductFavorite(context, product.id) },
+                        onClick = { onProductClick(product.id) },
+                        onQuickViewClick = { viewModel.onQuickViewProduct(context, product) }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HistoryItem(product: Product, onFavoriteClick: () -> Unit, onClick: () -> Unit, onQuickViewClick: () -> Unit) {
+    val storeName = when (product.storeId) {
+        "s1" -> "EZZETA"
+        "s2" -> "CREPANTE"
+        "s3" -> "MAXETA"
+        "s4" -> "UOMO CATTIVO"
+        else -> "Tienda"
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = product.imageUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
+            )
+            
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp)
+            ) {
+                Text(
+                    text = storeName, 
+                    style = MaterialTheme.typography.labelSmall, 
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = product.name, 
+                    style = MaterialTheme.typography.titleMedium, 
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+                Text(text = "S/ ${product.price}", style = MaterialTheme.typography.bodyMedium)
+            }
+
+            IconButton(onClick = onQuickViewClick) {
+                Icon(Icons.Default.Add, contentDescription = "Vista rápida")
+            }
+            
+            IconButton(onClick = onFavoriteClick) {
+                Icon(
+                    imageVector = if (product.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = null,
+                    tint = if (product.isFavorite) Color.Red else Color.Gray
+                )
+            }
+        }
+    }
+}

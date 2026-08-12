@@ -155,7 +155,7 @@ export const CuponesCrudPanel = (_props: Props) => {
         </div>
       </div>
 
-      <aside className="space-y-4 rounded-xl border border-zinc-200 bg-bone p-5 shadow-sm">
+      <aside className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold">Detalle del cupón</h2>
           <p className="mt-2 text-sm text-zinc-500">Selecciona un cupón para editar sus parámetros desde el panel.</p>
@@ -181,7 +181,7 @@ export const CuponesCrudPanel = (_props: Props) => {
 
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6">
-          <div className="w-full max-w-3xl rounded-2xl bg-bone p-6 shadow-xl">
+          <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold">{modoEdicion ? 'Editar cupón' : 'Nuevo cupón'}</h3>

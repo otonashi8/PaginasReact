@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { subscriptionPlans } from "../../../plans";
+import { getProducts } from "../../../services/contentService";
 import type { Cliente, ComparativaRegistro, KpiCliente, RankingCliente } from "../TiposClientes";
 import {
     calcularFrecuenciaMensualCliente,
@@ -81,6 +82,10 @@ export const useClientesDashboard = (clientes: Cliente[]) => {
             });
         });
         const topWishlist = [...productosWishlistFrecuencia.entries()].sort((a, b) => b[1] - a[1])[0];
+        const topWishlistProduct = topWishlist
+            ? getProducts().find((producto) => Number(producto.id) === Number(topWishlist[0]))
+            : undefined;
+        const topWishlistName = topWishlistProduct?.name || "producto";
 
         const productosVistosFrecuencia = new Map<string, number>();
         clientes.forEach((cliente) => {
@@ -128,7 +133,7 @@ export const useClientesDashboard = (clientes: Cliente[]) => {
             {
                 titulo: "Clientes con Wishlist",
                 valor: formatoNumero(clientesConWishlist.length),
-                descripcion: topWishlist ? `Top producto wishlist: #${topWishlist[0]}` : "Sin productos en wishlist"
+                descripcion: topWishlist ? `Top producto wishlist: ${topWishlistName}` : "Sin productos en wishlist"
             },
             {
                 titulo: "Clientes con carrito activo",

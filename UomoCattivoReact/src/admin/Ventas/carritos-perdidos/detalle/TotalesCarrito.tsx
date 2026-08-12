@@ -6,7 +6,7 @@ type Props = {
 
 export const TotalesCarrito = ({ carrito }: Props) => {
     return (
-        <section className="rounded-none border border-zinc-200 bg-bone p-6">
+        <section className="rounded-none border border-zinc-200 bg-white p-6">
             <div>
                 <h3 className="text-lg font-semibold text-zinc-900">Totales</h3>
                 <p className="mt-1 text-sm text-zinc-500">Resumen del valor del carrito.</p>

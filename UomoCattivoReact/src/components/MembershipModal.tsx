@@ -1,12 +1,12 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, CreditCard, ShieldCheck, Sparkles } from 'lucide-react';
+import { Building2, Check, CheckCircle2, CreditCard, ShieldCheck, Sparkles, UserRound, Wallet } from 'lucide-react';
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getPlanById, getPlanOptions, type SubscriptionPlan } from '../plans';
 import type { RegisterUserInput } from '../types/auth';
-import { PermissionGate } from './PermissionGate';
 import { PERMISSIONS } from '../utils/permissionCodes';
+import { PermissionGate } from './PermissionGate';
 
 type MembershipModalProps = {
   isOpen: boolean;
@@ -63,38 +63,6 @@ const createInitialPaymentForm = (): PaymentFormState => ({
   autoRenew: true,
 });
 
-const formatCardExpiry = (value: string): string => {
-  const digits = value.replace(/\D/g, '').slice(0, 4);
-  if (!digits) {
-    return '';
-  }
-
-  const monthPart = digits.slice(0, 2);
-  const monthNumber = Number(monthPart);
-  const normalizedMonth = monthPart.length === 2
-    ? monthNumber < 1
-      ? '01'
-      : monthNumber > 12
-        ? '12'
-        : String(monthNumber).padStart(2, '0')
-    : monthPart;
-
-  if (digits.length <= 2) {
-    return normalizedMonth;
-  }
-
-  const yearPart = digits.slice(2, 4);
-  const currentYear = new Date().getFullYear() % 100;
-  const yearNumber = Number(yearPart);
-  const normalizedYear = yearPart.length === 2
-    ? yearNumber < currentYear
-      ? String(currentYear).padStart(2, '0')
-      : String(yearNumber).padStart(2, '0')
-    : yearPart;
-
-  return `${normalizedMonth}/${normalizedYear}`;
-};
-
 export const MembershipModal = ({
   isOpen,
   onClose,
@@ -106,7 +74,8 @@ export const MembershipModal = ({
 }: MembershipModalProps) => {
   const { user: authUser, isAuthenticated, register, updateSubscription } = useAuth();
   const navigate = useNavigate();
-  const plans = useMemo(() => getPlanOptions(), []);
+  const [plans, setPlans] = useState(() => getPlanOptions());
+  const [plansVersion, setPlansVersion] = useState(0);
   const [view, setView] = useState<'select' | 'details'>(mode);
   const [flowStep, setFlowStep] = useState<FlowStep>(initialFlowStep);
   const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan['id']>(initialPlanId ?? user?.plan ?? plans[0]?.id ?? 'bronze');
@@ -117,12 +86,37 @@ export const MembershipModal = ({
 
   const profileName = authUser?.username ?? user?.name ?? '';
   const profileEmail = authUser?.email ?? user?.email ?? '';
-  const currentPlan = useMemo(() => getPlanById(user?.plan ?? selectedPlanId), [selectedPlanId, user?.plan]);
-  const selectedPlan = useMemo(() => getPlanById(selectedPlanId), [selectedPlanId]);
+  const currentPlan = useMemo(() => getPlanById(user?.plan ?? selectedPlanId), [selectedPlanId, user?.plan, plansVersion]);
+  const selectedPlan = useMemo(() => getPlanById(selectedPlanId), [selectedPlanId, plansVersion]);
 
   useEffect(() => {
     setView(mode);
   }, [mode]);
+
+  useEffect(() => {
+    const onPlansChanged = () => {
+      setPlans(getPlanOptions());
+      setPlansVersion((v) => v + 1);
+    };
+
+    const onStorage = (e: StorageEvent) => {
+      try {
+        const key = String(e.key ?? '');
+        if (key.includes('plans')) {
+          onPlansChanged();
+        }
+      } catch {
+      }
+    };
+
+    window.addEventListener('maxeta:plans-changed', onPlansChanged);
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener('maxeta:plans-changed', onPlansChanged);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -136,19 +130,22 @@ export const MembershipModal = ({
       return;
     }
 
-    const nextPlanId = initialPlanId ?? user?.plan ?? plans[0]?.id ?? 'bronze';
+    if (initialPlanId) {
+      setSelectedPlanId(initialPlanId);
+    } else if (user?.plan) {
+      setSelectedPlanId(user.plan);
+    }
 
-    setSelectedPlanId(nextPlanId);
     setFlowStep(initialFlowStep);
 
     setRegisterForm((current) => ({
       ...current,
       username: current.username || profileName,
       email: current.email || profileEmail,
-      plan: current.plan || nextPlanId,
+      plan: current.plan || selectedPlanId,
       autoRenew: current.autoRenew ?? true,
     }));
-  }, [initialFlowStep, initialPlanId, isOpen, mode, plans, profileEmail, profileName, user?.email, user?.plan]);
+  }, [initialFlowStep, initialPlanId, isOpen, mode, plans, profileEmail, profileName, selectedPlanId, user?.email, user?.plan]);
 
   const handlePlanSelect = (plan: SubscriptionPlan) => {
     setSelectedPlanId(plan.id);
@@ -178,17 +175,6 @@ export const MembershipModal = ({
       return;
     }
 
-    if (name === 'cardExpiry') {
-      setPaymentForm((current) => ({ ...current, cardExpiry: formatCardExpiry(value) }));
-      return;
-    }
-
-    if (name === 'cardCvc') {
-      const sanitized = value.replace(/\D/g, '').slice(0, 4);
-      setPaymentForm((current) => ({ ...current, cardCvc: sanitized }));
-      return;
-    }
-
     setPaymentForm((current) => ({ ...current, [name]: value }));
   };
 
@@ -210,17 +196,6 @@ export const MembershipModal = ({
     setIsSubmitting(true);
 
     try {
-      if (paymentForm.paymentMethod === 'card') {
-        const expiryMatch = paymentForm.cardExpiry.match(/^(0[1-9]|1[0-2])\/(\d{2})$/);
-        const currentYear = new Date().getFullYear() % 100;
-        const enteredYear = Number(expiryMatch?.[2] ?? '0');
-
-        if (!expiryMatch || enteredYear < currentYear) {
-          setError('La fecha de expiración debe ser válida en formato MM/AA y no anterior a la fecha actual.');
-          return;
-        }
-      }
-
       if (!isAuthenticated) {
         await register({
           username: registerForm.username.trim(),
@@ -257,7 +232,7 @@ export const MembershipModal = ({
   const handleComplete = () => {
     onClose();
     navigate('/');
-    window.alert('¡Bienvenido a UOMO CATTIVO! Tu membresía mayorista ya está activa.');
+    window.alert('¡Bienvenido a EZZETA! Tu membresía mayorista ya está activa.');
   };
 
   if (!isOpen) {
@@ -387,7 +362,10 @@ export const MembershipModal = ({
         >
           <div className="flex flex-col gap-4 border-b border-black/10 pb-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-black/60">Membresía mayorista</p>
+              <div className="flex items-center gap-2">
+                <Building2 size={15} className="text-black" />
+                <p className="text-xs uppercase tracking-[0.28em] text-black/50">Membresía mayorista</p>
+              </div>
               <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-semibold text-black">
                 {flowStep === 'plan' && 'Elige tu plan'}
                 {flowStep === 'account' && 'Crea tu cuenta'}
@@ -414,17 +392,26 @@ export const MembershipModal = ({
             {['plan', 'account', 'payment', 'success'].map((step, index) => {
               const isCompleted = ['plan', 'account', 'payment', 'success'].indexOf(flowStep) > index;
               const isActive = flowStep === step;
+              const labels = {
+                plan: 'Plan',
+                account: 'Cuenta',
+                payment: 'Pago',
+                success: 'Listo',
+              } as const;
+              const Icon = step === 'plan' ? Sparkles : step === 'account' ? UserRound : step === 'payment' ? Wallet : CheckCircle2;
+
               return (
                 <div key={step} className="flex items-center gap-2">
                   <span className={`flex h-7 w-7 items-center justify-center rounded-full ${isActive ? 'bg-black text-white' : isCompleted ? 'bg-red-600 text-white' : 'bg-white text-black/70'}`}>
-                    {index + 1}
+                    <Icon size={13} />
                   </span>
-                  {index < 3 ? <span className="text-black/40">→</span> : null}
+                  <span>{labels[step as keyof typeof labels]}</span>
                 </div>
               );
             })}
           </div>
 
+          <AnimatePresence mode="wait">
           {flowStep === 'plan' ? (
             <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-[1.2fr_0.8fr]">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -592,26 +579,8 @@ export const MembershipModal = ({
                       <label className="block text-sm text-black/75">
                         <span className="mb-1 block font-medium">Expiración / CVC</span>
                         <div className="flex flex-col gap-2 sm:flex-row">
-                          <input
-                        name="cardExpiry"
-                        value={paymentForm.cardExpiry}
-                        onChange={handlePaymentChange}
-                        inputMode="numeric"
-                        maxLength={5}
-                        className="w-full sm:w-1/2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none"
-                        placeholder="MM/AA"
-                        required
-                      />
-                          <input
-                            name="cardCvc"
-                            value={paymentForm.cardCvc}
-                            onChange={handlePaymentChange}
-                            inputMode="numeric"
-                            maxLength={4}
-                            className="w-full sm:w-1/2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none"
-                            placeholder="CVC"
-                            required
-                          />
+                          <input name="cardExpiry" value={paymentForm.cardExpiry} onChange={handlePaymentChange} inputMode="numeric" maxLength={5} className="w-full sm:w-1/2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="MM/AA" required/>
+                          <input name="cardCvc" value={paymentForm.cardCvc} onChange={handlePaymentChange} inputMode="numeric" maxLength={4} className="w-full sm:w-1/2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="CVC" required/>
                         </div>
                       </label>
                     </div>
@@ -667,6 +636,7 @@ export const MembershipModal = ({
               </button>
             </div>
           ) : null}
+          </AnimatePresence>
         </motion.div>
       </motion.div>
     </AnimatePresence>

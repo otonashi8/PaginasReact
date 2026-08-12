@@ -43,7 +43,7 @@ export const SelectorRelacionados = ({
 	};
 
 	return (
-		<section className="rounded-none border border-zinc-200 bg-bone p-4 shadow-sm sm:p-4">
+		<section className="rounded-none border border-zinc-200 bg-white p-4 shadow-sm sm:p-4">
 			<div className="mb-3">
 				<h3 className="text-base font-semibold text-zinc-950 md:text-base font-semibold">Productos relacionados</h3>
 				<p className="mt-1 text-sm text-zinc-500">
@@ -74,7 +74,7 @@ export const SelectorRelacionados = ({
 								className={`flex cursor-pointer items-start gap-4 rounded-none border p-4 transition sm:items-center ${
 									seleccionado
 										? 'border-zinc-900 bg-zinc-900 text-white'
-										: 'border-zinc-200 bg-bone hover:border-zinc-400'
+										: 'border-zinc-200 bg-white hover:border-zinc-400'
 								}`}
 							>
 								<input

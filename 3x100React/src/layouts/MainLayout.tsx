@@ -6,9 +6,9 @@ import { ScrollToTopButton } from '../components/ScrollToTopButton';
 
 export const MainLayout = () => {
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="max-h-screen bg-white text-black">
       <Header />
-      <main className="mx-auto min-h-[70vh] w-full max-w-1xl px-4 py-1 pt-1 sm:px-6 sm:pt-28 lg:px-8 lg:pt-32">
+      <main className="mx-auto min-h-[70vh] w-full max-w-7xl px-6 py-10 pt-24 lg:px-8">
         <Outlet />
       </main>
       <Footer />

@@ -25,6 +25,7 @@ export const StorageKeys = {
 	SEARCH_HISTORY: 'ezzeta.wholesale.searchHistory',
 	GUEST: 'ezzeta.wholesale.guest',
 	SYNC: 'ezzeta.wholesale.sync',
+	CONFIGURACION: 'maxeta.configuracion',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

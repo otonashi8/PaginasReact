@@ -32,7 +32,7 @@ export const ClientePedido = ({
                 <h3 className="text-lg font-semibold">Cliente</h3>
                 <p className="text-sm text-zinc-500">Información del comprador.</p>
             </div>
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-3">
                 <div>
                    <label className="mb-2 block font-medium">Nombre</label>
                     <input

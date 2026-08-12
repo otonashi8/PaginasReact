@@ -18,7 +18,7 @@ export function obtenerColorEstado(
         case "cancelado":
             return "border-red-300 bg-red-100 text-red-800";
         default:
-            return "border-zinc-300 bg-zinc-100 text-zinc-700 bg-white";
+            return "border-zinc-300 bg-zinc-100 text-zinc-700";
     }
 
 }

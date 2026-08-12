@@ -25,7 +25,6 @@ import { PERMISSIONS } from '../utils/permissionCodes';
 import { calcularCostoEnvio, obtenerConfiguracionEnvioActual } from '../utils/envioHelpers';
 import { SHIPPING_CONFIG_EVENT } from '../admin/Sistema/envio/DatosEnvio';
 
-
 type CartProduct = Product & { quantity: number; size: string };
 
 type AppliedCouponType = 'percentage' | 'fixed' | 'shipping' | 'price_fixed';
@@ -53,6 +52,7 @@ export const CartDrawer = () => {
   const { value: recommendedQuantity, setValue: setRecommendedQuantity, start: startRecommendedChange } = useHoldNumber(1, { min: 1, step: 1, interval: 120 });
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan['id']>(user?.plan ?? 'bronze');
+  const [plansVersion, setPlansVersion] = useState(0);
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(() => {
     try {
@@ -139,7 +139,7 @@ export const CartDrawer = () => {
   const selectedProductsSubtotal = selectedProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const configuracionEnvio = obtenerConfiguracionEnvioActual();
   const effectivePlanId = (user?.plan ?? selectedPlanId) as SubscriptionPlan['id'];
-  const activePlan = useMemo(() => getPlanById(effectivePlanId), [effectivePlanId]);
+  const activePlan = useMemo(() => getPlanById(effectivePlanId), [effectivePlanId, plansVersion]);
   const hasActivePlan = Boolean(user?.plan) || selectedPlanId !== 'bronze';
   const discountRate = hasActivePlan
     ? activePlan.descuento / 100
@@ -179,19 +179,20 @@ export const CartDrawer = () => {
   const canProceedToCheckout = checkoutDepartamento.trim().length > 0 && shippingResult.shippingCalculable;
 
   const shipping = shippingResult.shippingAmount ?? 0;
-  const discountedSubtotal = Number(
-    Math.max(0, selectedProductsSubtotal - discountAmount - promoDiscountAmount).toFixed(2)
-  );
-
-  const discountedTotal = Number(
-    Math.max(0, discountedSubtotal + shipping).toFixed(2)
-  );
+  const discountedSubtotal = Number(Math.max(0, selectedProductsSubtotal - discountAmount - promoDiscountAmount).toFixed(2));
+  const discountedTotal = Number(Math.max(0, discountedSubtotal + shipping).toFixed(2));
 
   useEffect(() => {
     if (user?.plan) {
       setSelectedPlanId(user.plan);
     }
   }, [user?.plan]);
+
+  useEffect(() => {
+    const onPlansChanged = () => setPlansVersion((v) => v + 1);
+    window.addEventListener('maxeta:plans-changed', onPlansChanged);
+    return () => window.removeEventListener('maxeta:plans-changed', onPlansChanged);
+  }, []);
 
   useEffect(() => {
     if (appliedCoupon && selectedProductsSubtotal < appliedCoupon.minPurchase) {
@@ -274,7 +275,7 @@ export const CartDrawer = () => {
       return;
     }
 
-if (selectedProductsSubtotal < foundPromo.minPurchase) {
+    if (selectedProductsSubtotal < foundPromo.minPurchase) {
       setPromoMessage({ text: `✕ Compra mínima de S/${foundPromo.minPurchase}`, type: 'error' });
       return;
     }
@@ -355,6 +356,7 @@ if (selectedProductsSubtotal < foundPromo.minPurchase) {
                   discountedSubtotal={discountedSubtotal}
                   discountedTotal={discountedTotal}
                     onProceedToCheckout={handleProceedToCheckout}
+                  hasActivePlan={hasActivePlan}
                   activePlan={activePlan}
                   onApplyPromo={applyPromoCode}
                   promoMessage={promoMessage}

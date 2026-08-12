@@ -21,7 +21,7 @@ export const InformacionGeneralCarrito = ({ carrito }: Props) => {
     const clienteLabel = esRegistrado ? usuario?.username ?? usuario?.email ?? carrito.userId : carrito.checkoutEmail ?? carrito.guestId ?? "Guest";
 
     return (
-        <section className="rounded-none border border-zinc-200 bg-bone p-6">
+        <section className="rounded-none border border-zinc-200 bg-white p-6">
             <div>
                 <h3 className="text-lg font-semibold">Información general</h3>
                 <p className="mt-1 text-sm text-zinc-500">Datos clave del carrito y su estado de abandono.</p>

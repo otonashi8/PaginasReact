@@ -17,7 +17,7 @@ export const ClienteCarrito = ({ carrito }: Props) => {
     const correo = usuario?.email ?? carrito.checkoutEmail ?? "No disponible";
 
     return (
-        <section className="rounded-none border border-zinc-200 bg-bone p-6">
+        <section className="rounded-none border border-zinc-200 bg-white p-6">
             <div className="flex items-center justify-between gap-4">
                 <div>
                     <h3 className="text-lg font-semibold text-zinc-900">Información de buyer</h3>

@@ -1,5 +1,6 @@
 import { storageManager } from '../storage';
 import type { LogSistema } from '../admin/Sistema/logs/TiposLogs';
+import { obtenerLogs as obtenerLogsIniciales } from '../admin/Sistema/logs/DatosLogs';
 
 export type AuditLogInput = {
   modulo: string;
@@ -64,6 +65,15 @@ const getCurrentIp = () => {
 const readLogs = (): LogSistema[] => {
   const stored = storageManager.get<string>(STORAGE_KEY);
   if (!stored) {
+    try {
+      const iniciales = obtenerLogsIniciales();
+      if (Array.isArray(iniciales) && iniciales.length > 0) {
+        writeLogs(iniciales);
+        return iniciales;
+      }
+    } catch {
+      // ignore
+    }
     return [];
   }
 
@@ -105,6 +115,26 @@ export const registrarLog = (input: AuditLogInput): LogSistema => {
   const nextLogs = [log, ...readLogs()];
   writeLogs(nextLogs);
   return log;
+};
+
+export const registrarExportacion = (
+  modulo: string,
+  submodulo: string,
+  objetoAfectado: string,
+  descripcion: string,
+  referencia: string,
+) => {
+  const actor = obtenerActorAuditoria();
+  registrarLog({
+    modulo,
+    submodulo,
+    accion: 'Exportó datos',
+    descripcion,
+    usuario: actor.usuario,
+    rol: actor.rol,
+    objetoAfectado,
+    referencia,
+  });
 };
 
 export const obtenerLogsAuditoria = (): LogSistema[] => readLogs();

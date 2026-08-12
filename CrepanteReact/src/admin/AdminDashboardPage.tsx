@@ -32,7 +32,15 @@ const getModulePanel = (module: PermissionModule | null, access: PermissionAcces
     return <GenericCrudPanel access={access} />;
   }
 
-  if (normalized === 'sistema' || accessLabel === 'logs' || accessLabel === 'auditoria' || normalized === 'logs' || normalized === 'auditoria') {
+  if (
+    normalized === 'sistema' ||
+    accessLabel === 'logs' ||
+    accessLabel === 'auditoria' ||
+    normalized === 'logs' ||
+    normalized === 'auditoria' ||
+    normalized === 'planes' ||
+    accessLabel === 'planes'
+  ) {
     return <SistemaCrudPanel access={access} />;
   }
 

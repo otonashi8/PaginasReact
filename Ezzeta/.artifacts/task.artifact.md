@@ -1,0 +1,5 @@
+- `[x]` Modificar `ProductRepository.kt` para arreglar la persistencia de `isVisible`.
+- `[x]` Actualizar `MainViewModel.kt` con la función de eliminar y filtrado de búsqueda.
+- `[x]` Mejorar `AdminProductManagementScreen.kt` con botón de borrar y mayor reactividad.
+- `[x]` Filtrar productos ocultos en `TrendsScreen.kt`.
+- `[x]` Asegurar que `ProductDetailScreen.kt` no muestre productos bloqueados ni los sugiera.

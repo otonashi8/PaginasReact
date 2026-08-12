@@ -36,7 +36,7 @@ export const DashboardUsuarios = ({
             />
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Últimos accesos */}
-                <section className="rounded-none border border-zinc-200 bg-bone p-6">
+                <section className="rounded-none border border-zinc-200 bg-white p-6">
                     <h3 className="mb-4 text-lg font-semibold">Últimos accesos</h3>
                     <div className="space-y-3">
                         {
@@ -63,7 +63,7 @@ export const DashboardUsuarios = ({
                     </div>
                 </section>
                 {/* Usuarios por rol */}
-                <section className="rounded-none border border-zinc-200 bg-bone p-6">
+                <section className="rounded-none border border-zinc-200 bg-white p-6">
                     <h3 className="mb-4 text-lg font-semibold">Usuarios por rol</h3>
                     <div className="space-y-3">
                         {

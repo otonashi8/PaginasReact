@@ -26,7 +26,9 @@ export const modulosBase: ModuloSistema[] = [
     "usuarios",
     "roles",
     "configuracion",
-    "logs"
+    "envio",
+    "logs",
+    "planes"
 ];
 
 /* GENERA LA MATRIZ COMPLETA DE PERMISOS*/

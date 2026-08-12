@@ -131,13 +131,13 @@ export default function CartSummary({
         )}
 
         {hasActivePlan && (
-          <div className="rounded-[1rem] border border-black/10 bg-white p-3 sm:p-4 text-sm text-black/80">
+          <div className="rounded-[1rem] border-2 border-red-600 bg-red-50 p-4 sm:p-5 text-sm text-black/80 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.25em] text-black/50">Plan activo</p>
                 <p className="mt-1 font-semibold text-black">{activePlan.nombre}</p>
               </div>
-              <span className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-black">{activePlan.descuento}%</span>
+              <span className="rounded-full border border-red-600 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-600">{activePlan.descuento}%</span>
             </div>
 
             <div className="mt-4 space-y-2 text-sm">
@@ -145,13 +145,13 @@ export default function CartSummary({
                 <span>Subtotal</span>
                 <span>S/{subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-green-600">
+              <div className="flex justify-between text-green-700 font-semibold">
                 <span>Ahorro obtenido</span>
                 <span>S/{(subtotal * (activePlan.descuento / 100)).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-black/70">
+              <div className="flex justify-between text-black/80">
                 <span>Total</span>
-                <span>S/{discountedSubtotal.toFixed(2)}</span>
+                <span className="font-semibold">S/{discountedSubtotal.toFixed(2)}</span>
               </div>
               
             </div>
@@ -160,7 +160,7 @@ export default function CartSummary({
 
         <div className="space-y-3 rounded-[1.2rem] border border-black/10 bg-white p-5 text-sm shadow-[0_14px_36px_rgba(0,0,0,0.07)]">
           <div className="flex justify-between text-black/70">
-            <span>Subtotal</span>
+            <span>Total</span>
             <span>S/{discountedSubtotal.toFixed(2)}</span>
           </div>
           {promoDiscountAmount > 0 ? (

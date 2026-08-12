@@ -74,7 +74,8 @@ export const MembershipModal = ({
 }: MembershipModalProps) => {
   const { user: authUser, isAuthenticated, register, updateSubscription } = useAuth();
   const navigate = useNavigate();
-  const plans = useMemo(() => getPlanOptions(), []);
+  const [plans, setPlans] = useState(() => getPlanOptions());
+  const [plansVersion, setPlansVersion] = useState(0);
   const [view, setView] = useState<'select' | 'details'>(mode);
   const [flowStep, setFlowStep] = useState<FlowStep>(initialFlowStep);
   const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan['id']>(initialPlanId ?? user?.plan ?? plans[0]?.id ?? 'bronze');
@@ -85,12 +86,37 @@ export const MembershipModal = ({
 
   const profileName = authUser?.username ?? user?.name ?? '';
   const profileEmail = authUser?.email ?? user?.email ?? '';
-  const currentPlan = useMemo(() => getPlanById(user?.plan ?? selectedPlanId), [selectedPlanId, user?.plan]);
-  const selectedPlan = useMemo(() => getPlanById(selectedPlanId), [selectedPlanId]);
+  const currentPlan = useMemo(() => getPlanById(user?.plan ?? selectedPlanId), [selectedPlanId, user?.plan, plansVersion]);
+  const selectedPlan = useMemo(() => getPlanById(selectedPlanId), [selectedPlanId, plansVersion]);
 
   useEffect(() => {
     setView(mode);
   }, [mode]);
+
+  useEffect(() => {
+    const onPlansChanged = () => {
+      setPlans(getPlanOptions());
+      setPlansVersion((v) => v + 1);
+    };
+
+    const onStorage = (e: StorageEvent) => {
+      try {
+        const key = String(e.key ?? '');
+        if (key.includes('plans')) {
+          onPlansChanged();
+        }
+      } catch {
+      }
+    };
+
+    window.addEventListener('maxeta:plans-changed', onPlansChanged);
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener('maxeta:plans-changed', onPlansChanged);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -104,14 +130,10 @@ export const MembershipModal = ({
       return;
     }
 
-    const preferredPlanId = initialPlanId ?? user?.plan ?? plans[0]?.id ?? 'bronze';
-
     if (initialPlanId) {
       setSelectedPlanId(initialPlanId);
     } else if (user?.plan) {
       setSelectedPlanId(user.plan);
-    } else {
-      setSelectedPlanId(preferredPlanId);
     }
 
     setFlowStep(initialFlowStep);
@@ -120,10 +142,10 @@ export const MembershipModal = ({
       ...current,
       username: current.username || profileName,
       email: current.email || profileEmail,
-      plan: current.plan || preferredPlanId,
+      plan: current.plan || selectedPlanId,
       autoRenew: current.autoRenew ?? true,
     }));
-  }, [initialFlowStep, initialPlanId, isOpen, mode, plans, profileEmail, profileName, user?.email, user?.plan]);
+  }, [initialFlowStep, initialPlanId, isOpen, mode, plans, profileEmail, profileName, selectedPlanId, user?.email, user?.plan]);
 
   const handlePlanSelect = (plan: SubscriptionPlan) => {
     setSelectedPlanId(plan.id);
@@ -131,11 +153,6 @@ export const MembershipModal = ({
   };
 
   const handleContinueToAccount = () => {
-    if (isAuthenticated) {
-      setFlowStep('payment');
-      return;
-    }
-
     setFlowStep('account');
   };
 
@@ -200,7 +217,11 @@ export const MembershipModal = ({
         paymentMethod: paymentForm.paymentMethod,
       });
 
-      setFlowStep('success');
+      const welcomeName = registerForm.username.trim() || authUser?.username || profileName || 'cliente mayorista';
+      const planIcon = selectedPlan.icono;
+      onClose();
+      navigate('/');
+      window.alert(`¡Bienvenido, ${welcomeName}! Tu membresía ${planIcon} ${selectedPlan.nombre} ya está activa.`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'No se pudo completar la suscripción.');
     } finally {

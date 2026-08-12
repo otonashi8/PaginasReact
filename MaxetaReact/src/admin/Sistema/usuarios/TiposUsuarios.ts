@@ -30,7 +30,9 @@ export type ModuloSistema =
     | "usuarios"
     | "roles"
     | "configuracion"
-    | "logs";
+    | "envio"
+    | "logs"
+    | "planes";
 
 /* PERMISO*/
 
@@ -111,7 +113,9 @@ export const modulosSistema: ModuloSistema[] = [
     "usuarios",
     "roles",
     "configuracion",
-    "logs"
+    "envio",
+    "logs",
+    "planes"
 ];
 
 /*ACCIONES*/

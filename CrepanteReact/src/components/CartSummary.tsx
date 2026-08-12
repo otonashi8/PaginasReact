@@ -1,44 +1,15 @@
 ﻿import { motion } from 'framer-motion';
+import { useMemo } from 'react';
 import { PermissionGate } from './PermissionGate';
+import { getPeruDepartments } from '../services/peruUbigeoService';
 import { PERMISSIONS } from '../utils/permissionCodes';
-
-type AppliedCouponType = 'percentage' | 'fixed' | 'shipping' | 'price_fixed';
-
-type AppliedCoupon = {
-  id?: number;
-  code: string;
-  type: AppliedCouponType;
-  value: number;
-  minPurchase: number;
-  active: boolean;
-  freeShipping?: boolean;
-  source: 'static' | 'admin';
-};
-
-type Props = {
-  subtotal: number;
-  discountAmount: number;
-  promoDiscountAmount: number;
-  shipping: number;
-  discountedSubtotal: number;
-  discountedTotal: number;
-  hasActivePlan: boolean;
-  activePlan: { nombre: string; descuento: number };
-  onApplyPromo: () => void;
-  promoMessage: { text: string; type: 'success' | 'error' } | null;
-  appliedCoupon: AppliedCoupon | null;
-  promoCodeInput: string;
-  setPromoCodeInput: (value: string) => void;
-  removeAppliedPromo: () => void;
-  setIsMembershipModalOpen: (open: boolean) => void;
-  setCheckoutStep: (step: 'cart' | 'checkout' | 'payment') => void;
-};
 
 export default function CartSummary({
   subtotal,
-  discountAmount,
   promoDiscountAmount,
-  shipping,
+  shippingLabel,
+  montoMinimoEnvioGratis,
+  shippingNotConfigured,
   discountedSubtotal,
   discountedTotal,
   hasActivePlan,
@@ -50,8 +21,13 @@ export default function CartSummary({
   setPromoCodeInput,
   removeAppliedPromo,
   setIsMembershipModalOpen,
-  setCheckoutStep,
-}: Props) {
+  checkoutDepartamento,
+  onDepartamentoChange,
+  departamentoError,
+  onProceedToCheckout,
+  isCheckoutDisabled,
+}: any) {
+  const departments = useMemo(() => getPeruDepartments(), []);
   return (
     <div className="mt-8 space-y-5 border-t border-black/10 pt-6 sm:pt-7">
       <div className="border-t border-black/10 pt-6 text-sm text-black">
@@ -81,6 +57,27 @@ export default function CartSummary({
             {promoMessage.text}
           </p>
         ) : null}
+
+        <div className="mt-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-black">Departamento</p>
+            <label className="mt-2 block">
+              <select
+                value={checkoutDepartamento}
+                onChange={(event) => onDepartamentoChange(event.target.value)}
+                className={`mt-2 w-full rounded-none border px-4 py-3 text-black outline-none transition ${departamentoError ? 'border-red-500' : 'border-black/10'} bg-white`}
+              >
+                <option value="">Seleccionar departamento</option>
+                {departments.map((department) => (
+                  <option key={department.code} value={department.name}>
+                    {department.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {departamentoError ? (
+            <p className="mt-2 text-xs text-red-600">Selecciona tu departamento para continuar.</p>
+          ) : null}
+        </div>
 
         {appliedCoupon ? (
           <div className="mt-4 border border-green-600 bg-green-50 p-4 text-sm">
@@ -148,55 +145,57 @@ export default function CartSummary({
               <span>Subtotal</span>
               <span>S/{subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-black/70">
-              <span>Descuento</span>
-              <span>-S/{discountAmount.toFixed(2)}</span>
+            <div className="flex justify-between text-green-600">
+              <span>Ahorro obtenido</span>
+              <span>S/{(subtotal * (activePlan.descuento / 100)).toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-black/70">
               <span>Total</span>
-              <span>S/{discountedSubtotal.toFixed(2)}</span>
+              <span className="font-semibold">S/{discountedSubtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-green-600">
-              <span>Ahorro obtenido</span>
-              <span>S/{discountAmount.toFixed(2)}</span>
-            </div>
+            
           </div>
         </div>
       )}
 
-      <div className="space-y-4 border-t-2 border-black bg-neutral-50 pt-6 text-sm">
-        <div className="flex justify-between text-black/70">
-          <span>Subtotal</span>
-          <span>S/{subtotal.toFixed(2)}</span>
-        </div>
-        {promoDiscountAmount > 0 ? (
-          <div className="flex justify-between text-green-600">
-            <span>Descuento aplicado</span>
-            <span>-S/{promoDiscountAmount.toFixed(2)}</span>
+      <div className="space-y-3 rounded-[1.2rem] border border-black/10 bg-white p-5 text-sm shadow-[0_14px_36px_rgba(0,0,0,0.07)]">
+          <div className="flex justify-between text-black/70">
+            <span>Total</span>
+            <span>S/{discountedSubtotal.toFixed(2)}</span>
           </div>
-        ) : null}
-        <div className="flex justify-between text-black/60">
-          <span>Envío (&gt; S/300 gratis)</span>
-          <span className={shipping === 0 ? 'font-semibold text-green-600' : 'text-black/80'}>{shipping === 0 ? 'GRATIS' : `S/${shipping}`}</span>
-        </div>
-        <div className="flex flex-col gap-3 border-t border-black/10 pt-3">
-          <div className="flex items-center justify-between border-t border-black pt-5 text-2xl font-bold uppercase text-black">
-            <span>Total final</span>
-            <span>S/{discountedTotal.toFixed(2)}</span>
+          {promoDiscountAmount > 0 ? (
+            <div className="flex justify-between text-green-600">
+              <span>Descuento aplicado</span>
+              <span>-S/{promoDiscountAmount.toFixed(2)}</span>
+            </div>
+          ) : null}
+          <div className="flex justify-between text-black/60">
+            <span>{shippingLabel === 'GRATIS' ? 'Envío (Gratis)' : `Envío (> S/${montoMinimoEnvioGratis.toFixed(2)})`}</span>
+            <span className={shippingLabel === 'GRATIS' ? 'font-semibold text-green-600' : shippingNotConfigured ? 'text-orange-600' : 'text-black/80'}>
+              {shippingLabel === 'GRATIS' ? 'GRATIS' : shippingLabel}
+            </span>
           </div>
-          <PermissionGate permission={PERMISSIONS.salesCreate}>
-          <motion.button
-            type="button"
-            onClick={() => setCheckoutStep('checkout')}
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.99 }}
-            className="w-full border border-red-600 bg-red-600 px-6 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white transition hover:bg-black hover:border-black"
-          >
-            Pagar ahora
-          </motion.button>
-          </PermissionGate>
+          {shippingNotConfigured ? (
+            <p className="text-xs text-orange-600">Selecciona un departamento con tarifa configurada para calcular el envío.</p>
+          ) : null}
+          <div className="flex flex-col gap-3 border-t border-black/10 pt-3">
+            <div className="flex items-center justify-between text-lg font-semibold text-black sm:text-2xl">
+              <span>Total final</span>
+              <span>S/{discountedTotal.toFixed(2)}</span>
+            </div>
+            <PermissionGate permission={PERMISSIONS.salesCreate}>
+              <motion.button
+                type="button"
+                onClick={onProceedToCheckout}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.99 }}
+                disabled={isCheckoutDisabled}
+                className={`w-full rounded-full px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(220,38,38,0.3)] transition ${isCheckoutDisabled ? 'cursor-not-allowed bg-zinc-400 hover:bg-zinc-400' : 'bg-red-600 hover:bg-red-500'}`}>
+                Pagar ahora
+              </motion.button>
+            </PermissionGate>
+          </div>
         </div>
-      </div>
     </div>
   );
 }

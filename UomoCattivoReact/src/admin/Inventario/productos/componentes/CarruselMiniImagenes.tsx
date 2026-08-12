@@ -30,7 +30,7 @@ export const CarruselMiniImagenes = ({
 	};
 
 	return (
-		<section className="rounded-none border border-zinc-200 bg-bone p-3 shadow-sm sm:p-4">
+		<section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
 			<div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 				<div>
 					<h3 className="text-base font-semibold text-zinc-950">Mini imágenes del producto</h3>

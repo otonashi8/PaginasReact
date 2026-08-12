@@ -10,7 +10,7 @@ export const CheckoutDraftCliente = ({ checkoutDraft }: Props) => {
     }
 
     return (
-        <section className="rounded-none border border-zinc-200 bg-bone p-6">
+        <section className="rounded-none border border-zinc-200 bg-white p-6">
             <div>
                 <h3 className="text-lg font-semibold text-zinc-900">Checkout pendiente</h3>
                 <p className="mt-1 text-sm text-zinc-500">Borrador de pago guardado temporalmente.</p>

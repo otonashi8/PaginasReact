@@ -32,7 +32,15 @@ const getModulePanel = (module: PermissionModule | null, access: PermissionAcces
     return <GenericCrudPanel access={access} />;
   }
 
-  if (normalized === 'sistema' || accessLabel === 'logs' || accessLabel === 'auditoria' || normalized === 'logs' || normalized === 'auditoria') {
+  if (
+    normalized === 'sistema' ||
+    accessLabel === 'logs' ||
+    accessLabel === 'auditoria' ||
+    normalized === 'logs' ||
+    normalized === 'auditoria' ||
+    normalized === 'planes' ||
+    accessLabel === 'planes'
+  ) {
     return <SistemaCrudPanel access={access} />;
   }
 
@@ -134,7 +142,7 @@ export const AdminDashboardPage = () => {
   if (!isAuthenticated || !isAdminUser) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-100 px-4 py-8">
-        <div className="w-full max-w-lg rounded-none border border-zinc-200 bg-bone p-1 shadow-xl">
+        <div className="w-full max-w-lg rounded-none border border-zinc-200 bg-white p-1 shadow-xl">
           <div className="mb-6 text-center">
             <p className="text-xs uppercase tracking-[0.35em] text-zinc-500">Dashboard</p>
             <h1 className="mt-2 text-3xl font-semibold text-zinc-900">Acceso Administrador</h1>
@@ -180,7 +188,7 @@ export const AdminDashboardPage = () => {
   return (
     <div className="min-h-screen bg-zinc-100">
       <div className="grid w-full max-w-[1600px] gap-1 p-4 md:grid-cols-[300px_1fr] md:p-2">
-        <aside className="rounded-none border border-zinc-200 bg-bone p-2 shadow-sm">
+        <aside className="rounded-none border border-zinc-200 bg-white p-2 shadow-sm">
           <div className="mb-4 flex items-center justify-between border-b border-zinc-200 pb-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">D-Admin</p>
@@ -257,7 +265,7 @@ export const AdminDashboardPage = () => {
           </nav>
         </aside>
 
-        <main className="rounded-none border border-zinc-200 bg-bone p-3 shadow-sm">
+        <main className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Modulo activo</p>
@@ -270,7 +278,7 @@ export const AdminDashboardPage = () => {
                 await logout();
                 navigate('/D-Admin');
               }}
-              className="inline-flex items-center gap-2 rounded-none border border-zinc-300 bg-bone px-4 py-2.5 text-sm font-medium text-zinc-800 transition hover:border-red-600 hover:text-red-600"
+              className="inline-flex items-center gap-2 rounded-none border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-800 transition hover:border-red-600 hover:text-red-600"
             >
               <LogOut size={16} /> Cerrar sesión
             </button>
@@ -289,7 +297,7 @@ export const AdminDashboardPage = () => {
                   {modules.map((module) => (
                     <article
                       key={module.id}
-                      className="rounded-none border border-zinc-300 bg-bone p-4 shadow-sm transition hover:border-red-600"
+                      className="rounded-none border border-zinc-300 bg-white p-4 shadow-sm transition hover:border-red-600"
                     >
                       <p className="text-xs uppercase tracking-[0.22em] text-zinc-500">Modulo</p>
                       <h3 className="mt-2 text-base font-semibold text-zinc-900">{module.label}</h3>

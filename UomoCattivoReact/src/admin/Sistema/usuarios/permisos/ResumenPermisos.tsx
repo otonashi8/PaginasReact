@@ -22,11 +22,11 @@ export const ResumenPermisos = ({
 
     return (
         <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-none border border-zinc-200 bg-bone p-5">
+            <div className="rounded-none border border-zinc-200 bg-white p-5">
                 <p className="text-sm text-zinc-500">Permisos asignados</p>
                 <p className="mt-2 text-3xl font-bold">{totalPermisos}</p>
             </div>
-            <div className="rounded-none border border-zinc-200 bg-bone p-5">
+            <div className="rounded-none border border-zinc-200 bg-white p-5">
                 <p className="text-sm text-zinc-500">Módulos con acceso</p>
                 <p className="mt-2 text-3xl font-bold">{modulosConPermisos}</p>
             </div>

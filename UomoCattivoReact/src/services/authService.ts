@@ -183,9 +183,11 @@ const getRolePermissionMetadata = (modulo: string) => {
     usuarios: { label: 'Usuarios', path: '/D-Admin/usuarios', codePrefix: 'user' },
     roles: { label: 'Roles', path: '/D-Admin/roles', codePrefix: 'roles' },
     configuracion: { label: 'Configuración', path: '/D-Admin/configuracion', codePrefix: 'configuracion' },
+    envio: { label: 'Envío', path: '/D-Admin/envio', codePrefix: 'envio' },
     logs: { label: 'Logs', path: '/D-Admin/logs', codePrefix: 'logs' },
     auditoria: { label: 'Logs', path: '/D-Admin/logs', codePrefix: 'logs' },
     almacenes: { label: 'Almacenes', path: '/D-Admin/almacenes', codePrefix: 'warehouse' },
+    planes: { label: 'Planes', path: '/D-Admin/planes', codePrefix: 'plans' },
   };
 
   return (
@@ -216,6 +218,7 @@ const buildPermissionsFromRole = (rol: Rol | undefined): Permission[] => {
     pricing_rules: 'Sistema',
     logs: 'Sistema',
     auditoria: 'Sistema',
+    envio: 'Sistema',
     subscription: 'Sistema',
     affiliate: 'Sistema',
     payment_methods: 'Negocio',
@@ -224,6 +227,7 @@ const buildPermissionsFromRole = (rol: Rol | undefined): Permission[] => {
     almacenes: 'Inventario',
     pedidos: 'Ventas',
     ventas: 'Ventas',
+    plans: 'Sistema',
   };
 
   const groups: Record<string, { label: string; accesses: Record<string, unknown>[] }> = {};
@@ -350,6 +354,7 @@ const buildFullDashboardPermissions = (): Permission[] => [
       {label: 'Usuarios',path: '/D-Admin/usuarios',permission_code: 'user.manage'},
       {label: 'Roles',path: '/D-Admin/roles',permission_code: 'roles.manage'},
       {label: 'Logs',path: '/D-Admin/logs',permission_code: 'logs.manage'},
+      {label: 'Planes', path: '/D-Admin/planes', permission_code: 'plans.manage'},
     ]
   },
 ];

@@ -10,7 +10,7 @@ export const withSuspense = (Component: LazyExoticComponent<ComponentType<any>>)
     {
       fallback: createElement(
         'div',
-        { className: 'rounded-[1.5rem] border border-black/10 bg-[#F7F3EC] p-8 text-center text-sm text-black/70' },
+        { className: 'rounded-[1.5rem] border border-black/10 bg-white p-8 text-center text-sm text-black/70' },
         'Cargando...'
       ),
     },

@@ -4,7 +4,6 @@
     "slug": "polo-luxury-verde",
     "name": "Polo Luxury Verde",
     "price": 55,
-    "previousPrice": 80,
     "category": "Polos",
     "subcategory": "Luxury",
     "description": "Polo premium confeccionado con algodón de alta calidad, de corte moderno y acabado elegante para un estilo sofisticado.",
@@ -24,8 +23,7 @@
     "id": 2,
     "slug": "polo-prime-melange",
     "name": "Polo Prime Melange",
-    "price": 55,
-    "previousPrice": 95,
+    "price": 65,
     "category": "Polos",
     "subcategory": "Prime",
     "description": "Polo de diseño minimalista elaborado con tela suave y resistente, ideal para un look casual premium.",
@@ -57,119 +55,10 @@
     ]
   },
   {
-    "id": 3,
-    "slug": "pantalon-sastre-negro",
-    "name": "Pantalón Sastre Negro",
-    "price": 55,
-    "previousPrice": 115,
-    "category": "Pantalón",
-    "subcategory": "Sastre",
-    "description": "Pantalón de corte sastre con acabado elegante y excelente caída, perfecto para ocasiones formales o un estilo ejecutivo.",
-    "image": "https://uomocattivo.com/wp-content/uploads/2026/05/PANTALON-SASTRE-NEGRO-3-600x900.jpg.webp",
-    "colors": [
-      "Negro"
-    ],
-    "sizes": [
-      "28",
-      "30",
-      "32",
-      "34",
-      "36"
-    ],
-    "featured": false,
-    "relatedIds": [
-      1,
-      2,
-      4
-    ],
-    "extras": [
-      "✓ Envío seguro",
-      "✓ Pago protegido",
-      "✓ Envío gratis desde S/300"
-    ],
-    "mini-image": [
-      "https://uomocattivo.com/wp-content/uploads/2026/05/PANTALON-SASTRE-NEGRO-3-600x900.jpg.webp",
-      "https://uomocattivo.com/wp-content/uploads/2026/05/PANTALON-SASTRE-NEGRO-1-600x750.png.webp",
-      "https://uomocattivo.com/wp-content/uploads/2026/05/MEDIDAS-PATALON-SASTRE-600x750.jpg.webp"
-    ]
-  },
-  {
-    "id": 4,
-    "slug": "polo-supremo-perla",
-    "name": "Polo Supremo Perla",
-    "price": 55,
-    "previousPrice": 95,
-    "category": "Polos",
-    "subcategory": "Supremo",
-    "description": "Polo de la línea Supremo con acabado premium, textura suave y un diseño pensado para destacar en cualquier ocasión.",
-    "image": "https://uomocattivo.com/wp-content/uploads/2026/07/POLO-SUPREMO-PERLA-17-600x900.png.webp",
-    "mini-image": [
-      "https://uomocattivo.com/wp-content/uploads/2026/07/POLO-SUPREMO-PERLA-17-600x900.png.webp",
-      "https://uomocattivo.com/wp-content/uploads/2026/07/PERLA-FRONT-600x750.png.webp",
-      "https://uomocattivo.com/wp-content/uploads/2026/07/MEDIDAS-POLO-SUPREMO-600x750.png.webp"
-    ],
-    "colors": [
-      "Perla"
-    ],
-    "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL"
-    ],
-    "featured": true,
-    "relatedIds": [
-      1,
-      2,
-      3
-    ],
-    "extras": [
-      "✓ Envío seguro",
-      "✓ Pago protegido",
-      "✓ Envío gratis desde S/300"
-    ]
-  },
-  {
-    "id": 5,
-    "slug": "polo-luxury-negro",
-    "name": "Polo Luxury Negro",
-    "price": 55,
-    "previousPrice": 80,
-    "category": "Polos",
-    "subcategory": "Luxury",
-    "description": "Polo premium confeccionado en algodón de alta calidad con acabado suave.",
-    "image": "https://uomocattivo.com/wp-content/uploads/2026/05/POLO-LUXURY-NEGRO-3-600x900.jpg.webp",
-    "mini-image": [
-      "https://uomocattivo.com/wp-content/uploads/2026/05/POLO-LUXURY-NEGRO-3-600x900.jpg.webp",
-      "https://uomocattivo.com/wp-content/uploads/2026/05/POLO-LUXURY-NEGRO-1-600x750.png.webp",
-      "https://uomocattivo.com/wp-content/uploads/2026/05/MEDIDADAS-POLO-LUXURY-2-600x750.jpg.webp"
-    ],
-    "colors": [
-      "Negro"
-    ],
-    "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL"
-    ],
-    "featured": true,
-    "relatedIds": [
-      6,
-      7,
-      8
-    ],
-    "extras": [
-      "✓ Envío seguro",
-      "✓ Pago protegido",
-      "✓ Envío gratis desde S/300"
-    ]
-  },
-  {
     "id": 6,
     "slug": "polo-supremo-gargola",
     "name": "Polo Supremo Gargola",
-    "price": 55,
+    "price": 79,
     "previousPrice": 99,
     "category": "Polos",
     "subcategory": "Supremo",
@@ -205,7 +94,7 @@
     "id": 7,
     "slug": "polo-prime-arena",
     "name": "Polo Prime Arena",
-    "price": 55,
+    "price": 67,
     "previousPrice": 95,
     "category": "Polos",
     "subcategory": "Prime",
@@ -241,8 +130,7 @@
     "id": 8,
     "slug": "polo-caffarena-negro",
     "name": "Polo Caffarena Negro",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 105,
     "category": "Polos",
     "subcategory": "Caffarena",
     "description": "Prenda elegante para temporadas de clima fresco.",
@@ -277,8 +165,8 @@
     "id": 9,
     "slug": "polo-negro-over-set-vittoria",
     "name": "Polo Negro Over Set Vittoria",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 110,
+    "previousPrice": 130,
     "category": "Polos",
     "subcategory": "Set Vittoria",
     "description": "Diseño exclusivo con detalles premium.",
@@ -313,8 +201,8 @@
     "id": 10,
     "slug": "polo-perla-set-classic-signorile",
     "name": "Polo Perla Set Classic Signorile",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 119,
+    "previousPrice": 139,
     "category": "Polos",
     "subcategory": "Set Signorile",
     "description": "Colección premium inspirada en la moda italiana.",
@@ -349,8 +237,8 @@
     "id": 11,
     "slug": "polo-acero-bottoncini",
     "name": "Polo Acero Bottoncini",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 99,
+    "previousPrice": 119,
     "category": "Polos",
     "subcategory": "Bottoncini",
     "description": "Acabado elegante con botones decorativos.",
@@ -385,8 +273,8 @@
     "id": 12,
     "slug": "short-negro-set-vittoria",
     "name": "Short Negro Set Vittoria",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 75,
+    "previousPrice": 90,
     "category": "Shorts",
     "subcategory": "Set Vittoria",
     "description": "Short ligero para uso diario.",
@@ -421,8 +309,8 @@
     "id": 13,
     "slug": "short-beige-set-vittoria",
     "name": "Short Beige Set Vittoria",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 78,
+    "previousPrice": 95,
     "category": "Shorts",
     "subcategory": "Set Vittoria",
     "description": "Comodidad y frescura para el verano.",
@@ -457,8 +345,8 @@
     "id": 14,
     "slug": "jogger-negro-set-signorile",
     "name": "Jogger Negro Set Signorile",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 129,
+    "previousPrice": 149,
     "category": "Joggers",
     "subcategory": "Set Signorile",
     "description": "Jogger moderno con acabado premium.",
@@ -493,8 +381,8 @@
     "id": 15,
     "slug": "jogger-plomo-set-signorile",
     "name": "Jogger Plomo Set Signorile",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 125,
+    "previousPrice": 145,
     "category": "Joggers",
     "subcategory": "Set Signorile",
     "description": "Ideal para un look casual premium.",
@@ -529,8 +417,8 @@
     "id": 16,
     "slug": "pantalon-clasico-negro",
     "name": "Pantalón Clásico Negro",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 135,
+    "previousPrice": 159,
     "category": "Pantalón",
     "subcategory": "Clásico",
     "description": "Corte clásico con excelente ajuste.",
@@ -566,8 +454,8 @@
     "id": 17,
     "slug": "pantalon-clasico-plomo-rata",
     "name": "Pantalón Clásico Plomo Rata",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 132,
+    "previousPrice": 155,
     "category": "Pantalón",
     "subcategory": "Clásico",
     "description": "Versátil para cualquier ocasión.",
@@ -600,11 +488,47 @@
     ]
   },
   {
+    "id": 18,
+    "slug": "pantalon-sastre-negro",
+    "name": "Pantalón Sastre Negro",
+    "price": 149,
+    "category": "Pantalón",
+    "subcategory": "Sastre",
+    "description": "Elegancia y comodidad para ocasiones formales.",
+    "image": "https://uomocattivo.com/wp-content/uploads/2026/05/PANTALON-SASTRE-NEGRO-3-600x900.jpg.webp",
+    "colors": [
+      "Negro"
+    ],
+    "sizes": [
+      "28",
+      "30",
+      "32",
+      "34",
+      "36"
+    ],
+    "featured": true,
+    "relatedIds": [
+      16,
+      17,
+      19
+    ],
+    "extras": [
+      "✓ Envío seguro",
+      "✓ Pago protegido",
+      "✓ Envío gratis desde S/300"
+    ],
+    "mini-image": [
+      "https://uomocattivo.com/wp-content/uploads/2026/05/PANTALON-SASTRE-NEGRO-3-600x900.jpg.webp",
+      "https://uomocattivo.com/wp-content/uploads/2026/05/PANTALON-SASTRE-NEGRO-1-600x750.png.webp",
+      "https://uomocattivo.com/wp-content/uploads/2026/05/MEDIDAS-PATALON-SASTRE-600x750.jpg.webp"
+    ]
+  },
+  {
     "id": 19,
     "slug": "pantalon-sastre-azul",
     "name": "Pantalón Sastre Azul",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 145,
+    "previousPrice": 170,
     "category": "Pantalón",
     "subcategory": "Sastre",
     "description": "Diseño refinado para un estilo ejecutivo.",
@@ -640,8 +564,8 @@
     "id": 20,
     "slug": "polo-luxury-grey",
     "name": "POLO LUXURY GREY",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 92,
+    "previousPrice": 115,
     "category": "Polos",
     "subcategory": "Luxury",
     "description": "Polo elegante con acabado premium.",
@@ -676,8 +600,8 @@
     "id": 21,
     "slug": "polo-luxury-Negro",
     "name": "POLO LUXURY Negro",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 60,
+    "previousPrice": 95,
     "category": "Polos",
     "subcategory": "Luxury",
     "description": "Polo premium confeccionado en algodón de alta calidad.",
@@ -693,8 +617,8 @@
     "id": 22,
     "slug": "polo-caffarena-perla",
     "name": "POLO CAFFARENA PERLA",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 75,
+    "previousPrice": 95,
     "category": "Polos",
     "subcategory": "Caffarena",
     "description": "Polo de cuello alto ideal para temporadas frías.",
@@ -707,11 +631,28 @@
     "mini-image": ["https://ezzetacompany.com/wp-content/uploads/2026/07/CAFFARENA-VITTORIO-PERLA-3-800x1200.jpg","https://ezzetacompany.com/wp-content/uploads/2026/07/VITTORIO-PERLA-FRONT-800x1000.jpg","https://uomocattivo.com/wp-content/uploads/2026/07/MEDIDAS-VITTORIO.jpg-600x750.jpeg.webp"]
   },
   {
+    "id": 23,
+    "slug": "polo-supremo-perla",
+    "name": "POLO SUPREMO PERLA",
+    "price": 82,
+    "previousPrice": 115,
+    "category": "Polos",
+    "subcategory": "Supremo",
+    "description": "Diseño moderno con excelente acabado.",
+    "image": "https://ezzetacompany.com/wp-content/uploads/2026/07/POLO-SUPREMO-PERLA-17-800x1200.png",
+    "colors": ["Perla"],
+    "sizes": ["S","M","L","XL"],
+    "featured": true,
+    "relatedIds": [21,22,24],
+    "extras": ["✓ Envío seguro","✓ Calidad Premium","✓ Pago Seguro"],
+    "mini-image": ["https://ezzetacompany.com/wp-content/uploads/2026/07/POLO-SUPREMO-PERLA-17-800x1200.png","https://ezzetacompany.com/wp-content/uploads/2026/07/PERLA-FRONT-800x1000.png","https://uomocattivo.com/wp-content/uploads/2026/07/MEDIDAS-POLO-SUPREMO-600x750.png.webp"]
+  },
+  {
     "id": 24,
     "slug": "polo-prime-arena-v",
     "name": "POLO PRIME ARENA V",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 67,
+    "previousPrice": 95,
     "category": "Polos",
     "subcategory": "Prime",
     "description": "Polo elegante de corte slim fit.",
@@ -727,8 +668,8 @@
     "id": 25,
     "slug": "polo-monarca-olive",
     "name": "POLO MONARCA OLIVE",
-    "price": 55,
-    "previousPrice": 80,
+    "price": 72,
+    "previousPrice": 105,
     "category": "Polos",
     "subcategory": "Monarca",
     "description": "Polo casual para uso diario.",
@@ -756,23 +697,6 @@
     "relatedIds": [25,27,28],
     "extras": ["✓ Algodón Premium","✓ Pago Seguro","✓ Envío Seguro"],
     "mini-image": ["https://ezzetacompany.com/wp-content/uploads/2026/01/Polo-Plomo-Barrido-Hombre-1-800x1000.jpg","https://ezzetacompany.com/wp-content/uploads/2026/01/Polo-Plomo-Barrido-Hombre-1-800x1000.png","https://ezzetacompany.com/wp-content/uploads/2026/01/Guia-de-tallas-Polo-Plomo-Barrido-Hombre-800x1000.png"]
-  },
-  {
-    "id": 27,
-    "slug": "polo-luxury-grey",
-    "name": "POLO LUXURY GREY",
-    "price": 91,
-    "previousPrice": 112,
-    "category": "Polos",
-    "subcategory": "Luxury",
-    "description": "Modelo Luxury con acabado premium.",
-    "image": "https://ezzetacompany.com/wp-content/uploads/2026/05/POLO-LUXURY-GREY-3-800x1200.jpg",
-    "colors": ["Grey"],
-    "sizes": ["S","M","L","XL"],
-    "featured": true,
-    "relatedIds": [21,26,28],
-    "extras": ["✓ Premium","✓ Pago Seguro","✓ Garantía"],
-    "mini-image": ["https://ezzetacompany.com/wp-content/uploads/2026/05/POLO-LUXURY-GREY-3-800x1200.jpg","https://ezzetacompany.com/wp-content/uploads/2026/05/POLO-LUXURY-GREY-1-800x1000.png","https://ezzetacompany.com/wp-content/uploads/2026/05/MEDIDADAS-POLO-LUXURY-2-800x1000.jpg"]
   },
   {
     "id": 28,
@@ -994,39 +918,5 @@
     "relatedIds": [36,38,39],
     "extras": ["✓ Denim Premium","✓ Pago Seguro","✓ Envío Gratis desde S/300"],
     "mini-image": ["","","https://ezzetacompany.com/wp-content/uploads/2026/05/MEDIDAS-JEAN-CLASICO-EZZETA.jpg-800x1000.jpeg"]
-  },
-  {
-    "id": 41,
-    "slug": "polera-blanco-cristal",
-    "name": "POLERA BLANCO CRISTAL",
-    "price": 70,
-    "previousPrice": 120,
-    "category": "Poleras",
-    "subcategory": "Cristal",
-    "description": "Polera cristal de estilo casual.",
-    "image": "https://crepante.com/wp-content/uploads/2026/04/Polera-Blanco-Crystal-Hombre-4.jpg.webp",
-    "colors": ["Blanco"],
-    "sizes": ["S","M","L","XL"],
-    "featured": true,
-    "relatedIds": [36,38,39],
-    "extras": ["✓ Denim Premium","✓ Pago Seguro","✓ Envío Gratis desde S/300"],
-    "mini-image": ["https://crepante.com/wp-content/uploads/2026/04/Polera-Blanco-Crystal-Hombre-4.jpg.webp","https://crepante.com/wp-content/uploads/2026/04/Polera-Blanco-Crystal-Hombre-1.jpg","https://crepante.com/wp-content/uploads/2026/04/Guia-de-tallas-Polera-Blanco-Crystal-Hombre.jpg"]
-  },
-  {
-    "id": 42,
-    "slug": "polera-negro-crystal",
-    "name": "POLERA NEGRO CRYSTAL",
-    "price": 70,
-    "previousPrice": 120,
-    "category": "Poleras",
-    "subcategory": "Crystal",
-    "description": "Polera cristal de estilo casual.",
-    "image": "https://crepante.com/wp-content/uploads/2026/04/Polera-Negro-Crystal-Hombre-4.jpg.webp",
-    "colors": ["Negro"],
-    "sizes": ["S","M","L","XL"],
-    "featured": true,
-    "relatedIds": [36,38,39],
-    "extras": ["✓ Denim Premium","✓ Pago Seguro","✓ Envío Gratis desde S/300"],
-    "mini-image": ["https://crepante.com/wp-content/uploads/2026/02/Polera-Crystal-Black-Hombre-1.jpg.webp","https://crepante.com/wp-content/uploads/2026/02/Polera-Crystal-Black-Hombre-1.png.webp","https://crepante.com/wp-content/uploads/2026/02/Guia-de-tallas-Polera-Crystal-Black-Hombre.png.webp"]
   }
 ]

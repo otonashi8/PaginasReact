@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -58,12 +57,10 @@ fun WishlistScreen(viewModel: MainViewModel, onBack: () -> Unit, onProductClick:
                             onMenuClick = { scope.launch { drawerState.open() } },
                             onThemeToggle = { viewModel.toggleTheme(context) },
                             isDarkTheme = isDarkTheme,
+                            onBack = onBack,
                             actions = {
                                 IconButton(onClick = { viewModel.shareWishlist(context, wishlist) }) {
                                     Icon(Icons.Default.Share, contentDescription = "Compartir")
-                                }
-                                IconButton(onClick = onBack) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                                 }
                             }
                         )

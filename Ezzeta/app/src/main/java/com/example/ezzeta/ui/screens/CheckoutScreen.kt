@@ -3,6 +3,7 @@ package com.example.ezzeta.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,14 +40,31 @@ fun CheckoutScreen(
     var name by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
+    
+    // Ubigeo state
+    val ubigeoData by viewModel.ubigeoData.collectAsState()
+    val isLoadingUbigeo by viewModel.isLoadingUbigeo.collectAsState()
+    val ubigeoError by viewModel.ubigeoError.collectAsState()
+
     var selectedDept by remember { mutableStateOf("") }
+    var selectedProv by remember { mutableStateOf("") }
     var selectedDistrict by remember { mutableStateOf("") }
+    var selectedUbigeoCode by remember { mutableStateOf<String?>(null) }
     
     var saveAddress by remember { mutableStateOf(false) }
+
     var addressName by remember { mutableStateOf("") }
     val user by viewModel.currentUser.collectAsState()
     
+    val subtotal by viewModel.subtotal.collectAsState()
+    val planDiscount by viewModel.planDiscount.collectAsState()
+    val userPlan by viewModel.userPlan.collectAsState()
+    val shippingCost by viewModel.shippingCost.collectAsState()
+    val total by viewModel.total.collectAsState()
+    
     var paymentMethod by remember { mutableStateOf("card") } // "tarjeta" o"yape"
+
+
     
     // Form tarjeta
     var cardNumber by remember { mutableStateOf("") }
@@ -58,17 +76,11 @@ fun CheckoutScreen(
     var yapePhone by remember { mutableStateOf("") }
     var yapeCode by remember { mutableStateOf("") }
     
+    var saveCardInfo by remember { mutableStateOf(false) }
+    var selectedCardId by remember { mutableStateOf<String?>(null) }
+
     var couponCode by remember { mutableStateOf("") }
     var termsAccepted by remember { mutableStateOf(false) }
-
-    val departments = listOf("Lima", "Arequipa", "Cusco", "La Libertad", "Piura")
-    val districtsMap = mapOf(
-        "Lima" to listOf("Miraflores", "San Isidro", "Barranco", "Surco", "La Molina"),
-        "Arequipa" to listOf("Yanahuara", "Cayma", "Cercado", "Selva Alegre"),
-        "Cusco" to listOf("Cercado", "San Blas", "San Sebastian"),
-        "La Libertad" to listOf("Trujillo", "Victor Larco", "Huanchaco"),
-        "Piura" to listOf("Piura", "Castilla", "Catacaos")
-    )
 
     Scaffold(
         topBar = {
@@ -103,7 +115,7 @@ fun CheckoutScreen(
             Text("Detalles de facturación", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Saved Addresses Section
+            // ubicaciones
             if (user?.addresses?.isNotEmpty() == true) {
                 Text(
                     "Usar dirección guardada", 
@@ -140,11 +152,10 @@ fun CheckoutScreen(
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
-                    value = document,
-                    onValueChange = { document = it },
-                    label = { Text("DNI/CE/RUC*") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre Completo*") },
+                    modifier = Modifier.weight(1f)
                 )
                 OutlinedTextField(
                     value = phone,
@@ -154,30 +165,26 @@ fun CheckoutScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                 )
             }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nombre/Alias*") },
-                    modifier = Modifier.weight(1f)
-                )
-                OutlinedTextField(
-                    value = lastName,
-                    onValueChange = { lastName = it },
-                    label = { Text("Apellidos*") },
-                    modifier = Modifier.weight(1f)
-                )
-            }
 
             Spacer(modifier = Modifier.height(8.dp))
-            
-            // Dept Dropdown
+
+            if (isLoadingUbigeo) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Cargando ubicaciones...", style = MaterialTheme.typography.bodySmall)
+                }
+            } else if (ubigeoError != null) {
+                Text(ubigeoError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+
+            // Departamento
             var deptExpanded by remember { mutableStateOf(false) }
+            val departments = remember(ubigeoData) { ubigeoData.keys.toList().sorted() }
+
             ExposedDropdownMenuBox(
                 expanded = deptExpanded,
-                onExpandedChange = { deptExpanded = it }
+                onExpandedChange = { if (!isLoadingUbigeo) deptExpanded = it }
             ) {
                 OutlinedTextField(
                     value = selectedDept,
@@ -185,7 +192,8 @@ fun CheckoutScreen(
                     readOnly = true,
                     label = { Text("Departamento*") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = deptExpanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    enabled = !isLoadingUbigeo && departments.isNotEmpty()
                 )
                 ExposedDropdownMenu(
                     expanded = deptExpanded,
@@ -195,8 +203,12 @@ fun CheckoutScreen(
                         DropdownMenuItem(
                             text = { Text(dept) },
                             onClick = {
-                                selectedDept = dept
-                                selectedDistrict = ""
+                                if (selectedDept != dept) {
+                                    selectedDept = dept
+                                    selectedProv = ""
+                                    selectedDistrict = ""
+                                    selectedUbigeoCode = null
+                                }
                                 deptExpanded = false
                             }
                         )
@@ -206,11 +218,56 @@ fun CheckoutScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // District Dropdown
+            // Provincia
+            var provExpanded by remember { mutableStateOf(false) }
+            val provinces = remember(selectedDept, ubigeoData) {
+                ubigeoData[selectedDept]?.keys?.toList()?.sorted() ?: emptyList()
+            }
+
+            ExposedDropdownMenuBox(
+                expanded = provExpanded,
+                onExpandedChange = { if (selectedDept.isNotEmpty()) provExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value = selectedProv,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Provincia*") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = provExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    enabled = selectedDept.isNotEmpty() && provinces.isNotEmpty()
+                )
+                ExposedDropdownMenu(
+                    expanded = provExpanded,
+                    onDismissRequest = { provExpanded = false }
+                ) {
+                    provinces.forEach { prov ->
+                        DropdownMenuItem(
+                            text = { Text(prov) },
+                            onClick = {
+                                if (selectedProv != prov) {
+                                    selectedProv = prov
+                                    selectedDistrict = ""
+                                    selectedUbigeoCode = null
+                                }
+                                provExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Distrito
             var distExpanded by remember { mutableStateOf(false) }
+            val districts = remember(selectedDept, selectedProv, ubigeoData) {
+                ubigeoData[selectedDept]?.get(selectedProv)?.keys?.toList()?.sorted() ?: emptyList()
+            }
+
             ExposedDropdownMenuBox(
                 expanded = distExpanded,
-                onExpandedChange = { if (selectedDept.isNotEmpty()) distExpanded = it }
+                onExpandedChange = { if (selectedProv.isNotEmpty()) distExpanded = it }
             ) {
                 OutlinedTextField(
                     value = selectedDistrict,
@@ -219,23 +276,25 @@ fun CheckoutScreen(
                     label = { Text("Distrito*") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = distExpanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    enabled = selectedDept.isNotEmpty()
+                    enabled = selectedProv.isNotEmpty() && districts.isNotEmpty()
                 )
                 ExposedDropdownMenu(
                     expanded = distExpanded,
                     onDismissRequest = { distExpanded = false }
                 ) {
-                    districtsMap[selectedDept]?.forEach { dist ->
+                    districts.forEach { dist ->
                         DropdownMenuItem(
                             text = { Text(dist) },
                             onClick = {
                                 selectedDistrict = dist
+                                selectedUbigeoCode = ubigeoData[selectedDept]?.get(selectedProv)?.get(dist)?.ubigeo
                                 distExpanded = false
                             }
                         )
                     }
                 }
             }
+
 
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
@@ -269,15 +328,13 @@ fun CheckoutScreen(
                 color = Color.Gray
             )
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Payment Methods
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent)
             ) {
                 Column {
-                    // Credit Card Option
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -292,6 +349,44 @@ fun CheckoutScreen(
                     
                     AnimatedVisibility(visible = paymentMethod == "card") {
                         Column(modifier = Modifier.padding(16.dp)) {
+                            // Tarjetas guardadas
+                            if (user?.savedCards?.isNotEmpty() == true) {
+                                Text("Usar tarjeta guardada", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                Row(
+                                    modifier = Modifier.padding(vertical = 8.dp).horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    user?.savedCards?.forEach { card ->
+                                        val isSelected = selectedCardId == card.id
+                                        Surface(
+                                            onClick = {
+                                                if (isSelected) {
+                                                    selectedCardId = null
+                                                    cardNumber = ""
+                                                    cardName = ""
+                                                    cardExpiry = ""
+                                                } else {
+                                                    selectedCardId = card.id
+                                                    cardNumber = card.cardNumber
+                                                    cardName = card.cardHolder
+                                                    cardExpiry = card.expiryDate
+                                                }
+                                            },
+                                            shape = RoundedCornerShape(12.dp),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray),
+                                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                        ) {
+                                            Column(modifier = Modifier.padding(12.dp)) {
+                                                Text(card.cardBrand, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                                Text("**** ${card.cardNumber.takeLast(4)}", fontSize = 11.sp)
+                                            }
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
+                                HorizontalDivider(modifier = Modifier.padding(bottom = 12.dp))
+                            }
+
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Icon(Icons.Default.CreditCard, null, tint = Color.Blue)
                                 Text("Visa / Mastercard / AMEX / Diners", fontSize = 12.sp, color = Color.Gray)
@@ -299,7 +394,7 @@ fun CheckoutScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             OutlinedTextField(
                                 value = cardNumber,
-                                onValueChange = { cardNumber = it },
+                                onValueChange = { cardNumber = it; selectedCardId = null },
                                 label = { Text("Número de tarjeta*") },
                                 modifier = Modifier.fillMaxWidth(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -307,7 +402,7 @@ fun CheckoutScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = cardName,
-                                onValueChange = { cardName = it },
+                                onValueChange = { cardName = it; selectedCardId = null },
                                 label = { Text("Nombre del titular*") },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -315,7 +410,7 @@ fun CheckoutScreen(
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedTextField(
                                     value = cardExpiry,
-                                    onValueChange = { cardExpiry = it },
+                                    onValueChange = { cardExpiry = it; selectedCardId = null },
                                     label = { Text("Vencimiento*") },
                                     modifier = Modifier.weight(1f),
                                     placeholder = { Text("MM/YY") }
@@ -331,12 +426,19 @@ fun CheckoutScreen(
                                     placeholder = { Text("123") }
                                 )
                             }
+
+                            if (selectedCardId == null) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                                    Checkbox(checked = saveCardInfo, onCheckedChange = { saveCardInfo = it })
+                                    Text("Guardar esta tarjeta para futuras compras", fontSize = 12.sp)
+                                }
+                            }
                         }
                     }
                     
                     HorizontalDivider()
                     
-                    // Yape Option
+                    // Yape
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -346,7 +448,6 @@ fun CheckoutScreen(
                     ) {
                         RadioButton(selected = paymentMethod == "yape", onClick = { paymentMethod = "yape" })
                         Text("Yape", modifier = Modifier.weight(1f))
-                        // Simulated Yape icon placeholder
                         Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = Color(0xFF8E24AA))
                     }
                     
@@ -429,19 +530,63 @@ fun CheckoutScreen(
                 Text("He leído y estoy de acuerdo con los términos y condiciones de la web*", fontSize = 12.sp)
             }
             
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Resumen de Compra
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Resumen del pedido", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Subtotal")
+                        Text("S/ ${String.format(java.util.Locale.US, "%.2f", subtotal)}")
+                    }
+                    if (planDiscount > 0.0) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Descuento Plan ${userPlan?.name ?: ""}", color = Color(0xFF1976D2))
+                            Text("- S/ ${String.format(java.util.Locale.US, "%.2f", planDiscount)}", color = Color(0xFF1976D2))
+                        }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Envío")
+                        Text(if (shippingCost == 0.0) "GRATIS" else "S/ ${String.format(java.util.Locale.US, "%.2f", shippingCost)}")
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Total", fontWeight = FontWeight.Bold)
+                        Text("S/ ${String.format(java.util.Locale.US, "%.2f", total)}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
             Button(
+
                 onClick = { 
-                    if (saveAddress && address.isNotBlank() && selectedDept.isNotBlank() && selectedDistrict.isNotBlank()) {
-                        viewModel.addAddress(context, address, selectedDept, selectedDistrict, addressName)
+                    if (saveAddress && address.isNotBlank() && selectedDept.isNotBlank() && selectedProv.isNotBlank() && selectedDistrict.isNotBlank()) {
+                        viewModel.addAddress(context, address, selectedDept, selectedProv, selectedDistrict, selectedUbigeoCode, addressName)
+                    }
+                    if (paymentMethod == "card" && saveCardInfo && selectedCardId == null && cardNumber.isNotBlank()) {
+                        viewModel.savePaymentMethod(context, com.example.ezzeta.data.model.SavedCard(
+                            id = java.util.UUID.randomUUID().toString(),
+                            cardHolder = cardName,
+                            cardNumber = cardNumber,
+                            cardBrand = "Visa", // Simplificación
+                            expiryDate = cardExpiry
+                        ))
                     }
                     viewModel.checkout(context)
                     onOrderComplete()
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                enabled = termsAccepted,
+                enabled = termsAccepted && selectedUbigeoCode != null,
                 shape = RoundedCornerShape(12.dp)
             ) {
+
                 Icon(Icons.Default.Lock, null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("REALIZAR PEDIDO", fontWeight = FontWeight.Bold)

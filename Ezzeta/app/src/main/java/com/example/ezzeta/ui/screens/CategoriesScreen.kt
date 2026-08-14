@@ -55,7 +55,7 @@ fun CategoriesScreen(
     val ofertasPatrias by viewModel.ofertasPatriasProducts.collectAsState()
     val masVendidos by viewModel.masVendidosProducts.collectAsState()
     
-    val categories by viewModel.categories.collectAsState()
+    val categories by viewModel.storeCategories.collectAsState()
     val currentCategory = categories.find { it.id == selectedCategoryId }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)

@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -27,19 +28,23 @@ import com.example.ezzeta.ui.viewmodel.MainViewModel
 @Composable
 fun AdminProductManagementScreen(
     viewModel: MainViewModel,
+    managementType: String,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val products by viewModel.allProducts.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-    val filteredProducts = products.filter { 
-        it.name.contains(searchQuery, ignoreCase = true) || it.id.contains(searchQuery, ignoreCase = true)
+    
+    val filteredProducts = products.filter { product ->
+        val matchesType = if (managementType == "client") product.isClientProduct else !product.isClientProduct
+        val matchesSearch = product.name.contains(searchQuery, ignoreCase = true) || product.id.contains(searchQuery, ignoreCase = true)
+        matchesType && matchesSearch
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gestión de Productos") },
+                title = { Text(if (managementType == "client") "Productos Clientes" else "Productos Ezzeta") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -69,6 +74,7 @@ fun AdminProductManagementScreen(
                 items(filteredProducts, key = { it.id }) { product ->
                     AdminProductItem(
                         product = product,
+                        viewModel = viewModel,
                         onUpdate = { updatedProduct ->
                             viewModel.updateProduct(context, updatedProduct)
                         },
@@ -85,6 +91,7 @@ fun AdminProductManagementScreen(
 @Composable
 fun AdminProductItem(
     product: Product,
+    viewModel: MainViewModel,
     onUpdate: (Product) -> Unit,
     onDelete: () -> Unit
 ) {
@@ -92,11 +99,11 @@ fun AdminProductItem(
     var stockText by remember(product) { mutableStateOf(product.stock.toString()) }
     var isVisible by remember(product) { mutableStateOf(product.isVisible) }
     
-    // Tallas locales para edición rápida
-    val availableSizes = product.getAvailableSizes()
-    var selectedSizes by remember(product) { mutableStateOf(product.customSizes?.toSet() ?: availableSizes.toSet()) }
+    // Variantes actuales del producto
+    var currentVariants by remember(product) { mutableStateOf(product.variants ?: emptyList()) }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val globalSystems by viewModel.globalSizeSystems.collectAsState()
 
     if (showDeleteDialog) {
         AlertDialog(
@@ -191,30 +198,50 @@ fun AdminProductItem(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(text = "Tallas Disponibles", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            Text(text = "Gestión de Tallas / Variantes", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             
-            val allPossibleSizes = when (product.categoryId) {
-                "4" -> listOf("28", "30", "32", "34", "36")
-                else -> listOf("S", "M", "L", "XL")
-            }
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                allPossibleSizes.forEach { size ->
-                    val isSelected = selectedSizes.contains(size)
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
-                            val newSet = if (isSelected) selectedSizes - size else selectedSizes + size
-                            selectedSizes = newSet
-                            onUpdate(product.copy(customSizes = newSet.toList()))
-                        },
-                        label = { Text(size) }
-                    )
+            // Si el producto usa un sistema global, mostrar chips de ese sistema
+            val currentSystem = globalSystems.find { it.id == product.sizeSystemId }
+            if (currentSystem != null) {
+                Text("Sistema: ${currentSystem.name}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    currentSystem.options.forEach { option ->
+                        val isSelected = currentVariants.any { it.name == option.name }
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                val newVariants = if (isSelected) {
+                                    currentVariants.filter { it.name != option.name }
+                                } else {
+                                    currentVariants + com.example.ezzeta.data.model.ProductVariant(option.name, product.price)
+                                }
+                                currentVariants = newVariants
+                                onUpdate(product.copy(variants = newVariants))
+                            },
+                            label = { Text(option.name) }
+                        )
+                    }
                 }
+            } else if (!product.variants.isNullOrEmpty()) {
+                Text("Variantes Personalizadas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                currentVariants.forEachIndexed { index, variant ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("${variant.name}: S/ ${variant.price}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        IconButton(onClick = {
+                            val newVariants = currentVariants.toMutableList().apply { removeAt(index) }
+                            currentVariants = newVariants
+                            onUpdate(product.copy(variants = if (newVariants.isEmpty()) null else newVariants))
+                        }) {
+                            Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            } else {
+                Text("Sin tallas definidas.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.example.ezzeta.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -11,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,8 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ezzeta.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val user by viewModel.currentUser.collectAsState()
@@ -46,9 +50,22 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     var contactName by remember { mutableStateOf("") }
     var contactPhone by remember { mutableStateOf("") }
     var selectedCategoryId by remember { mutableStateOf("1") }
+    val selectedSubCategories = remember { mutableStateListOf<String>() }
     var condition by remember { mutableStateOf("Nuevo") }
     val imageUrls = remember { mutableStateListOf<String>() }
     var newImageUrl by remember { mutableStateOf("") }
+
+    // Variantes
+    val variants = remember { mutableStateListOf<com.example.ezzeta.data.model.ProductVariant>() }
+    var newVariantName by remember { mutableStateOf("") }
+    var newVariantPrice by remember { mutableStateOf("") }
+    
+    // Sistema de tallas
+    val globalSystems by viewModel.globalSizeSystems.collectAsState()
+    val userSizes by viewModel.userCustomSizes.collectAsState()
+    
+    var selectedSystemId by remember { mutableStateOf<String?>("predefined_clothing") }
+    val selectedPredefinedSizes = remember { mutableStateListOf<String>() }
     
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
@@ -68,7 +85,7 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Subir Producto Único", fontWeight = FontWeight.Bold) },
+                title = { Text("Publicar mi producto", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -180,10 +197,128 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 singleLine = true
             )
 
+            Text(text = "Variantes / Tallas*", fontWeight = FontWeight.Bold)
+            Text(text = "Elige un catálogo o crea tus propias opciones en 'Mis tallas'.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            
+            // Selector de Tipo de Sistema
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                globalSystems.forEach { system ->
+                    FilterChip(
+                        selected = selectedSystemId == system.id,
+                        onClick = { 
+                            selectedSystemId = system.id
+                            selectedPredefinedSizes.clear()
+                        },
+                        label = { Text(system.name) }
+                    )
+                }
+                
+                // Opción Mis Tallas
+                FilterChip(
+                    selected = selectedSystemId == "user_custom",
+                    onClick = { 
+                        selectedSystemId = "user_custom"
+                        selectedPredefinedSizes.clear()
+                    },
+                    label = { Text("Mis tallas") },
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+            }
+
+            // Mostrar opciones según sistema seleccionado
+            val currentOptions = if (selectedSystemId == "user_custom") {
+                userSizes.map { it.name }
+            } else {
+                globalSystems.find { it.id == selectedSystemId }?.options?.map { it.name } ?: emptyList()
+            }
+
+            if (currentOptions.isNotEmpty()) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    currentOptions.forEach { sizeName ->
+                        val isSelected = selectedPredefinedSizes.contains(sizeName)
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                if (isSelected) selectedPredefinedSizes.remove(sizeName)
+                                else selectedPredefinedSizes.add(sizeName)
+                            },
+                            label = { Text(sizeName) }
+                        )
+                    }
+                }
+            } else if (selectedSystemId == "user_custom") {
+                Text("Aún no tienes tallas personalizadas.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            }
+
+            // Sección para Crear Talla Personalizada (Solo si está en modo Mis Tallas o quiere agregar una nueva)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "¿Necesitas una talla especial?", style = MaterialTheme.typography.labelMedium)
+            
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = newVariantName,
+                    onValueChange = { newVariantName = it },
+                    label = { Text("Nombre (ej. 1un rosa)") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = newVariantPrice,
+                    onValueChange = { newVariantPrice = it },
+                    label = { Text("Precio (opcional)") },
+                    modifier = Modifier.weight(0.6f),
+                    singleLine = true,
+                    placeholder = { Text(price) }
+                )
+                IconButton(
+                    onClick = {
+                        if (newVariantName.isNotBlank()) {
+                            viewModel.addUserCustomSize(context, newVariantName)
+                            // Si puso precio, la agregamos directamente a la lista de variantes final
+                            val customPrice = newVariantPrice.toDoubleOrNull() ?: price.toDoubleOrNull() ?: 0.0
+                            variants.add(com.example.ezzeta.data.model.ProductVariant(newVariantName, customPrice))
+                            
+                            // También la marcamos como seleccionada si estamos en modo user_custom
+                            if (selectedSystemId == "user_custom") {
+                                selectedPredefinedSizes.add(newVariantName)
+                            }
+                            
+                            newVariantName = ""
+                            newVariantPrice = ""
+                        }
+                    }
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                }
+            }
+
+            // Mostrar variantes con precio si se han agregado manualmente o vienen de un sistema
+            if (variants.isNotEmpty()) {
+                Text(text = "Resumen de variantes con precio:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                variants.forEachIndexed { index, v ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("${v.name}: S/ ${v.price}", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                        IconButton(onClick = { variants.removeAt(index) }, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.Default.Remove, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(text = "Categoría*", fontWeight = FontWeight.Bold)
-            val categories by viewModel.categories.collectAsState()
+            val categories by viewModel.marketplaceCategories.collectAsState()
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded },
@@ -205,9 +340,37 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                         DropdownMenuItem(
                             text = { Text(category.name) },
                             onClick = {
-                                selectedCategoryId = category.id
+                                if (selectedCategoryId != category.id) {
+                                    selectedCategoryId = category.id
+                                    selectedSubCategories.clear()
+                                }
                                 expanded = false
                             }
+                        )
+                    }
+                }
+            }
+
+            // Sección Subcategorías
+            val currentCategory = categories.find { it.id == selectedCategoryId }
+            if (currentCategory != null && currentCategory.subCategories.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = "Subcategorías*", fontWeight = FontWeight.Bold)
+                Text(text = "Puedes seleccionar más de una.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    currentCategory.subCategories.forEach { sub ->
+                        val isSelected = selectedSubCategories.contains(sub)
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                if (isSelected) selectedSubCategories.remove(sub)
+                                else selectedSubCategories.add(sub)
+                            },
+                            label = { Text(sub) }
                         )
                     }
                 }
@@ -310,17 +473,25 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             ) {
                 Button(
                     onClick = {
+                        val basePrice = price.toDoubleOrNull() ?: 0.0
+                        // Combinar variantes manuales con las seleccionadas de chips (que toman precio base)
+                        val chipsVariants = selectedPredefinedSizes.map { com.example.ezzeta.data.model.ProductVariant(it, basePrice) }
+                        val finalVariants = (variants + chipsVariants).distinctBy { it.name }
+                        
                         viewModel.uploadSingleProduct(
                             context = context,
                             name = name,
-                            price = price.toDoubleOrNull() ?: 0.0,
+                            price = basePrice,
                             categoryId = selectedCategoryId,
+                            subCategories = selectedSubCategories.toList(),
                             condition = condition,
                             description = description,
                             imageUrls = imageUrls.toList(),
                             stock = stock.toIntOrNull() ?: 1,
                             contactName = contactName,
-                            contactPhone = contactPhone
+                            contactPhone = contactPhone,
+                            variants = if (finalVariants.isEmpty()) null else finalVariants,
+                            sizeSystemId = if (selectedSystemId != "user_custom") selectedSystemId else null
                         )
                         onBack()
                     },
@@ -333,17 +504,24 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
 
                 Button(
                     onClick = {
+                        val basePrice = price.toDoubleOrNull() ?: 0.0
+                        val chipsVariants = selectedPredefinedSizes.map { com.example.ezzeta.data.model.ProductVariant(it, basePrice) }
+                        val finalVariants = (variants + chipsVariants).distinctBy { it.name }
+                        
                         viewModel.uploadSingleProductViaWhatsApp(
                             context = context,
                             name = name,
-                            price = price.toDoubleOrNull() ?: 0.0,
+                            price = basePrice,
                             categoryId = selectedCategoryId,
+                            subCategories = selectedSubCategories.toList(),
                             condition = condition,
                             description = description,
                             imageUrls = imageUrls.toList(),
                             stock = stock.toIntOrNull() ?: 1,
                             contactName = contactName,
-                            contactPhone = contactPhone
+                            contactPhone = contactPhone,
+                            variants = if (finalVariants.isEmpty()) null else finalVariants,
+                            sizeSystemId = if (selectedSystemId != "user_custom") selectedSystemId else null
                         )
                         onBack()
                     },

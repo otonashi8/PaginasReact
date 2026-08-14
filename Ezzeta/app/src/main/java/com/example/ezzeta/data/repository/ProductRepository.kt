@@ -30,17 +30,43 @@ class ProductRepository {
             // Init Categories
             val catType = object : TypeToken<List<Category>>() {}.type
             val loadedCats: List<Category>? = LocalJsonStorage.loadFromFile(context, CATEGORIES_FILE, catType)
-            if (loadedCats != null) {
-                _categories.value = loadedCats
+            
+            val finalCategories = if (loadedCats != null) {
+                // Reparar campos nulos por migración (visibility) y realizar MERGE con nuevos MockData
+                val fixedCats = loadedCats.map { loaded ->
+                    val mock = MockData.categories.find { it.id == loaded.id }
+                    loaded.copy(
+                        visibility = loaded.visibility ?: mock?.visibility ?: "STORE",
+                        subCategories = if (loaded.subCategories.isNullOrEmpty()) mock?.subCategories ?: emptyList() else loaded.subCategories
+                    )
+                }.toMutableList()
+                
+                // Añadir categorías de MockData que NO existen en el archivo local (ej. las nuevas de Marketplace)
+                MockData.categories.forEach { mock ->
+                    if (fixedCats.none { it.id == mock.id }) {
+                        fixedCats.add(mock)
+                    }
+                }
+                fixedCats
             } else {
-                _categories.value = MockData.categories
-                LocalJsonStorage.saveToFile(context, CATEGORIES_FILE, _categories.value)
+                MockData.categories
             }
+            
+            _categories.value = finalCategories
+            LocalJsonStorage.saveToFile(context, CATEGORIES_FILE, _categories.value)
 
             // Init Stores
             val storeType = object : TypeToken<List<Store>>() {}.type
-            _stores = LocalJsonStorage.loadFromFile(context, STORES_FILE, storeType) ?: MockData.stores.also {
-                LocalJsonStorage.saveToFile(context, STORES_FILE, it)
+            val loadedStores: List<Store>? = LocalJsonStorage.loadFromFile(context, STORES_FILE, storeType)
+            if (loadedStores != null) {
+                // Reparar websiteUrl tras migración de datos
+                _stores = loadedStores.map { loaded ->
+                    val mock = MockData.stores.find { it.id == loaded.id }
+                    loaded.copy(websiteUrl = loaded.websiteUrl ?: mock?.websiteUrl)
+                }
+            } else {
+                _stores = MockData.stores
+                LocalJsonStorage.saveToFile(context, STORES_FILE, _stores)
             }
 
             // Init Products
@@ -48,8 +74,13 @@ class ProductRepository {
             val loadedProducts: List<Product>? = LocalJsonStorage.loadFromFile(context, PRODUCTS_FILE, prodType)
             
             if (loadedProducts != null) {
-                // Mantener el estado de visibilidad y stock tal cual se guardó
-                _products.value = loadedProducts
+                // Asegurar campos no nulos tras migración de datos
+                val fixedProducts = loadedProducts.map { p ->
+                    p.copy(
+                        imageUrls = p.imageUrls ?: emptyList()
+                    )
+                }
+                _products.value = fixedProducts
             } else {
                 _products.value = MockData.products
                 LocalJsonStorage.saveToFile(context, PRODUCTS_FILE, _products.value)
@@ -107,10 +138,8 @@ class ProductRepository {
     fun getProductsByStore(storeId: String): List<Product> {
         return _products.value.filter { it.storeId == storeId }
     }
-    
-    fun getTrends(): List<String> = MockData.hashtags
 
-    // Admin Panel Preparation
+    // Admin Panel
     fun addCategory(context: Context, category: Category) {
         val currentList = _categories.value.toMutableList()
         currentList.add(category)

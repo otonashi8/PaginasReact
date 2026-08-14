@@ -1,5 +1,7 @@
 package com.example.ezzeta.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import com.example.ezzeta.ui.components.*
 import com.example.ezzeta.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
@@ -33,6 +37,7 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     viewModel: MainViewModel, 
     onProductClick: (String) -> Unit,
+    onStoreClick: (String) -> Unit,
     onWishlistClick: () -> Unit
 ) {
     val user by viewModel.currentUser.collectAsState()
@@ -97,8 +102,8 @@ fun HomeScreen(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                         )
 
-                        // categorías y menú
-                        val categories by viewModel.categories.collectAsState()
+                        // categorías y menú (Header reestablecido)
+                        val categories by viewModel.storeCategories.collectAsState()
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -115,7 +120,7 @@ fun HomeScreen(
                             }
                         }
 
-                        // sub categorias
+                        // sub categorías
                         SubCategoryBubbleRow(viewModel = viewModel)
                     }
                 }
@@ -155,14 +160,41 @@ fun HomeScreen(
                                 fontWeight = FontWeight.Medium
                             )
                         }
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
+                // Sección Familia Ezzeta
+                item(span = { GridItemSpan(2) }, key = "familia_ezzeta_header") {
+                    Text(
+                        text = "Familia Ezzeta",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+
+                item(span = { GridItemSpan(2) }, key = "familia_ezzeta_row") {
+                    val stores = viewModel.getStores()
+                    val allProductsLocal by viewModel.allProducts.collectAsState()
+                    
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(stores) { store ->
+                            StoreMiniCard(
+                                store = store,
+                                products = allProductsLocal.filter { it.storeId == store.id }.take(3),
+                                onProductClick = onProductClick,
+                                onStoreClick = onStoreClick
+                            )
+                        }
                     }
                 }
 
                 item(span = { GridItemSpan(2) }, key = "recommendation_header") {
                     Text(
-                        text = if (searchQuery.isEmpty()) "Para ti" else "Resultados para '$searchQuery'",
+                        text = if (searchQuery.isEmpty()) "Novedades de la Tienda" else "Resultados para '$searchQuery'",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(16.dp)
@@ -190,6 +222,67 @@ fun HomeScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun StoreMiniCard(
+    store: com.example.ezzeta.data.model.Store,
+    products: List<com.example.ezzeta.data.model.Product>,
+    onProductClick: (String) -> Unit,
+    onStoreClick: (String) -> Unit
+) {
+    val context = LocalContext.current
+    Card(
+        modifier = Modifier.width(280.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AsyncImage(
+                    model = store.logoUrl,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp).clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = store.name, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                
+                // Botón Web
+                if (!store.websiteUrl.isNullOrEmpty()) {
+                    IconButton(onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(store.websiteUrl))
+                        context.startActivity(intent)
+                    }, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Default.Public, contentDescription = "Ver Web", modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                products.forEach { product ->
+                    AsyncImage(
+                        model = product.imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(60.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable { onProductClick(product.id) },
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = { onStoreClick(store.id) },
+                modifier = Modifier.fillMaxWidth().height(36.dp),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text("Ver Catálogo Completo", fontSize = 12.sp)
             }
         }
     }

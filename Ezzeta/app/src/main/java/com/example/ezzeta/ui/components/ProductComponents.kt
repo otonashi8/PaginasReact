@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -61,7 +62,6 @@ fun ProductCard(
         "s2" -> "CREPANTE"
         "s3" -> "MAXETA"
         "s4" -> "UOMO CATTIVO"
-        "s5" -> "3x100"
         else -> "Tienda"
     }
 
@@ -684,10 +684,11 @@ fun FilterDrawerContent(
 
 @Composable
 fun CategoryTabRow(
-    viewModel: MainViewModel
+    viewModel: MainViewModel,
+    isMarketplace: Boolean = false
 ) {
-    val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
-    val categories by viewModel.categories.collectAsState()
+    val selectedCategoryId by (if (isMarketplace) viewModel.marketplaceFilterManager.selectedCategoryId else viewModel.storeFilterManager.selectedCategoryId).collectAsState()
+    val categories by (if (isMarketplace) viewModel.marketplaceCategories else viewModel.storeCategories).collectAsState()
     
     if (categories.isEmpty()) return
 
@@ -714,7 +715,10 @@ fun CategoryTabRow(
             val isSelected = category.id == selectedCategoryId
             Tab(
                 selected = isSelected,
-                onClick = { viewModel.onCategorySelected(category.id) },
+                onClick = { 
+                    if (isMarketplace) viewModel.onMarketplaceCategorySelected(category.id)
+                    else viewModel.onCategorySelected(category.id) 
+                },
                 text = {
                     Text(
                         text = category.name,
@@ -730,11 +734,12 @@ fun CategoryTabRow(
 
 @Composable
 fun SubCategoryBubbleRow(
-    viewModel: MainViewModel
+    viewModel: MainViewModel,
+    isMarketplace: Boolean = false
 ) {
-    val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
-    val selectedSubCategory by viewModel.selectedSubCategory.collectAsState()
-    val categories by viewModel.categories.collectAsState()
+    val selectedCategoryId by (if (isMarketplace) viewModel.marketplaceFilterManager.selectedCategoryId else viewModel.storeFilterManager.selectedCategoryId).collectAsState()
+    val selectedSubCategory by (if (isMarketplace) viewModel.marketplaceFilterManager.selectedSubCategory else viewModel.storeFilterManager.selectedSubCategory).collectAsState()
+    val categories by (if (isMarketplace) viewModel.marketplaceCategories else viewModel.storeCategories).collectAsState()
     val currentCategory = categories.find { it.id == selectedCategoryId }
     val subCategories = listOf("Todo") + (currentCategory?.subCategories ?: emptyList())
 
@@ -751,7 +756,10 @@ fun SubCategoryBubbleRow(
             Surface(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
-                    .clickable { viewModel.onSubCategorySelected(sub) }
+                    .clickable { 
+                        if (isMarketplace) viewModel.onMarketplaceSubCategorySelected(sub)
+                        else viewModel.onSubCategorySelected(sub) 
+                    }
                     .border(
                         width = 1.dp,
                         color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline,
@@ -779,12 +787,19 @@ fun FilterSearchBar(
     onMenuClick: () -> Unit,
     onThemeToggle: () -> Unit,
     isDarkTheme: Boolean,
+    onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     TopAppBar(
         navigationIcon = {
-            IconButton(onClick = onMenuClick) {
-                Icon(Icons.Default.Menu, contentDescription = "Menú")
+            if (onBack != null) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                }
+            } else {
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, contentDescription = "Menú")
+                }
             }
         },
         title = {
@@ -812,6 +827,11 @@ fun FilterSearchBar(
                     imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.Nightlight,
                     contentDescription = "Cambiar tema"
                 )
+            }
+            if (onBack != null) {
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, contentDescription = "Filtros")
+                }
             }
             actions()
         }

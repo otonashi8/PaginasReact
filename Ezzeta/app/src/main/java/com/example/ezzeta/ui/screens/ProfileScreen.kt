@@ -2,13 +2,18 @@ package com.example.ezzeta.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -22,12 +27,24 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.ezzeta.data.model.AdvantagePlan
 import com.example.ezzeta.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
+
+private fun getPlanIcon(iconName: String): ImageVector {
+    return when (iconName) {
+        "Star" -> Icons.Default.Star
+        "Stars" -> Icons.Default.Stars
+        "WorkspacePremium" -> Icons.Default.WorkspacePremium
+        else -> Icons.Default.Star
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,17 +53,20 @@ fun ProfileScreen(
     onHistoryClick: () -> Unit,
     onOrdersClick: () -> Unit,
     onFollowingClick: () -> Unit,
-    onAffiliateClick: () -> Unit,
     onWishlistClick: () -> Unit,
     onCustomerServiceClick: () -> Unit,
     onSingleProductClick: () -> Unit,
     onAddressBookClick: () -> Unit,
+    onPaymentMethodsClick: () -> Unit,
     onLoginClick: () -> Unit,
     onMyProductsClick: () -> Unit
 ) {
     val user by viewModel.currentUser.collectAsState()
     val isDarkTheme by viewModel.isDarkTheme.collectAsState()
+    val userPlan by viewModel.userPlan.collectAsState()
+    val allPlans by viewModel.advantagePlans.collectAsState()
     val context = LocalContext.current
+
 
     var showEditAliasDialog by remember { mutableStateOf(false) }
     var newAlias by remember { mutableStateOf(user?.alias ?: "") }
@@ -54,7 +74,15 @@ fun ProfileScreen(
     var showSettingsSheet by remember { mutableStateOf(false) }
     var showTermsDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
+    
+    var showPlansSheet by remember { mutableStateOf(false) }
+    var showPaymentSheet by remember { mutableStateOf(false) }
+    var selectedPlan by remember { mutableStateOf<AdvantagePlan?>(null) }
+
     val sheetState = rememberModalBottomSheetState()
+    val plansSheetState = rememberModalBottomSheetState()
+    val paymentSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -65,6 +93,7 @@ fun ProfileScreen(
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             SettingsMenuContent(
+                viewModel = viewModel,
                 onNavigate = { url ->
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                     context.startActivity(intent)
@@ -80,10 +109,55 @@ fun ProfileScreen(
                 onAddressBookClick = {
                     showSettingsSheet = false
                     onAddressBookClick()
+                },
+                onPaymentMethodsClick = {
+                    showSettingsSheet = false
+                    onPaymentMethodsClick()
+                }
+            )
+        }
+
+    }
+
+    if (showPlansSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showPlansSheet = false },
+            sheetState = plansSheetState
+        ) {
+            PlansBottomSheetContent(
+                plans = allPlans,
+                currentPlanId = user?.currentPlanId,
+                onPlanSelect = { plan ->
+                    selectedPlan = plan
+                    showPlansSheet = false
+                    showPaymentSheet = true
+                }
+            )
+
+        }
+    }
+
+    if (showPaymentSheet && selectedPlan != null) {
+        ModalBottomSheet(
+            onDismissRequest = { showPaymentSheet = false },
+            sheetState = paymentSheetState
+        ) {
+            PlanPaymentFormContent(
+                plan = selectedPlan!!,
+                onSuccess = {
+                    viewModel.subscribeToPlan(context, selectedPlan!!.id)
+                    showPaymentSheet = false
+                    scope.launch {
+                        snackbarHostState.showSnackbar("¡Suscripción al plan ${selectedPlan?.name} exitosa!")
+                    }
+                },
+                onTermsClick = {
+                    showTermsDialog = true
                 }
             )
         }
     }
+
 
     if (showTermsDialog) {
         TermsAndConditionsDialog(onDismiss = { showTermsDialog = false })
@@ -153,9 +227,11 @@ fun ProfileScreen(
                     modifier = Modifier.padding(top = 16.dp)
                 )
                 
-                Row(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                FlowRow(
+                    modifier = Modifier.padding(vertical = 8.dp).padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    maxItemsInEachRow = 3
                 ) {
                     Button(
                         onClick = { 
@@ -165,10 +241,32 @@ fun ProfileScreen(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        ),
+                        modifier = Modifier.padding(horizontal = 4.dp)
                     ) {
                         Text("Editar alias")
                     }
+
+                    Button(
+                        onClick = { 
+                            showPlansSheet = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (userPlan != null) Color(userPlan!!.colorHex) else MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = if (userPlan != null) Color.White else MaterialTheme.colorScheme.onSecondaryContainer
+                        ),
+                        modifier = Modifier.padding(horizontal = 4.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (userPlan != null) getPlanIcon(userPlan!!.iconName) else Icons.Default.Stars,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp).padding(end = 4.dp)
+                        )
+                        Text(userPlan?.let { "Plan ${it.name}" } ?: "Ventajas y ahorros")
+                    }
+
+
 
                     if (user?.isGuest == true) {
                         Button(
@@ -176,7 +274,8 @@ fun ProfileScreen(
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
+                            ),
+                            modifier = Modifier.padding(horizontal = 4.dp)
                         ) {
                             Text("Iniciar sesión / Registro")
                         }
@@ -189,7 +288,8 @@ fun ProfileScreen(
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.error,
                                 contentColor = MaterialTheme.colorScheme.onError
-                            )
+                            ),
+                            modifier = Modifier.padding(horizontal = 4.dp)
                         ) {
                             Text("Cerrar Sesión")
                         }
@@ -267,7 +367,6 @@ fun ProfileScreen(
             item { ProfileMenuItem(icon = Icons.Default.Favorite, title = "Lista de Deseos", onClick = onWishlistClick) }
             item { ProfileMenuItem(icon = Icons.Default.History, title = "Historial", onClick = onHistoryClick) }
             item { ProfileMenuItem(icon = Icons.Default.People, title = "Siguiendo", onClick = onFollowingClick) }
-            item { ProfileMenuItem(icon = Icons.Default.Stars, title = "Affiliate & Creator", onClick = onAffiliateClick) }
             item { 
                 ProfileMenuItem(
                     icon = Icons.Default.TrendingUp, 
@@ -298,11 +397,17 @@ fun ProfileScreen(
 
 @Composable
 fun SettingsMenuContent(
+    viewModel: MainViewModel,
     onNavigate: (String) -> Unit, 
     onTermsClick: () -> Unit, 
     onPrivacyClick: () -> Unit,
-    onAddressBookClick: () -> Unit
+    onAddressBookClick: () -> Unit,
+    onPaymentMethodsClick: () -> Unit
 ) {
+    val user by viewModel.currentUser.collectAsState()
+    val userPlan by viewModel.userPlan.collectAsState()
+    val context = LocalContext.current
+    
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -316,8 +421,66 @@ fun SettingsMenuContent(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
+        // --- Sección de Suscripción ---
+        if (userPlan != null) {
+            Text(
+                text = "Mi Suscripción",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(userPlan!!.colorHex),
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+            
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(userPlan!!.colorHex).copy(alpha = 0.05f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(userPlan!!.colorHex).copy(alpha = 0.3f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(getPlanIcon(userPlan!!.iconName), null, tint = Color(userPlan!!.colorHex))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Plan ${userPlan!!.name}", fontWeight = FontWeight.Bold)
+                    }
+                    
+                    user?.subscriptionEndDate?.let { endDate ->
+                        val dateStr = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date(endDate))
+                        Text(
+                            text = "Activo hasta el $dateStr",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Renovación automática", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = if (user?.isAutoRenewalEnabled == true) "Activo" else "Desactivado (se cancelará al finalizar)",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (user?.isAutoRenewalEnabled == true) Color(0xFF2E7D32) else Color.Gray
+                            )
+                        }
+                        Switch(
+                            checked = user?.isAutoRenewalEnabled == true,
+                            onCheckedChange = { viewModel.toggleAutoRenewal(context) },
+                            colors = SwitchDefaults.colors(checkedThumbColor = Color(userPlan!!.colorHex))
+                        )
+                    }
+                }
+            }
+            HorizontalDivider(modifier = Modifier.padding(bottom = 16.dp))
+        }
+
         SettingsItem(Icons.Default.LocationOn, "Libreta de direcciones", onClick = onAddressBookClick)
-        SettingsItem(Icons.Default.Payments, "Opciones de Pago")
+        SettingsItem(Icons.Default.CreditCard, "Métodos de pago", onClick = onPaymentMethodsClick)
+
         SettingsItem(Icons.Default.PrivacyTip, "Política de privacidad y cookies", onClick = onPrivacyClick)
         SettingsItem(Icons.Default.Description, "Términos y condiciones", onClick = onTermsClick)
         
@@ -340,7 +503,6 @@ fun SettingsMenuContent(
         val crepanteLogo = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR3zQmT4V-w98N5ZK4s3xDh6KVhf7PO6JZBZUW03tF1MA&s=10"
         val maxetaLogo = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxc1FrAjCDilMinzGvdINO5l4LS8QhwI2DWjNLnO9wkJY4TqvxUcNLie7_&s=10"
         val uomoLogo = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNlxm0vLmPWcDXKI3qtD_OWlT4a7P6rXQB2PMt2ExjnAC7ZH4U91z4lGE&s=10"
-        val t3x100Logo = "https://3x100.pe/wp-content/uploads/2026/01/LOGO-3X100.png"
 
         BrandSocialsSection(
             brandName = "Ezzeta Company",
@@ -351,17 +513,6 @@ fun SettingsMenuContent(
                 SocialInfo("Instagram", "https://www.instagram.com/ezzetacompany", igIcon, Color(0xFFE4405F)),
                 SocialInfo("TikTok", "https://www.tiktok.com/@ezzetacompany", tkIcon, Color(0xFF000000)),
                 SocialInfo("YouTube", "https://www.youtube.com/@Pabloezzeta", ytIcon, Color(0xFFFF0000))
-            )
-        )
-        
-        BrandSocialsSection(
-            brandName = "3x100",
-            brandLogoUrl = t3x100Logo,
-            onNavigate = onNavigate,
-            socials = listOf(
-                SocialInfo("Facebook", "https://www.facebook.com/people/3X100/61584965300866/", fbIcon, Color(0xFF1877F2)),
-                SocialInfo("Instagram", "https://www.instagram.com/3x100.pe/#", igIcon, Color(0xFFE4405F)),
-                SocialInfo("TikTok", "https://www.tiktok.com/@3x100.pe?_r=1", tkIcon, Color(0xFF000000))
             )
         )
         
@@ -652,5 +803,230 @@ fun ProfileMenuItem(icon: ImageVector, title: String, onClick: () -> Unit = {}) 
             )
             Icon(Icons.Default.ChevronRight, contentDescription = null)
         }
+    }
+}
+
+@Composable
+fun PlansBottomSheetContent(
+    plans: List<AdvantagePlan>, 
+    currentPlanId: String?,
+    onPlanSelect: (AdvantagePlan) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        Text(
+            text = "Nuestros Planes de Ventajas",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        
+        Surface(
+            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+        ) {
+            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.error)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "Aviso: EzzetaCompany se reserva el derecho de realizar cambios en los beneficios sin previo aviso.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
+
+        plans.forEach { plan ->
+            val planColor = Color(plan.colorHex)
+            val isCurrentPlan = plan.id == currentPlanId
+            
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = planColor.copy(alpha = 0.1f)),
+                border = androidx.compose.foundation.BorderStroke(2.dp, planColor)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(getPlanIcon(plan.iconName), contentDescription = null, tint = planColor, modifier = Modifier.size(40.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(plan.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("${plan.discountPercent}% descuento en carrito", style = MaterialTheme.typography.bodyMedium)
+                        Text("${plan.commissionPercent}% comisión sobre venta", style = MaterialTheme.typography.bodyMedium)
+                        Text("S/ ${String.format(java.util.Locale.US, "%.2f", plan.price)} / mes", style = MaterialTheme.typography.labelLarge, color = planColor, fontWeight = FontWeight.Bold)
+                    }
+                    Button(
+                        onClick = { if (!isCurrentPlan) onPlanSelect(plan) },
+                        enabled = !isCurrentPlan,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isCurrentPlan) Color.Gray else planColor,
+                            disabledContainerColor = Color.Gray.copy(alpha = 0.5f),
+                            disabledContentColor = Color.White
+                        )
+                    ) {
+                        Text(if (isCurrentPlan) "En uso" else "Unirme")
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlanPaymentFormContent(plan: AdvantagePlan, onSuccess: () -> Unit, onTermsClick: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var paymentMethod by remember { mutableStateOf("card") }
+    var termsAccepted by remember { mutableStateOf(false) }
+
+    // Card state
+    var cardNumber by remember { mutableStateOf("") }
+    var cardExpiry by remember { mutableStateOf("") }
+    var cardCvc by remember { mutableStateOf("") }
+
+    // Yape state
+    var yapePhone by remember { mutableStateOf("") }
+    var yapeCode by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        Text(
+            text = "Suscripción al Plan ${plan.name}",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Total a pagar hoy:",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Gray
+            )
+            Text(
+                text = "S/ ${String.format(java.util.Locale.US, "%.2f", plan.price)}",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color(plan.colorHex)
+            )
+        }
+        
+        Surface(
+            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+        ) {
+            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.EventRepeat, null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Aviso: Esta suscripción es de renovación mensual automática. Podrás cancelar en cualquier momento desde tu configuración.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+        }
+
+        Text(
+            text = "Completa tus datos para disfrutar de tus beneficios",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+
+
+        Text("Información de contacto", fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre Completo") }, modifier = Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Correo electrónico") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Número de celular") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("Método de Pago", fontWeight = FontWeight.Bold)
+        
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray),
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { paymentMethod = "card" }.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(selected = paymentMethod == "card", onClick = { paymentMethod = "card" })
+                    Text("Tarjeta de Crédito/Débito", modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.CreditCard, null, tint = Color.Gray)
+                }
+                AnimatedVisibility(visible = paymentMethod == "card") {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        OutlinedTextField(value = cardNumber, onValueChange = { cardNumber = it }, label = { Text("Número de tarjeta") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                        Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(value = cardExpiry, onValueChange = { cardExpiry = it }, label = { Text("MM/YY") }, modifier = Modifier.weight(1f))
+                            OutlinedTextField(value = cardCvc, onValueChange = { cardCvc = it }, label = { Text("CVC") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                        }
+                    }
+                }
+                HorizontalDivider()
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { paymentMethod = "yape" }.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(selected = paymentMethod == "yape", onClick = { paymentMethod = "yape" })
+                    Text("Yape", modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.QrCodeScanner, null, tint = Color(0xFF8E24AA))
+                }
+                AnimatedVisibility(visible = paymentMethod == "yape") {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        OutlinedTextField(value = yapePhone, onValueChange = { yapePhone = it }, label = { Text("Celular Yape") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(value = yapeCode, onValueChange = { yapeCode = it }, label = { Text("Código de aprobación") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = termsAccepted, onCheckedChange = { termsAccepted = it })
+            Text(
+                text = "He leído y estoy de acuerdo con los términos y condiciones",
+                fontSize = 12.sp,
+                modifier = Modifier.clickable { onTermsClick() }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = onSuccess,
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            enabled = termsAccepted && name.isNotBlank() && email.isNotBlank() && phone.isNotBlank(),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text("Suscribirme ahora", fontWeight = FontWeight.Bold)
+        }
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }

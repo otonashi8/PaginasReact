@@ -13,7 +13,7 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     // Bottom Nav Screens
     object Home : Screen("home", "Inicio", Icons.Default.Home)
     object Categories : Screen("categories", "Categorías", Icons.Default.Category)
-    object Trends : Screen("trends", "Trends", Icons.Default.TrendingUp)
+    object Marketplace : Screen("marketplace", "Marketplace", Icons.Default.Storefront)
     object Cart : Screen("cart", "Cesta", Icons.Default.ShoppingCart)
     object Profile : Screen("profile", "Perfil", Icons.Default.Person)
     
@@ -29,23 +29,27 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     object Wishlist : Screen("wishlist")
     object Orders : Screen("orders")
     object Following : Screen("following")
-    object Affiliate : Screen("affiliate")
     object CustomerService : Screen("customer_service")
     object SingleProductUpload : Screen("single_product_upload")
     object Checkout : Screen("checkout")
     object AddressBook : Screen("address_book")
+    object PaymentMethods : Screen("payment_methods")
     object MyProducts : Screen("my_products")
     
     // Admin Screens
     object AdminDashboard : Screen("admin_dashboard")
-    object AdminProductManagement : Screen("admin_product_management")
+    object AdminProductManagement : Screen("admin_product_management/{type}") {
+        fun createRoute(type: String) = "admin_product_management/$type"
+    }
     object AdminCategoryManagement : Screen("admin_category_management")
+    object AdminSizeManagement : Screen("admin_size_management")
+    object AdminClientSizes : Screen("admin_client_sizes")
 }
 
 val bottomNavItems = listOf(
     Screen.Home,
     Screen.Categories,
-    Screen.Trends,
+    Screen.Marketplace,
     Screen.Cart,
     Screen.Profile
 )

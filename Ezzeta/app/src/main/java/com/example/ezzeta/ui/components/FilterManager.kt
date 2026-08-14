@@ -8,7 +8,8 @@ class FilterManager(
     private val allProducts: Flow<List<Product>>,
     private val scope: CoroutineScope,
     private val minPriceFlow: StateFlow<Float>,
-    private val maxPriceFlow: StateFlow<Float>
+    private val maxPriceFlow: StateFlow<Float>,
+    private val isClientProductFilter: Boolean? = null // null: all, true: only client, false: only store
 ) {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
@@ -61,7 +62,7 @@ class FilterManager(
             
             val matchesCategory = catId == "1" || product.categoryId == catId
             val matchesSub = subCat == "Todo" || 
-                             product.subCategory.equals(subCat, ignoreCase = true) || 
+                             product.subCategories.any { it.equals(subCat, ignoreCase = true) } || 
                              product.name.contains(subCat, ignoreCase = true)
             val matchesCampaign = campaign == null || product.campaign == campaign
             val matchesPrice = product.price.toFloat() in priceR
@@ -72,7 +73,9 @@ class FilterManager(
                 sizes.any { it in productSizes }
             }
             
-            matchesQuery && matchesCategory && matchesSub && matchesCampaign && matchesPrice && matchesSize && matchesStore && product.isVisible
+            val matchesOrigin = isClientProductFilter == null || product.isClientProduct == isClientProductFilter
+            
+            matchesQuery && matchesCategory && matchesSub && matchesCampaign && matchesPrice && matchesSize && matchesStore && product.isVisible && matchesOrigin
         }
     }.stateIn(scope, SharingStarted.WhileSubscribed(5000), emptyList())
 

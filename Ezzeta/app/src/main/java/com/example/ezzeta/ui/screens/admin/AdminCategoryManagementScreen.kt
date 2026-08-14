@@ -1,5 +1,6 @@
 package com.example.ezzeta.ui.screens.admin
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -67,8 +68,8 @@ fun AdminCategoryManagementScreen(
         if (showAddDialog) {
             CategoryEditDialog(
                 onDismiss = { showAddDialog = false },
-                onConfirm = { name, subs ->
-                    viewModel.addCategory(context, name, subs)
+                onConfirm = { name, subs, visibility ->
+                    viewModel.addCategory(context, name, subs, visibility)
                     showAddDialog = false
                 }
             )
@@ -78,8 +79,8 @@ fun AdminCategoryManagementScreen(
             CategoryEditDialog(
                 initialCategory = category,
                 onDismiss = { categoryToEdit = null },
-                onConfirm = { name, subs ->
-                    viewModel.updateCategory(context, category.copy(name = name, subCategories = subs))
+                onConfirm = { name, subs, visibility ->
+                    viewModel.updateCategory(context, category.copy(name = name, subCategories = subs, visibility = visibility))
                     categoryToEdit = null
                 }
             )
@@ -101,8 +102,14 @@ fun CategoryAdminItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = category.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    val visibilityLabel = when(category.visibility) {
+                        "STORE" -> "Inicio"
+                        "MARKETPLACE" -> "Marketplace"
+                        "BOTH" -> "Ambos"
+                        else -> category.visibility
+                    }
                     Text(
-                        text = "${category.subCategories.size} subcategorías",
+                        text = "${category.subCategories.size} subcategorías | $visibilityLabel",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -133,17 +140,34 @@ fun CategoryAdminItem(
 fun CategoryEditDialog(
     initialCategory: Category? = null,
     onDismiss: () -> Unit,
-    onConfirm: (String, List<String>) -> Unit
+    onConfirm: (String, List<String>, String) -> Unit
 ) {
     var name by remember { mutableStateOf(initialCategory?.name ?: "") }
     var subName by remember { mutableStateOf("") }
     var subCategories by remember { mutableStateOf(initialCategory?.subCategories ?: emptyList()) }
+    var visibility by remember { mutableStateOf(initialCategory?.visibility ?: "STORE") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initialCategory == null) "Nueva Categoría" else "Editar Categoría") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(text = "Visibilidad", fontWeight = FontWeight.Bold)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { visibility = "STORE" }) {
+                        RadioButton(selected = visibility == "STORE", onClick = null)
+                        Text("Inicio", modifier = Modifier.padding(start = 4.dp))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { visibility = "MARKETPLACE" }) {
+                        RadioButton(selected = visibility == "MARKETPLACE", onClick = null)
+                        Text("MktPlace", modifier = Modifier.padding(start = 4.dp))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { visibility = "BOTH" }) {
+                        RadioButton(selected = visibility == "BOTH", onClick = null)
+                        Text("Ambos", modifier = Modifier.padding(start = 4.dp))
+                    }
+                }
+
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -190,7 +214,7 @@ fun CategoryEditDialog(
         },
         confirmButton = {
             Button(
-                onClick = { if (name.isNotBlank()) onConfirm(name, subCategories) },
+                onClick = { if (name.isNotBlank()) onConfirm(name, subCategories, visibility) },
                 enabled = name.isNotBlank()
             ) {
                 Text("Guardar")

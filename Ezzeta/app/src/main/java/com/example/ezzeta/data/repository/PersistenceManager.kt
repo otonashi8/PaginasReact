@@ -53,13 +53,15 @@ object PersistenceManager {
         return LocalJsonStorage.loadFromFile(context, "${HISTORY_FILE_PREFIX}${getUserId()}.json", type) ?: emptyList()
     }
 
-    fun saveCart(context: Context, items: List<CartItem>) {
-        LocalJsonStorage.saveToFile(context, "${CART_FILE_PREFIX}${getUserId()}.json", items)
-    }
-
     fun getCart(context: Context): List<CartItem> {
         val type = object : TypeToken<List<CartItem>>() {}.type
-        return LocalJsonStorage.loadFromFile(context, "${CART_FILE_PREFIX}${getUserId()}.json", type) ?: emptyList()
+        val loaded: List<CartItem> = LocalJsonStorage.loadFromFile(context, "${CART_FILE_PREFIX}${getUserId()}.json", type) ?: emptyList()
+        // Reparar campos nulos por migración
+        return loaded.map { it.copy(size = it.size ?: "") }
+    }
+
+    fun saveCart(context: Context, items: List<CartItem>) {
+        LocalJsonStorage.saveToFile(context, "${CART_FILE_PREFIX}${getUserId()}.json", items)
     }
 
     fun saveOrders(context: Context, orders: List<Order>) {
@@ -68,6 +70,10 @@ object PersistenceManager {
 
     fun getOrders(context: Context): List<Order> {
         val type = object : TypeToken<List<Order>>() {}.type
-        return LocalJsonStorage.loadFromFile(context, "${ORDERS_FILE_PREFIX}${getUserId()}.json", type) ?: emptyList()
+        val loaded: List<Order> = LocalJsonStorage.loadFromFile(context, "${ORDERS_FILE_PREFIX}${getUserId()}.json", type) ?: emptyList()
+        // Reparar campos nulos por migración
+        return loaded.map { order ->
+            order.copy(items = order.items ?: emptyList())
+        }
     }
 }

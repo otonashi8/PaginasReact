@@ -36,7 +36,14 @@ fun AddressBookScreen(
         AddAddressDialog(
             onDismiss = { showAddDialog = false },
             onConfirm = { name, address, dept, dist ->
-                viewModel.addAddress(context, address, dept, dist, name)
+                viewModel.addAddress(
+                    context = context,
+                    address = address,
+                    dept = dept,
+                    prov = dept,
+                    dist = dist,
+                    name = name
+                )
                 showAddDialog = false
             }
         )
@@ -158,7 +165,6 @@ fun AddAddressDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Dept Dropdown
                 var deptExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = deptExpanded,
@@ -189,7 +195,6 @@ fun AddAddressDialog(
                     }
                 }
 
-                // District Dropdown
                 var distExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = distExpanded,

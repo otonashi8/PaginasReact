@@ -85,6 +85,12 @@ fun ProductDetailScreen(
     
     // Tallas dinámicas desde el modelo
     val sizes = remember(product) { product?.getAvailableSizes() ?: emptyList() }
+    
+    // Precio actual basado en la variante seleccionada
+    val currentPrice = remember(product, selectedSize) {
+        val variant = product?.variants?.find { it.name == selectedSize }
+        variant?.price ?: product?.price ?: 0.0
+    }
 
     LaunchedEffect(product) {
         // Añadir al historial al entrar
@@ -151,7 +157,7 @@ fun ProductDetailScreen(
                                 color = Color.Gray
                             )
                             Text(
-                                text = "S/ ${product.price * quantity}",
+                                text = "S/ ${String.format(Locale.US, "%.2f", currentPrice * quantity)}",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -160,7 +166,7 @@ fun ProductDetailScreen(
                         Button(
                             onClick = { 
                                 if (selectedSize.isNotEmpty()) {
-                                    viewModel.addToCart(context, product, selectedSize, quantity)
+                                    viewModel.addToCart(context, product, selectedSize, quantity, currentPrice)
                                     scope.launch {
                                         snackbarHostState.showSnackbar("Producto añadido a la cesta")
                                     }
@@ -188,7 +194,8 @@ fun ProductDetailScreen(
         } else {
             val categories by viewModel.categories.collectAsState()
             val categoryName = categories.firstOrNull { it.id == product.categoryId }?.name ?: "Categoría"
-            val breadcrumb = "$categoryName / ${product.subCategory} / ${product.name}"
+            val subCats = if (product.subCategories.isNotEmpty()) " / ${product.subCategories.joinToString(", ")}" else ""
+            val breadcrumb = "$categoryName$subCats / ${product.name}"
 
             LazyColumn(
                 modifier = Modifier
@@ -197,22 +204,22 @@ fun ProductDetailScreen(
             ) {
                 item(key = "product_image_carousel") {
                     Column {
-                        HorizontalPager(
-                            state = mainPagerState,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(450.dp)
-                        ) { page ->
-                            AsyncImage(
-                                model = productImages[page],
-                                contentDescription = "${product.name} image $page",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                        
-                        // Miniaturas debajo de la imagen principal
                         if (productImages.size > 1) {
+                            HorizontalPager(
+                                state = mainPagerState,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(450.dp)
+                            ) { page ->
+                                AsyncImage(
+                                    model = productImages[page],
+                                    contentDescription = "${product.name} image $page",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                            
+                            // Miniaturas debajo de la imagen principal
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -247,6 +254,15 @@ fun ProductDetailScreen(
                                     }
                                 }
                             }
+                        } else {
+                            AsyncImage(
+                                model = productImages.firstOrNull() ?: product.imageUrl,
+                                contentDescription = product.name,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(450.dp),
+                                contentScale = ContentScale.Crop
+                            )
                         }
                     }
                 }
@@ -280,7 +296,7 @@ fun ProductDetailScreen(
                         }
                         
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (product.oldPrice != null) {
+                            if (product.oldPrice != null && product.variants.isNullOrEmpty()) {
                                 Text(
                                     text = "S/ ${String.format(Locale.US, "%.2f", product.oldPrice)}",
                                     style = MaterialTheme.typography.titleMedium,
@@ -290,7 +306,7 @@ fun ProductDetailScreen(
                                 )
                             }
                             Text(
-                                text = "S/ ${String.format(Locale.US, "%.2f", product.price)}",
+                                text = "S/ ${String.format(Locale.US, "%.2f", currentPrice)}",
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold
@@ -504,7 +520,7 @@ fun ProductDetailScreen(
                 if (relatedProducts.isNotEmpty()) {
                     item(key = "related_products_header") {
                         Text(
-                            text = "Productos Relacionados",
+                            text = "Otros Productos",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)

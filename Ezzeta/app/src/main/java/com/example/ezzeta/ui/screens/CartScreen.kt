@@ -33,13 +33,18 @@ import kotlinx.coroutines.launch
 fun CartScreen(
     viewModel: MainViewModel, 
     onNavigateToCategories: () -> Unit,
-    onNavigateToCheckout: () -> Unit
+    onNavigateToCheckout: () -> Unit,
+    onProductClick: (String) -> Unit
 ) {
     val cartItems by viewModel.cartItems.collectAsState()
+    val allProducts by viewModel.allProducts.collectAsState()
     val lastDeletedItem by viewModel.lastDeletedItem.collectAsState()
     val subtotal by viewModel.subtotal.collectAsState()
     val totalSavings by viewModel.totalSavings.collectAsState()
+    val planDiscount by viewModel.planDiscount.collectAsState()
+    val userPlan by viewModel.userPlan.collectAsState()
     val shippingCost by viewModel.shippingCost.collectAsState()
+
     val total by viewModel.total.collectAsState()
     val context = LocalContext.current
 
@@ -102,33 +107,34 @@ fun CartScreen(
                             )
                         }
 
-                        if (totalSavings > 0.0) {
+                        if (planDiscount > 0.0) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    "Ahorrado", 
+                                    "Descuento Plan ${userPlan?.name ?: ""}", 
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(0xFF2E7D32),
+                                    color = Color(0xFF1976D2),
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    "- S/ ${String.format(Locale.US, "%.2f", totalSavings)}",
-                                    color = Color(0xFF2E7D32),
+                                    "- S/ ${String.format(Locale.US, "%.2f", planDiscount)}",
+                                    color = Color(0xFF1976D2),
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                         }
 
+
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Subtotal", style = MaterialTheme.typography.bodyMedium)
-                            Text("S/ $subtotal")
+                            Text("S/ ${String.format(Locale.US, "%.2f", subtotal)}")
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Envío", style = MaterialTheme.typography.bodyMedium)
                             Text(
-                                text = if (shippingCost == 0.0) "GRATIS" else "S/ $shippingCost",
+                                text = if (shippingCost == 0.0) "GRATIS" else "S/ ${String.format(Locale.US, "%.2f", shippingCost)}",
                                 color = if (shippingCost == 0.0) Color(0xFF2E7D32) else Color.Unspecified,
                                 fontWeight = if (shippingCost == 0.0) FontWeight.Bold else FontWeight.Normal
                             )
@@ -142,7 +148,7 @@ fun CartScreen(
                             Column {
                                 Text(text = "Total", style = MaterialTheme.typography.bodyMedium)
                                 Text(
-                                    text = "S/ $total",
+                                    text = "S/ ${String.format(Locale.US, "%.2f", total)}",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.secondary
@@ -156,6 +162,7 @@ fun CartScreen(
                 }
             }
         },
+
         floatingActionButton = {
             ScrollToTopButton(
                 isVisible = showScrollToTop,
@@ -165,36 +172,41 @@ fun CartScreen(
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
+        LazyColumn(
+            modifier = Modifier.padding(padding).fillMaxSize(),
+            state = listState
+        ) {
             // Undo Banner
-            AnimatedVisibility(
-                visible = lastDeletedItem != null,
-                enter = expandVertically(),
-                exit = shrinkVertically()
-            ) {
-                lastDeletedItem?.let { item ->
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+            item {
+                AnimatedVisibility(
+                    visible = lastDeletedItem != null,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    lastDeletedItem?.let { item ->
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text(
-                                text = "Producto \"${item.product.name}\" eliminado",
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f)
-                            )
-                            TextButton(
-                                onClick = { viewModel.undoLastDelete(context) },
-                                contentPadding = PaddingValues(horizontal = 12.dp)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("¿Deshacer?", fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = "Producto \"${item.product.name}\" eliminado",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(
+                                    onClick = { viewModel.undoLastDelete(context) },
+                                    contentPadding = PaddingValues(horizontal = 12.dp)
+                                ) {
+                                    Text("¿Deshacer?", fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
@@ -202,84 +214,101 @@ fun CartScreen(
             }
 
             if (cartItems.isEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Tu cesta está vacía",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = onNavigateToCategories,
-                        shape = RoundedCornerShape(12.dp)
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 40.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text("Explorar Categorías")
+                        Text(
+                            text = "Tu cesta está vacía",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = onNavigateToCategories,
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Explorar Categorías")
+                        }
                     }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    state = listState
-                ) {
-                    groupedItems.forEach { (storeId, items) ->
-                        item {
-                            Text(
-                                text = storeNames[storeId] ?: "Tienda",
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                        }
-                        items(
-                            items = items,
-                            key = { it.product.id + it.size }
-                        ) { item ->
-                            var showDeleteConfirm by remember { mutableStateOf(false) }
+                groupedItems.forEach { (storeId, items) ->
+                    item {
+                        Text(
+                            text = storeNames[storeId] ?: "Tienda",
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    }
+                    items(
+                        items = items,
+                        key = { it.product.id + it.size }
+                    ) { item ->
+                        var showDeleteConfirm by remember { mutableStateOf(false) }
 
-                            CartItemRow(
-                                item = item,
-                                onQuantityChange = { delta -> viewModel.updateCartItemQuantity(context, item.product.id, item.size, delta) },
-                                onSizeChange = { newSize -> viewModel.updateCartItemSize(context, item.product.id, item.size, newSize) },
-                                onRemove = { showDeleteConfirm = true }
-                            )
+                        CartItemRow(
+                            item = item,
+                            onQuantityChange = { delta -> viewModel.updateCartItemQuantity(context, item.product.id, item.size, delta) },
+                            onSizeChange = { newSize -> viewModel.updateCartItemSize(context, item.product.id, item.size, newSize) },
+                            onRemove = { showDeleteConfirm = true }
+                        )
 
-                            if (showDeleteConfirm) {
-                                AlertDialog(
-                                    onDismissRequest = { showDeleteConfirm = false },
-                                    title = { Text("¿Eliminar producto?", fontWeight = FontWeight.Bold) },
-                                    text = { Text("¿Estás seguro de que deseas quitar '${item.product.name}' de tu cesta?") },
-                                    confirmButton = {
-                                        TextButton(
-                                            onClick = { showDeleteConfirm = false },
-                                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
-                                        ) {
-                                            Text("Cancelar", fontWeight = FontWeight.Bold)
-                                        }
-                                    },
-                                    dismissButton = {
-                                        TextButton(
-                                            onClick = {
-                                                viewModel.removeCartItem(context, item.product.id)
-                                                showDeleteConfirm = false
-                                            },
-                                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        ) {
-                                            Text("Eliminar")
-                                        }
-                                    },
-                                    shape = RoundedCornerShape(16.dp),
-                                    containerColor = MaterialTheme.colorScheme.surface
-                                )
-                            }
+                        if (showDeleteConfirm) {
+                            AlertDialog(
+                                onDismissRequest = { showDeleteConfirm = false },
+                                title = { Text("¿Eliminar producto?", fontWeight = FontWeight.Bold) },
+                                text = { Text("¿Estás seguro de que deseas quitar '${item.product.name}' de tu cesta?") },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = { showDeleteConfirm = false },
+                                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                                    ) {
+                                        Text("Cancelar", fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(
+                                        onClick = {
+                                            viewModel.removeCartItem(context, item.product.id)
+                                            showDeleteConfirm = false
+                                        },
+                                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    ) {
+                                        Text("Eliminar")
+                                    }
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                                containerColor = MaterialTheme.colorScheme.surface
+                            )
                         }
                     }
                 }
+            }
+
+            // --- Sección "Llena tu cesta con" ---
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                val suggestedProducts = remember(allProducts, cartItems) {
+                    val cartIds = cartItems.map { it.product.id }.toSet()
+                    allProducts.filter { it.id !in cartIds && it.isVisible }.shuffled().take(10)
+                }
+
+                ProductCarousel(
+                    title = "** Llena tu cesta con **",
+                    products = suggestedProducts,
+                    onProductClick = onProductClick,
+                    onFavoriteClick = { product -> viewModel.toggleProductFavorite(context, product.id) },
+                    onQuickViewClick = { product -> viewModel.onQuickViewProduct(context, product) }
+                )
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
@@ -344,7 +373,7 @@ fun CartItemRow(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (item.product.oldPrice != null && item.product.oldPrice > item.product.price) {
+                    if (item.product.oldPrice != null && item.product.oldPrice > item.effectivePrice && item.product.variants.isNullOrEmpty()) {
                         Text(
                             text = "S/ ${String.format(Locale.US, "%.2f", item.product.oldPrice)}",
                             style = MaterialTheme.typography.bodySmall,
@@ -354,7 +383,7 @@ fun CartItemRow(
                         )
                     }
                     Text(
-                        text = "S/ ${String.format(Locale.US, "%.2f", item.product.price)}",
+                        text = "S/ ${String.format(Locale.US, "%.2f", item.effectivePrice)}",
                         color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.Bold
                     )

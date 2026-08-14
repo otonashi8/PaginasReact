@@ -25,7 +25,13 @@ object UserRepository {
             val loaded: User? = LocalJsonStorage.loadFromFile(context, USERS_FILE, type)
             
             if (loaded != null) {
-                _currentUser.value = loaded
+                // Asegurar que campos no nulos realmente no lo sean tras deserialización (Gson bypasses null safety)
+                val fixedUser = loaded.copy(
+                    addresses = loaded.addresses ?: emptyList(),
+                    savedCards = loaded.savedCards ?: emptyList(),
+                    followedStoreIds = loaded.followedStoreIds ?: emptySet()
+                )
+                _currentUser.value = fixedUser
             } else {
                 // Legacy support: check SharedPreferences
                 val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

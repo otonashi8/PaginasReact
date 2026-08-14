@@ -10,6 +10,7 @@ import com.example.ezzeta.data.model.*
 import com.example.ezzeta.data.repository.PersistenceManager
 import com.example.ezzeta.data.repository.ProductRepository
 import com.example.ezzeta.data.repository.UserRepository
+import com.example.ezzeta.data.repository.SizeRepository
 import com.example.ezzeta.ui.components.FilterManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -20,6 +21,8 @@ import java.util.Locale
 
 class MainViewModel : ViewModel() {
     private val productRepository = ProductRepository()
+    private val sizeRepository = SizeRepository()
+    
     val currentUser: StateFlow<User?> = UserRepository.currentUser
     val isAdmin: StateFlow<Boolean> = currentUser.map { it?.isAdmin ?: false }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -35,8 +38,32 @@ class MainViewModel : ViewModel() {
     // Deshacer eliminación en cesta
     private val _lastDeletedItem = MutableStateFlow<CartItem?>(null)
     val lastDeletedItem: StateFlow<CartItem?> = _lastDeletedItem.asStateFlow()
+
+    // Ubigeo Data
+    private val _ubigeoData = MutableStateFlow<Map<String, Map<String, Map<String, UbigeoDistrict>>>>(emptyMap())
+    val ubigeoData: StateFlow<Map<String, Map<String, Map<String, UbigeoDistrict>>>> = _ubigeoData.asStateFlow()
+    
+    private val _isLoadingUbigeo = MutableStateFlow(false)
+    val isLoadingUbigeo: StateFlow<Boolean> = _isLoadingUbigeo.asStateFlow()
+    
+    private val _ubigeoError = MutableStateFlow<String?>(null)
+    val ubigeoError: StateFlow<String?> = _ubigeoError.asStateFlow()
     
     val allProducts: StateFlow<List<Product>> = productRepository.getProducts()
+
+
+    private val _advantagePlans = MutableStateFlow(listOf(
+        AdvantagePlan("bronze", "Bronce", 19.90, 5, 8, 0xFF8B4513, "Star"), // Marrón cuero/bronce oscuro
+        AdvantagePlan("silver", "Plata", 39.90, 7, 6, 0xFF424242, "Stars"),  // Gris oscuro carbón
+        AdvantagePlan("gold", "Oro", 59.90, 10, 5, 0xFFB8860B, "WorkspacePremium") // Oro oscuro/viejo
+    ))
+
+    val advantagePlans: StateFlow<List<AdvantagePlan>> = _advantagePlans.asStateFlow()
+
+    val userPlan: StateFlow<AdvantagePlan?> = combine(currentUser, advantagePlans) { user, plans ->
+        plans.find { it.id == user?.currentPlanId }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
 
     val minAvailablePrice: StateFlow<Float> = allProducts.map { products ->
         products.minOfOrNull { it.price.toFloat() } ?: 0f
@@ -46,26 +73,44 @@ class MainViewModel : ViewModel() {
         products.maxOfOrNull { it.price.toFloat() } ?: 5000f
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 5000f)
 
-    // Gestor de Filtros
-    val filterManager = FilterManager(
+    // Gestor de Filtros Tienda
+    val storeFilterManager = FilterManager(
         allProducts = allProducts,
         scope = viewModelScope,
         minPriceFlow = minAvailablePrice,
-        maxPriceFlow = maxAvailablePrice
+        maxPriceFlow = maxAvailablePrice,
+        isClientProductFilter = false
+    )
+
+    // Gestor de Filtros Marketplace
+    val marketplaceFilterManager = FilterManager(
+        allProducts = allProducts,
+        scope = viewModelScope,
+        minPriceFlow = minAvailablePrice,
+        maxPriceFlow = maxAvailablePrice,
+        isClientProductFilter = true
     )
 
     // Exponer productos filtrados y estados para conveniencia de la UI
-    val filteredProducts = filterManager.filteredProducts
-    val searchQuery = filterManager.searchQuery
-    val categorySearchQuery = filterManager.categorySearchQuery
-    val selectedCategoryId = filterManager.selectedCategoryId
-    val selectedSubCategory = filterManager.selectedSubCategory
-    val priceRange = filterManager.priceRange
-    val selectedSizes = filterManager.selectedSizes
-    val selectedCampaign = filterManager.selectedCampaign
-    val selectedStoreId = filterManager.selectedStoreId
+    val filteredProducts = storeFilterManager.filteredProducts
+    val searchQuery = storeFilterManager.searchQuery
+    val categorySearchQuery = storeFilterManager.categorySearchQuery
+    val selectedCategoryId = storeFilterManager.selectedCategoryId
+    val selectedSubCategory = storeFilterManager.selectedSubCategory
+    val priceRange = storeFilterManager.priceRange
+    val selectedSizes = storeFilterManager.selectedSizes
+    val selectedCampaign = storeFilterManager.selectedCampaign
+    val selectedStoreId = storeFilterManager.selectedStoreId
 
     val categories: StateFlow<List<Category>> = productRepository.getCategoriesFlow()
+    
+    val storeCategories: StateFlow<List<Category>> = categories.map { list ->
+        list.filter { it.visibility == "STORE" || it.visibility == "BOTH" }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val marketplaceCategories: StateFlow<List<Category>> = categories.map { list ->
+        list.filter { it.visibility == "MARKETPLACE" || it.visibility == "BOTH" }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     
     val categoriesList: List<Category> get() = categories.value
 
@@ -110,26 +155,31 @@ class MainViewModel : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     val subtotal: StateFlow<Double> = _cartItems.map { items ->
-        items.sumOf { it.product.price * it.quantity }
+        items.sumOf { it.effectivePrice * it.quantity }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val planDiscount: StateFlow<Double> = combine(subtotal, userPlan) { sub, plan ->
+        if (plan != null) (sub * plan.discountPercent / 100.0) else 0.0
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     val shippingCost: StateFlow<Double> = subtotal.map { if (it >= 200.0) 0.0 else 15.0 }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 15.0)
 
-    val total: StateFlow<Double> = combine(subtotal, shippingCost) { s, sh -> s + sh }
+    val total: StateFlow<Double> = combine(subtotal, shippingCost, planDiscount) { s, sh, d -> s + sh - d }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
 
     private fun createCampaignFlow(campaignName: String): StateFlow<List<Product>> {
         return combine(
             allProducts,
-            filterManager.selectedCategoryId,
-            filterManager.selectedSubCategory
+            storeFilterManager.selectedCategoryId,
+            storeFilterManager.selectedSubCategory
         ) { products, catId, subCat ->
             products.filter { 
-                it.isVisible && // Filtrar por visibilidad
+                it.isVisible && !it.isClientProduct && // Solo tienda y visible
                 it.campaign == campaignName && 
                 (catId == "1" || it.categoryId == catId) &&
-                (subCat == "Todo" || it.subCategory.equals(subCat, ignoreCase = true) || it.name.contains(subCat, ignoreCase = true))
+                (subCat == "Todo" || it.subCategories.any { s -> s.equals(subCat, ignoreCase = true) } || it.name.contains(subCat, ignoreCase = true))
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     }
@@ -138,12 +188,33 @@ class MainViewModel : ViewModel() {
     val ofertasPatriasProducts = createCampaignFlow("Ofertas Patrias")
     val masVendidosProducts = createCampaignFlow("Más Vendidos")
 
+    // Estadísticas para Admin
+    val ezzetaProductsCount: StateFlow<Int> = allProducts.map { products ->
+        products.count { !it.isClientProduct }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val clientProductsCount: StateFlow<Int> = allProducts.map { products ->
+        products.count { it.isClientProduct }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val totalSalesValue: StateFlow<Double> = orders.map { orderList ->
+        orderList.sumOf { it.total }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val globalSizeSystems: StateFlow<List<SizeSystem>> = sizeRepository.globalSystems
+    
+    val allClientCustomSizes: StateFlow<List<SizeOption>> = sizeRepository.allUserCustomSizes
+    
+    val userCustomSizes: StateFlow<List<SizeOption>> = combine(allClientCustomSizes, currentUser) { all, user ->
+        all.filter { it.createdByUserId == user?.uuid }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val categorySearchResults: StateFlow<List<Product>> = combine(
         productRepository.getProducts(),
-        filterManager.categorySearchQuery
+        storeFilterManager.categorySearchQuery
     ) { products, query ->
         if (query.isEmpty()) emptyList()
-        else products.filter { it.isVisible && it.name.contains(query, ignoreCase = true) }
+        else products.filter { it.isVisible && !it.isClientProduct && it.name.contains(query, ignoreCase = true) }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -156,13 +227,42 @@ class MainViewModel : ViewModel() {
             try {
                 withContext(Dispatchers.IO) {
                     UserRepository.init(appContext)
+                    sizeRepository.init(appContext)
                     loadUserData(appContext)
                 }
+                fetchUbigeoData()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
+
+    private fun fetchUbigeoData() {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (_ubigeoData.value.isNotEmpty()) return@launch
+            
+            _isLoadingUbigeo.value = true
+            _ubigeoError.value = null
+            try {
+                val url = Uri.parse("https://free.e-api.net.pe/ubigeos.json").toString()
+                val jsonString = java.net.URL(url).readText()
+                val type = object : com.google.gson.reflect.TypeToken<Map<String, Map<String, Map<String, UbigeoDistrict>>>>() {}.type
+                val data: Map<String, Map<String, Map<String, UbigeoDistrict>>> = com.google.gson.Gson().fromJson(jsonString, type)
+                
+                withContext(Dispatchers.Main) {
+                    _ubigeoData.value = data
+                    _isLoadingUbigeo.value = false
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    _ubigeoError.value = "Error al cargar datos de ubicación: ${e.localizedMessage}"
+                    _isLoadingUbigeo.value = false
+                }
+            }
+        }
+    }
+
 
     private suspend fun loadUserData(context: Context) {
         val appContext = context.applicationContext
@@ -212,6 +312,30 @@ class MainViewModel : ViewModel() {
         UserRepository.updateAlias(context, newAlias)
     }
 
+    fun subscribeToPlan(context: Context, planId: String) {
+        val current = UserRepository.currentUser.value
+        if (current != null) {
+            val thirtyDaysMillis = 30L * 24 * 60 * 60 * 1000
+            val endDate = System.currentTimeMillis() + thirtyDaysMillis
+            UserRepository.updateUser(context, current.copy(
+                currentPlanId = planId,
+                subscriptionEndDate = endDate,
+                isAutoRenewalEnabled = true
+            ))
+        }
+    }
+
+    fun toggleAutoRenewal(context: Context) {
+        val current = UserRepository.currentUser.value
+        if (current != null) {
+            UserRepository.updateUser(context, current.copy(
+                isAutoRenewalEnabled = !current.isAutoRenewalEnabled
+            ))
+        }
+    }
+
+
+
     fun toggleTheme(context: Context) {
         val newTheme = !_isDarkTheme.value
         _isDarkTheme.value = newTheme
@@ -241,13 +365,13 @@ class MainViewModel : ViewModel() {
         PersistenceManager.saveHistory(context, history)
     }
 
-    fun addToCart(context: Context, product: Product, size: String, quantity: Int = 1) {
+    fun addToCart(context: Context, product: Product, size: String, quantity: Int = 1, price: Double? = null) {
         val current = _cartItems.value.toMutableList()
         val index = current.indexOfFirst { it.product.id == product.id && it.size == size }
         if (index != -1) {
             current[index] = current[index].copy(quantity = current[index].quantity + quantity)
         } else {
-            current.add(CartItem(product, quantity, size))
+            current.add(CartItem(product, quantity, size, price))
         }
         _cartItems.value = current
         PersistenceManager.saveCart(context, current)
@@ -288,7 +412,7 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun addAddress(context: Context, address: String, dept: String, dist: String, name: String? = null) {
+    fun addAddress(context: Context, address: String, dept: String, prov: String, dist: String, ubigeo: String? = null, name: String? = null) {
         val current = UserRepository.currentUser.value
         if (current != null) {
             val newAddress = UserAddress(
@@ -296,12 +420,31 @@ class MainViewModel : ViewModel() {
                 name = if (name.isNullOrBlank()) null else name,
                 address = address,
                 department = dept,
-                district = dist
+                province = prov,
+                district = dist,
+                ubigeoCode = ubigeo
             )
             val updatedAddresses = current.addresses + newAddress
             UserRepository.updateUser(context, current.copy(addresses = updatedAddresses))
         }
     }
+
+    fun savePaymentMethod(context: Context, card: SavedCard) {
+        val current = UserRepository.currentUser.value
+        if (current != null) {
+            val updatedCards = current.savedCards + card
+            UserRepository.updateUser(context, current.copy(savedCards = updatedCards))
+        }
+    }
+
+    fun deletePaymentMethod(context: Context, cardId: String) {
+        val current = UserRepository.currentUser.value
+        if (current != null) {
+            val updatedCards = current.savedCards.filter { it.id != cardId }
+            UserRepository.updateUser(context, current.copy(savedCards = updatedCards))
+        }
+    }
+
 
     fun deleteAddress(context: Context, addressId: String) {
         val current = UserRepository.currentUser.value
@@ -419,8 +562,11 @@ class MainViewModel : ViewModel() {
     fun uploadSingleProduct(
         context: Context,
         name: String, price: Double, categoryId: String,
+        subCategories: List<String>,
         condition: String, description: String, imageUrls: List<String>,
-        stock: Int, contactName: String, contactPhone: String
+        stock: Int, contactName: String, contactPhone: String,
+        variants: List<ProductVariant>? = null,
+        sizeSystemId: String? = null
     ) {
         val subject = "Publicación de Producto Único - $name ($contactName)"
         val body = """
@@ -430,7 +576,11 @@ class MainViewModel : ViewModel() {
             Stock: $stock
             Estado: $condition
             Categoría: ${categories.value.find { it.id == categoryId }?.name ?: categoryId}
+            Subcategorías: ${subCategories.joinToString(", ")}
             
+            --- VARIANTES/PRECIOS ---
+            ${variants?.joinToString("\n") { "${it.name}: S/ ${it.price}" } ?: "Sin variantes"}
+
             --- CONTACTO DEL VENDEDOR ---
             Nombre: $contactName
             Teléfono/WhatsApp: $contactPhone
@@ -445,14 +595,17 @@ class MainViewModel : ViewModel() {
         CommunicationsHelper.sendEmail(context, "correo@gmail.com", subject, body)
         
         // Publicar localmente
-        publishClientProduct(context.applicationContext, name, price, categoryId, condition, description, imageUrls, contactName, stock)
+        publishClientProduct(context.applicationContext, name, price, categoryId, subCategories, condition, description, imageUrls, contactName, stock, variants, sizeSystemId)
     }
 
     fun uploadSingleProductViaWhatsApp(
         context: Context,
         name: String, price: Double, categoryId: String,
+        subCategories: List<String>,
         condition: String, description: String, imageUrls: List<String>,
-        stock: Int, contactName: String, contactPhone: String
+        stock: Int, contactName: String, contactPhone: String,
+        variants: List<ProductVariant>? = null,
+        sizeSystemId: String? = null
     ) {
         val appContext = context.applicationContext
         val text = """
@@ -462,6 +615,9 @@ class MainViewModel : ViewModel() {
             *Stock:* $stock
             *Estado:* $condition
             *Categoría:* ${categories.value.find { it.id == categoryId }?.name ?: categoryId}
+            *Subcategorías:* ${subCategories.joinToString(", ")}
+            
+            *Variantes:* ${variants?.size ?: 0} variantes añadidas.
             
             *Vendedor:* $contactName
             *Teléfono:* $contactPhone
@@ -474,14 +630,17 @@ class MainViewModel : ViewModel() {
         CommunicationsHelper.sendWhatsApp(context, "51987654321", text)
         
         // Publicar localmente
-        publishClientProduct(appContext, name, price, categoryId, condition, description, imageUrls, contactName, stock)
+        publishClientProduct(appContext, name, price, categoryId, subCategories, condition, description, imageUrls, contactName, stock, variants, sizeSystemId)
     }
 
     private fun publishClientProduct(
         context: Context,
         name: String, price: Double, categoryId: String,
+        subCategories: List<String>,
         condition: String, description: String, imageUrls: List<String>,
-        sellerName: String, stock: Int
+        sellerName: String, stock: Int,
+        variants: List<ProductVariant>? = null,
+        sizeSystemId: String? = null
     ) {
         val userId = UserRepository.getCurrentUserId()
         val newProduct = Product(
@@ -492,14 +651,16 @@ class MainViewModel : ViewModel() {
             imageUrl = imageUrls.firstOrNull() ?: "",
             imageUrls = imageUrls,
             categoryId = categoryId,
-            subCategory = "Cliente",
+            subCategories = subCategories,
             campaign = "Del cliente para el cliente",
             storeId = "client_store",
             sellerName = sellerName,
             sellerId = userId,
             isClientProduct = true,
             stock = stock,
-            isVisible = true // Aseguramos que nazca visible
+            isVisible = true,
+            variants = variants,
+            sizeSystemId = sizeSystemId
         )
         productRepository.addProduct(context, newProduct)
     }
@@ -537,12 +698,13 @@ class MainViewModel : ViewModel() {
     }
 
     // Category Management
-    fun addCategory(context: Context, name: String, subCategories: List<String>) {
+    fun addCategory(context: Context, name: String, subCategories: List<String>, visibility: String = "STORE") {
         val newCategory = Category(
             id = System.currentTimeMillis().toString(),
             name = name,
             iconUrl = "",
-            subCategories = subCategories
+            subCategories = subCategories,
+            visibility = visibility
         )
         productRepository.addCategory(context.applicationContext, newCategory)
     }
@@ -555,25 +717,27 @@ class MainViewModel : ViewModel() {
         productRepository.deleteCategory(context.applicationContext, categoryId)
     }
 
-    fun onSearchQueryChange(newQuery: String) { filterManager.onSearchQueryChange(newQuery) }
-    fun onCategorySearchQueryChange(newQuery: String) { filterManager.onCategorySearchQueryChange(newQuery) }
-    fun onCategorySelected(categoryId: String) { filterManager.onCategorySelected(categoryId) }
-    fun onSubCategorySelected(subCategory: String) { filterManager.onSubCategorySelected(subCategory) }
-    fun onPriceRangeChange(newRange: ClosedFloatingPointRange<Float>) { filterManager.onPriceRangeChange(newRange) }
-    fun onSizeToggle(size: String) { filterManager.onSizeToggle(size) }
-    fun clearFilters() { filterManager.clearFilters() }
-    fun onCampaignSelected(campaign: String?) { filterManager.onCampaignSelected(campaign) }
-    fun onStoreSelected(storeId: String?) { filterManager.onStoreSelected(storeId) }
+    fun onSearchQueryChange(newQuery: String) { storeFilterManager.onSearchQueryChange(newQuery) }
+    fun onCategorySearchQueryChange(newQuery: String) { storeFilterManager.onCategorySearchQueryChange(newQuery) }
+    fun onCategorySelected(categoryId: String) { storeFilterManager.onCategorySelected(categoryId) }
+    fun onSubCategorySelected(subCategory: String) { storeFilterManager.onSubCategorySelected(subCategory) }
+    fun onPriceRangeChange(newRange: ClosedFloatingPointRange<Float>) { storeFilterManager.onPriceRangeChange(newRange) }
+    fun onSizeToggle(size: String) { storeFilterManager.onSizeToggle(size) }
+    fun clearFilters() { storeFilterManager.clearFilters() }
+    fun onCampaignSelected(campaign: String?) { storeFilterManager.onCampaignSelected(campaign) }
+    fun onStoreSelected(storeId: String?) { storeFilterManager.onStoreSelected(storeId) }
+
+    // Marketplace filter bridges
+    fun onMarketplaceSearchQueryChange(newQuery: String) { marketplaceFilterManager.onSearchQueryChange(newQuery) }
+    fun onMarketplaceCategorySelected(categoryId: String) { marketplaceFilterManager.onCategorySelected(categoryId) }
+    fun onMarketplaceSubCategorySelected(subCategory: String) { marketplaceFilterManager.onSubCategorySelected(subCategory) }
+    fun clearMarketplaceFilters() { marketplaceFilterManager.clearFilters() }
 
     fun onQuickViewProduct(context: Context, product: Product?) {
         _quickViewProductId.value = product?.id
         if (product != null) {
             addToHistory(context, product)
         }
-    }
-
-    fun getProductsByHashtag(hashtag: String): List<Product> {
-        return productRepository.getProductsSync().filter { it.hashtags.contains(hashtag) }.take(3)
     }
 
     fun getStores() = productRepository.getStores()
@@ -585,6 +749,42 @@ class MainViewModel : ViewModel() {
             .filter { it.categoryId == product.categoryId && it.id != product.id }
             .shuffled()
             .take(6)
+    }
+
+    // Size Management
+    fun addSizeSystem(context: Context, name: String) {
+        sizeRepository.addSizeSystem(context, name)
+    }
+
+    fun deleteSizeSystem(context: Context, systemId: String) {
+        sizeRepository.deleteSizeSystem(context, systemId)
+    }
+
+    fun addGlobalSizeOption(context: Context, systemId: String, name: String) {
+        sizeRepository.addSizeToGlobalSystem(context, systemId, name)
+    }
+
+    fun removeGlobalSizeOption(context: Context, systemId: String, optionId: String) {
+        sizeRepository.removeSizeFromGlobalSystem(context, systemId, optionId)
+    }
+
+    fun addUserCustomSize(context: Context, name: String) {
+        val user = UserRepository.currentUser.value
+        sizeRepository.addUserCustomSize(context, name, user?.uuid, user?.alias)
+    }
+
+    fun deleteUserCustomSize(context: Context, sizeId: String) {
+        sizeRepository.deleteUserCustomSize(context, sizeId)
+    }
+
+    fun updateClientSize(context: Context, updated: SizeOption) {
+        sizeRepository.updateClientSize(context, updated)
+    }
+
+    fun isSizeInUse(sizeName: String): Boolean {
+        return productRepository.getProductsSync().any { product ->
+            product.variants?.any { it.name == sizeName } == true
+        }
     }
 
     fun shareWishlist(context: Context, wishlist: List<Product>) {

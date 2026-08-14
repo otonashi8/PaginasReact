@@ -8,95 +8,128 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.ezzeta.ui.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
     viewModel: MainViewModel,
     onLogout: () -> Unit,
-    onNavigateToProductManagement: () -> Unit,
-    onNavigateToCategoryManagement: () -> Unit
+    onNavigateToProductManagement: (String) -> Unit,
+    onNavigateToCategoryManagement: () -> Unit,
+    onNavigateToSizeManagement: () -> Unit,
+    onNavigateToClientSizes: () -> Unit
 ) {
-    val products by viewModel.allProducts.collectAsState()
+    val ezzetaCount by viewModel.ezzetaProductsCount.collectAsState()
+    val clientCount by viewModel.clientProductsCount.collectAsState()
     val orders by viewModel.orders.collectAsState()
+    val totalSales by viewModel.totalSalesValue.collectAsState()
+
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
     
     val stats = listOf(
-        StatItem("Productos", products.size.toString(), Icons.Default.Inventory),
-        StatItem("Pedidos", orders.size.toString(), Icons.Default.Receipt),
-        StatItem("Usuarios", "124", Icons.Default.People),
-        StatItem("Ventas", "S/ 1,240", Icons.Default.AttachMoney)
+        StatItem("Productos Ezzeta", ezzetaCount.toString(), Icons.Default.Inventory),
+        StatItem("Productos Clientes", clientCount.toString(), Icons.Default.Storefront),
+        StatItem("Pedidos Totales", orders.size.toString(), Icons.Default.Receipt),
+        StatItem("Ventas Totales", "S/ ${String.format(java.util.Locale.US, "%.2f", totalSales)}", Icons.Default.AttachMoney)
     )
 
     val adminActions = listOf(
-        AdminAction("Gestión Productos", Icons.Default.Edit, onNavigateToProductManagement),
-        AdminAction("Categorías", Icons.Default.Category, onNavigateToCategoryManagement),
-        AdminAction("Cupones", Icons.Default.LocalOffer, {}),
+        AdminAction("Productos Ezzeta", Icons.Default.Inventory2, { onNavigateToProductManagement("store") }),
+        AdminAction("Productos Clientes", Icons.Default.Storefront, { onNavigateToProductManagement("client") }),
+        AdminAction("Gestión Categorías", Icons.Default.Category, onNavigateToCategoryManagement),
+        AdminAction("Gestión Tallas", Icons.Default.Straighten, onNavigateToSizeManagement),
+        AdminAction("Tallas Clientes", Icons.Default.PeopleOutline, onNavigateToClientSizes),
+        AdminAction("Reglas de precios", Icons.Default.Discount, {}),
         AdminAction("Configuración", Icons.Default.Settings, {})
     )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Panel Administrativo", fontWeight = FontWeight.Bold) },
-                actions = {
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
-                    }
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Acciones Administrativas",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                HorizontalDivider()
+                adminActions.forEach { action ->
+                    NavigationDrawerItem(
+                        label = { Text(action.label) },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            action.onClick()
+                        },
+                        icon = { Icon(action.icon, contentDescription = null) },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
                 }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Resumen del Sistema",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.height(240.dp)
-            ) {
-                items(stats) { item ->
-                    StatCard(item)
-                }
+                Spacer(modifier = Modifier.weight(1f))
+                NavigationDrawerItem(
+                    label = { Text("Cerrar Sesión") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onLogout()
+                    },
+                    icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Acciones Rápidas",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f)
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Panel Administrativo", fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menú")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onLogout) {
+                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp)
             ) {
-                items(adminActions) { action ->
-                    ActionCard(action)
+                Text(
+                    text = "Resumen del Sistema",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(stats) { item ->
+                        StatCard(item)
+                    }
                 }
             }
         }
@@ -119,27 +152,6 @@ fun StatCard(item: StatItem) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = item.label, style = MaterialTheme.typography.labelMedium)
             Text(text = item.value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-fun ActionCard(action: AdminAction) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(100.dp),
-        onClick = action.onClick
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(action.icon, contentDescription = null)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = action.label, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-            }
         }
     }
 }

@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
                 val showBottomBar = currentRoute in listOf(
                     Screen.Home.route,
                     Screen.Categories.route,
-                    Screen.Trends.route,
+                    Screen.Marketplace.route,
                     Screen.Cart.route,
                     Screen.Profile.route
                 )
@@ -86,8 +86,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
                         EzzetaNavGraph(navController = navController, mainViewModel = mainViewModel)
-                        
-                        // Order Success Banner
+
                         AnimatedVisibility(
                             visible = showOrderSuccess,
                             enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),

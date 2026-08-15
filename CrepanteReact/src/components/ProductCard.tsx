@@ -5,9 +5,11 @@ import { useWishlist } from '../context/WishlistContext';
 import type { Product } from '../types';
 import { ProductHoverImage } from './ProductHoverImage';
 import QuickAddModal from './QuickAddModal';
-import { useState } from 'react';
+import PriceDisplay from './PriceDisplay';
+import { useMemo, useState } from 'react';
 import { PermissionGate } from './PermissionGate';
 import { PERMISSIONS } from '../utils/permissionCodes';
+import { resolveProductPrice } from '../services/pricingService';
 
 type ProductCardProps = {
   product: Product;
@@ -21,6 +23,11 @@ export const ProductCard = ({ product, variant = "default", onQuickAdd }: Produc
   const isFavorite = favorites.includes(product.id);
   const isCompact = variant === "compact";
   const isSearch = variant === "search";
+  const resultadoPrecio = useMemo(() => resolveProductPrice(product), [product]);
+  const precioOriginal = resultadoPrecio.precioOriginal;
+  const precioFinal = resultadoPrecio.precioFinal;
+  const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
+  const etiquetaDescuento = resultadoPrecio.etiquetaDescuento;
 
 if (isSearch) {
     return (
@@ -50,8 +57,11 @@ if (isSearch) {
                 </span>
 
                 <span className="mt-1 font-semibold text-red-600">
-                    S/{product.price}
+                    S/{precioFinal.toFixed(2)}
                 </span>
+                {hayDescuento ? (
+                    <span className="text-[11px] font-medium text-zinc-500">{etiquetaDescuento ?? 'Oferta activa'}</span>
+                ) : null}
             </div>
         </Link>
     );
@@ -76,29 +86,33 @@ if (isSearch) {
           <p className="mt-1 text-sm text-black/70">{product.category}</p>
         </div>
         <PermissionGate permission={PERMISSIONS.productUpdate}>
-        <button
-          type="button"
-          onClick={() => toggleFavorite(product.id)}
-          className={`rounded-full border p-2 transition ${isFavorite ? 'border-black-600 bg-red-600 text-white' : 'border-black/10 text-black hover:border-red-600 hover:text-red-600'}`}
-        >
-          <Heart size={16} />
-        </button>
+          <button
+            type="button"
+            onClick={() => toggleFavorite(product.id)}
+            className={`rounded-full border p-2 transition ${isFavorite ? 'border-red-600 bg-red-600 text-white' : 'border-black/10 text-black hover:border-red-600 hover:text-red-600'}`}
+          >
+            <Heart size={16} />
+          </button>
         </PermissionGate>
       </div>
       <div className="mt-4 flex items-center justify-between">
         <div>
-          {product.previousPrice ? <p className="text-sm text-black/40 line-through">S/{product.previousPrice}</p> : null}
-          <p className="text-base font-semibold text-red-600">S/{product.price}</p>
+          <PriceDisplay product={product} />
+          {hayDescuento && etiquetaDescuento ? (
+            <p className="mt-1 text-[11px] font-medium text-zinc-500">{etiquetaDescuento}</p>
+          ) : !hayDescuento && product.previousPrice ? (
+            <p className="mt-1 text-[11px] font-medium text-zinc-500">Oferta</p>
+          ) : null}
         </div>
         <div className="flex items-center gap-2">
           <PermissionGate permission={PERMISSIONS.salesCreate}>
-          <button
-            type="button"
-            onClick={() => setIsQuickOpen(true)}
-            className="rounded-full border border-black/10 p-2 text-black transition hover:border-red-600 hover:text-red-600"
-          >
-            <Plus size={16} />
-          </button>
+            <button
+              type="button"
+              onClick={() => setIsQuickOpen(true)}
+              className="rounded-full border border-black/10 p-2 text-black transition hover:border-red-600 hover:text-red-600"
+            >
+              <Plus size={16} />
+            </button>
           </PermissionGate>
           <QuickAddModal product={product} isOpen={isQuickOpen} onClose={() => setIsQuickOpen(false)} />
           {onQuickAdd ? (
@@ -106,8 +120,7 @@ if (isSearch) {
               type="button"
               onClick={() => onQuickAdd(product)}
               className="rounded-full border border-black/10 px-3 py-2 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
-            >
-              Ver
+            >Ver
             </button>
           ) : null}
         </div>

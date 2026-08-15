@@ -25,7 +25,13 @@ fun AdminDashboardScreen(
     onNavigateToProductManagement: (String) -> Unit,
     onNavigateToCategoryManagement: () -> Unit,
     onNavigateToSizeManagement: () -> Unit,
-    onNavigateToClientSizes: () -> Unit
+    onNavigateToClientSizes: () -> Unit,
+    onNavigateToMarketplaceRequests: () -> Unit,
+    onNavigateToShippingManagement: () -> Unit,
+    onNavigateToPriceRules: () -> Unit,
+    onNavigateToStats: () -> Unit,
+    onNavigateToCustomers: () -> Unit,
+    onNavigateToAbandonedCarts: () -> Unit
 ) {
     val ezzetaCount by viewModel.ezzetaProductsCount.collectAsState()
     val clientCount by viewModel.clientProductsCount.collectAsState()
@@ -35,20 +41,34 @@ fun AdminDashboardScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     
-    val stats = listOf(
-        StatItem("Productos Ezzeta", ezzetaCount.toString(), Icons.Default.Inventory),
-        StatItem("Productos Clientes", clientCount.toString(), Icons.Default.Storefront),
-        StatItem("Pedidos Totales", orders.size.toString(), Icons.Default.Receipt),
-        StatItem("Ventas Totales", "S/ ${String.format(java.util.Locale.US, "%.2f", totalSales)}", Icons.Default.AttachMoney)
-    )
+    val stats = remember(ezzetaCount, clientCount, orders, totalSales) {
+        val totalSalesText = try {
+            val safeSales = if (totalSales.isNaN() || totalSales.isInfinite()) 0.0 else totalSales
+            "S/ ${String.format(java.util.Locale.US, "%.2f", safeSales)}"
+        } catch (e: Exception) {
+            "S/ 0.00"
+        }
+        
+        listOf(
+            StatItem("Productos Tienda", ezzetaCount.toString(), Icons.Default.Inventory),
+            StatItem("Productos Clientes", clientCount.toString(), Icons.Default.Storefront),
+            StatItem("Pedidos Totales", (orders?.size ?: 0).toString(), Icons.Default.Receipt),
+            StatItem("Ventas Totales", totalSalesText, Icons.Default.AttachMoney)
+        )
+    }
 
     val adminActions = listOf(
-        AdminAction("Productos Ezzeta", Icons.Default.Inventory2, { onNavigateToProductManagement("store") }),
+        AdminAction("Productos Tienda", Icons.Default.Inventory2, { onNavigateToProductManagement("store") }),
         AdminAction("Productos Clientes", Icons.Default.Storefront, { onNavigateToProductManagement("client") }),
+        AdminAction("Solicitudes Marketplace", Icons.Default.PendingActions, onNavigateToMarketplaceRequests),
+        AdminAction("Estadísticas de Ventas", Icons.Default.BarChart, onNavigateToStats),
+        AdminAction("Información de Clientes", Icons.Default.Groups, onNavigateToCustomers),
+        AdminAction("Carritos abandonados", Icons.Default.ShoppingCartCheckout, onNavigateToAbandonedCarts),
         AdminAction("Gestión Categorías", Icons.Default.Category, onNavigateToCategoryManagement),
         AdminAction("Gestión Tallas", Icons.Default.Straighten, onNavigateToSizeManagement),
         AdminAction("Tallas Clientes", Icons.Default.PeopleOutline, onNavigateToClientSizes),
-        AdminAction("Reglas de precios", Icons.Default.Discount, {}),
+        AdminAction("Gestión de Envíos", Icons.Default.LocalShipping, onNavigateToShippingManagement),
+        AdminAction("Reglas de precios", Icons.Default.Discount, onNavigateToPriceRules),
         AdminAction("Configuración", Icons.Default.Settings, {})
     )
 

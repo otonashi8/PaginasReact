@@ -3,6 +3,7 @@ package com.example.ezzeta.data.repository
 import android.content.Context
 import com.example.ezzeta.data.mock.MockData
 import com.example.ezzeta.data.model.Category
+import com.example.ezzeta.data.model.MarketplaceRequest
 import com.example.ezzeta.data.model.Product
 import com.example.ezzeta.data.model.Store
 import com.google.gson.reflect.TypeToken
@@ -11,11 +12,13 @@ import kotlinx.coroutines.flow.*
 class ProductRepository {
     private val _products = MutableStateFlow<List<Product>>(MockData.products)
     private val _categories = MutableStateFlow<List<Category>>(MockData.categories)
+    private val _requests = MutableStateFlow<List<MarketplaceRequest>>(emptyList())
     private var _stores = MockData.stores
     
     private val PRODUCTS_FILE = "products.json"
     private val CATEGORIES_FILE = "categories.json"
     private val STORES_FILE = "stores.json"
+    private val REQUESTS_FILE = "marketplace_requests.json"
     
     fun getProducts(): StateFlow<List<Product>> = _products.asStateFlow()
 
@@ -27,7 +30,7 @@ class ProductRepository {
 
     fun init(context: Context) {
         try {
-            // Init Categories
+            // Init categorias
             val catType = object : TypeToken<List<Category>>() {}.type
             val loadedCats: List<Category>? = LocalJsonStorage.loadFromFile(context, CATEGORIES_FILE, catType)
             
@@ -59,7 +62,6 @@ class ProductRepository {
             val storeType = object : TypeToken<List<Store>>() {}.type
             val loadedStores: List<Store>? = LocalJsonStorage.loadFromFile(context, STORES_FILE, storeType)
             if (loadedStores != null) {
-                // Reparar websiteUrl tras migración de datos
                 _stores = loadedStores.map { loaded ->
                     val mock = MockData.stores.find { it.id == loaded.id }
                     loaded.copy(websiteUrl = loaded.websiteUrl ?: mock?.websiteUrl)
@@ -86,11 +88,15 @@ class ProductRepository {
                 LocalJsonStorage.saveToFile(context, PRODUCTS_FILE, _products.value)
             }
 
-            // Apply User Specific Data (Favorites)
             loadUserSpecificData(context)
+
+            val reqType = object : TypeToken<List<MarketplaceRequest>>() {}.type
+            val loadedReqs: List<MarketplaceRequest>? = LocalJsonStorage.loadFromFile(context, REQUESTS_FILE, reqType)
+            if (loadedReqs != null) {
+                _requests.value = loadedReqs
+            }
         } catch (e: Exception) {
             e.printStackTrace()
-            // Fallback to memory
             _categories.value = MockData.categories
             _stores = MockData.stores
             _products.value = MockData.products
@@ -139,7 +145,7 @@ class ProductRepository {
         return _products.value.filter { it.storeId == storeId }
     }
 
-    // Admin Panel
+    // panel admin
     fun addCategory(context: Context, category: Category) {
         val currentList = _categories.value.toMutableList()
         currentList.add(category)
@@ -187,6 +193,26 @@ class ProductRepository {
         if (currentList.removeIf { it.id == productId }) {
             _products.value = currentList
             LocalJsonStorage.saveToFile(context, PRODUCTS_FILE, _products.value)
+        }
+    }
+
+    // petisiones
+    fun getRequests(): StateFlow<List<MarketplaceRequest>> = _requests.asStateFlow()
+
+    fun addRequest(context: Context, request: MarketplaceRequest) {
+        val currentList = _requests.value.toMutableList()
+        currentList.add(0, request)
+        _requests.value = currentList
+        LocalJsonStorage.saveToFile(context, REQUESTS_FILE, _requests.value)
+    }
+
+    fun updateRequest(context: Context, request: MarketplaceRequest) {
+        val currentList = _requests.value.toMutableList()
+        val index = currentList.indexOfFirst { it.id == request.id }
+        if (index != -1) {
+            currentList[index] = request
+            _requests.value = currentList
+            LocalJsonStorage.saveToFile(context, REQUESTS_FILE, _requests.value)
         }
     }
 }

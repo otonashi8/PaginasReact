@@ -268,7 +268,10 @@ fun ProductQuickViewContent(
     onToggleFavorite: () -> Unit,
     onClose: () -> Unit
 ) {
-    var quantity by remember { mutableIntStateOf(1) }
+    val sizes = product.getAvailableSizes()
+    var selectedSize by remember(product.id) { mutableStateOf(sizes.firstOrNull { product.getStockForSize(it) > 0 } ?: "") }
+    
+    var quantity by remember(product.id, selectedSize) { mutableIntStateOf(1) }
     val productImages = remember(product) { product.imageUrls.ifEmpty { listOf(product.imageUrl) } }
     val pagerState = rememberPagerState(pageCount = { productImages.size })
 
@@ -368,9 +371,6 @@ fun ProductQuickViewContent(
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        val sizes = product.getAvailableSizes()
-        var selectedSize by remember(product.id) { mutableStateOf(sizes.firstOrNull() ?: "") }
-
         if (sizes.isNotEmpty()) {
             Text(text = "Seleccionar Talla", fontWeight = FontWeight.Bold)
             Row(
@@ -379,24 +379,41 @@ fun ProductQuickViewContent(
             ) {
                 sizes.forEach { size ->
                     val isSelected = selectedSize == size
+                    val stock = product.getStockForSize(size)
+                    val isAvailable = stock > 0
+                    
                     Surface(
                         modifier = Modifier
-                            .size(width = 50.dp, height = 36.dp)
+                            .size(width = 50.dp, height = 44.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .clickable { selectedSize = size }
+                            .clickable(enabled = isAvailable) { selectedSize = size }
                             .border(
                                 width = 1.dp,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                color = when {
+                                    isSelected -> MaterialTheme.colorScheme.primary
+                                    !isAvailable -> Color.LightGray.copy(alpha = 0.5f)
+                                    else -> Color.LightGray
+                                },
                                 shape = RoundedCornerShape(8.dp)
                             ),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+                        color = when {
+                            isSelected -> MaterialTheme.colorScheme.primary
+                            !isAvailable -> Color.LightGray.copy(alpha = 0.2f)
+                            else -> Color.Transparent
+                        }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
-                                text = size,
-                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                                text = if (isAvailable) size else "$size\n(Agt)",
+                                color = when {
+                                    isSelected -> Color.White
+                                    !isAvailable -> Color.Gray
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                },
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
+                                fontSize = if (isAvailable) 14.sp else 10.sp,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 12.sp
                             )
                         }
                     }
@@ -406,10 +423,13 @@ fun ProductQuickViewContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        val maxStock = if (selectedSize.isNotEmpty()) product.getStockForSize(selectedSize) else 0
+        
         Text(text = "Cantidad", fontWeight = FontWeight.Bold)
         QuantitySelector(
-            quantity = quantity,
-            onQuantityChange = { quantity = it },
+            quantity = quantity.coerceAtMost(maxStock.coerceAtLeast(1)),
+            onQuantityChange = { quantity = it.coerceAtMost(maxStock) },
+            maxQuantity = maxStock,
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
@@ -435,12 +455,13 @@ fun ProductQuickViewContent(
                     onAddToCart(selectedSize, quantity)
                     onClose()
                 },
+                enabled = selectedSize.isNotEmpty() && maxStock > 0,
                 modifier = Modifier.weight(1f).height(56.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Icon(Icons.Default.ShoppingCart, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Añadir a la cesta")
+                Text(if (maxStock > 0) "Añadir a la cesta" else "Sin Stock")
             }
         }
         
@@ -507,7 +528,8 @@ fun AutoRepeatIconButton(
 fun QuantitySelector(
     quantity: Int,
     onQuantityChange: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    maxQuantity: Int = 999
 ) {
     val textValue = remember(quantity) { mutableStateOf(quantity.toString()) }
 
@@ -546,7 +568,7 @@ fun QuantitySelector(
                         val limitedValue = if (newValue.length > 3) newValue.take(3) else newValue
                         textValue.value = limitedValue
                         limitedValue.toIntOrNull()?.let { 
-                            if (it > 0) onQuantityChange(it) 
+                            if (it > 0) onQuantityChange(it.coerceAtMost(maxQuantity)) 
                         }
                     }
                 },
@@ -564,6 +586,7 @@ fun QuantitySelector(
         AutoRepeatIconButton(
             icon = Icons.Default.Add,
             contentDescription = "Aumentar",
+            enabled = quantity < maxQuantity,
             onClick = { onQuantityChange(quantity + 1) }
         )
     }

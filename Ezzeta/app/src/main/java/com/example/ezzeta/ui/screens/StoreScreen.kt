@@ -122,7 +122,6 @@ fun StoreDetailScreen(
                 )
             }
 
-            // Products Grid
             items(
                 items = filteredProducts,
                 key = { it.id }

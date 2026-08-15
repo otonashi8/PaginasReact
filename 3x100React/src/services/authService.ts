@@ -180,6 +180,9 @@ const getRolePermissionMetadata = (modulo: string) => {
     reglas: { label: 'Reglas de precios', path: '/D-Admin/reglas-precios', codePrefix: 'pricing_rules' },
     pedidos: { label: 'Pedidos', path: '/D-Admin/pedidos', codePrefix: 'orders' },
     clientes: { label: 'Clientes', path: '/D-Admin/clientes/editar', codePrefix: 'customers' },
+    formularios: { label: 'Formularios', path: '/D-Admin/clientes/formularios', codePrefix: 'customers' },
+    formulario: { label: 'Formularios', path: '/D-Admin/clientes/formularios', codePrefix: 'customers' },
+    forms: { label: 'Formularios', path: '/D-Admin/clientes/formularios', codePrefix: 'customers' },
     usuarios: { label: 'Usuarios', path: '/D-Admin/usuarios', codePrefix: 'user' },
     roles: { label: 'Roles', path: '/D-Admin/roles', codePrefix: 'roles' },
     configuracion: { label: 'Configuración', path: '/D-Admin/configuracion', codePrefix: 'configuracion' },
@@ -253,7 +256,40 @@ const buildPermissionsFromRole = (rol: Rol | undefined): Permission[] => {
       path: metadata.path,
       permission_codes: accessCodes,
     });
+
+    if (parent === 'Clientes') {
+      const hasFormsAccess = groups[parent].accesses.some((access) => {
+        const label = String((access as Record<string, unknown>).label ?? '').trim().toLowerCase();
+        const path = String((access as Record<string, unknown>).path ?? '').trim().toLowerCase();
+        return label === 'formularios' || path === '/d-admin/clientes/formularios';
+      });
+
+      if (!hasFormsAccess) {
+        groups[parent].accesses.push({
+          label: 'Formularios',
+          path: '/D-Admin/clientes/formularios',
+          permission_codes: ['customers.update'],
+        });
+      }
+    }
   });
+
+  if (groups['Clientes']) {
+    const clientesGroup = groups['Clientes'];
+    const clientesHasFormsAccess = clientesGroup.accesses.some((access) => {
+      const label = String((access as Record<string, unknown>).label ?? '').trim().toLowerCase();
+      const path = String((access as Record<string, unknown>).path ?? '').trim().toLowerCase();
+      return label === 'formularios' || path === '/d-admin/clientes/formularios';
+    });
+
+    if (!clientesHasFormsAccess) {
+      clientesGroup.accesses.push({
+        label: 'Formularios',
+        path: '/D-Admin/clientes/formularios',
+        permission_codes: ['customers.update'],
+      });
+    }
+  }
 
   const ventasGroup = groups['Ventas'];
   if (ventasGroup) {
@@ -338,6 +374,7 @@ const buildFullDashboardPermissions = (): Permission[] => [
     label: 'Clientes',
     accesses: [
       { label: 'Editar clientes', path: '/D-Admin/clientes/editar', permission_code: 'customers.update' },
+      { label: 'Formularios', path: '/D-Admin/clientes/formularios', permission_code: 'customers.update' },
     ],
   },
   {
@@ -374,6 +411,7 @@ const buildClientsPermissions = (): Permission[] => [
     label: 'Clientes',
     accesses: [
       { label: 'Editar clientes', path: '/D-Admin/clientes/editar', permission_code: 'customers.update' },
+      { label: 'Formularios', path: '/D-Admin/clientes/formularios', permission_code: 'customers.update' },
     ],
   },
 ];

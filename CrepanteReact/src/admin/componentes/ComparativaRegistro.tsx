@@ -1,4 +1,4 @@
-import type { ComparativaRegistro as ComparativaRegistroType } from "../Clientes/TiposClientes";
+import type { ComparativaRegistro as ComparativaRegistroType } from "../Clientes/Clientes/TiposClientes";
 
 type Props = {
     comparativa: ComparativaRegistroType[];

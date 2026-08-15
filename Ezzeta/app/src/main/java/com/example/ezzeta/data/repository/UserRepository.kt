@@ -33,7 +33,6 @@ object UserRepository {
                 )
                 _currentUser.value = fixedUser
             } else {
-                // Legacy support: check SharedPreferences
                 val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 val uuid = prefs.getString(KEY_UUID, null)
                 

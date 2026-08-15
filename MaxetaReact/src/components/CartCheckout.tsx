@@ -1,4 +1,4 @@
-﻿import { motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { PermissionGate } from './PermissionGate';
 import { PERMISSIONS } from '../utils/permissionCodes';
@@ -86,6 +86,7 @@ export default function CartCheckout({
 
   useEffect(() => {
     const draftPhone: string | undefined = (paymentInfo as any)?.phone ?? undefined;
+
     setDraft({
       name: paymentInfo.name,
       email: paymentInfo.email,
@@ -103,137 +104,148 @@ export default function CartCheckout({
     <>
       {checkoutStep === 'checkout' ? (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-5 rounded-[1.25rem] border border-black/10 bg-white p-4 sm:p-5 lg:p-6 text-black shadow-[0_12px_30px_rgba(0,0,0,0.05)]">
-          <h3 className="text-lg font-bold uppercase tracking-[0.12em]">Datos de envío y contacto</h3>
-          <div className="mt-6 space-y-6 text-sm">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Nombre completo</span>
-                <input
-                  type="text"
-                  value={paymentInfo.name}
-                  onChange={(event) => setPaymentInfo({ ...paymentInfo, name: event.target.value })}
-                  className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                />
-              </label>
-              <label className="block">
-                <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Email</span>
-                <input
-                  type="email"
-                  value={paymentInfo.email}
-                  onChange={(event) => setPaymentInfo({ ...paymentInfo, email: event.target.value })}
-                  className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                />
-              </label>
-            </div>
+          <h3 className="text-base font-semibold">Datos de envío y contacto</h3>
+          <div className="mt-4 space-y-4 text-sm">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-black/60">Nombre completo</span>
+            <input
+              type="text"
+              value={paymentInfo.name}
+              onChange={(event) => setPaymentInfo({ ...paymentInfo, name: event.target.value })}
+              className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
+            />
+          </label>
+          <label className="block">
+            <span className="text-black/60">Email</span>
+            <input
+              type="email"
+              value={paymentInfo.email}
+              onChange={(event) => setPaymentInfo({ ...paymentInfo, email: event.target.value })}
+              className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
+            />
+          </label>
+        </div>
 
-            <label className="block">
-              <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Dirección de entrega</span>
-              <input
-                type="text"
-                value={paymentInfo.address}
-                onChange={(event) => setPaymentInfo({ ...paymentInfo, address: event.target.value })}
-                className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-              />
-            </label>
+        <label className="block">
+          <span className="text-black/60">Dirección de entrega</span>
+          <input
+            type="text"
+            value={paymentInfo.address}
+            onChange={(event) => setPaymentInfo({ ...paymentInfo, address: event.target.value })}
+            className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
+          />
+        </label>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <label className="block">
-                <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Departamento</span>
-                <input
-                  type="text"
-                  value={shippingAddress.departamento}
-                  readOnly
-                  placeholder="Departamento no seleccionado"
-                  className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                />
-                <p className="mt-2 text-sm text-black/70">
-                  {shippingLabel === 'GRATIS' ? '🎉 Envío gratis' : shipping !== undefined ? `S/${shipping.toFixed(2)} de envío` : 'Costo de envío por calcular'}
-                </p>
-              </label>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <label className="block">
+            <span className="text-black/60">Departamento</span>
+            <input
+              type="text"
+              value={shippingAddress.departamento}
+              readOnly
+              placeholder="Departamento no seleccionado"
+              className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
+            />
+            <p className="mt-2 text-sm text-black/70">
+              {shippingLabel === 'GRATIS' ? '🎉 Envío gratis' : shipping !== undefined ? `S/${shipping.toFixed(2)} de envío` : 'Costo de envío por calcular'}
+            </p>
+          </label>
 
-              <label className="block">
-                <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Provincia</span>
-                <select
-                  value={shippingAddress.provincia}
-                  onChange={(event) => setShippingAddress({
-                    ...shippingAddress,
-                    provincia: event.target.value,
-                    distrito: '',
-                  })}
-                  disabled={!shippingAddress.departamento}
-                  className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none disabled:cursor-not-allowed disabled:bg-black/5"
-                >
-                  <option value="">Selecciona una provincia</option>
-                  {provinces.map((province) => (
-                    <option key={province.code} value={province.name}>{province.name}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Distrito</span>
-                <select
-                  value={shippingAddress.distrito}
-                  onChange={(event) => setShippingAddress({ ...shippingAddress, distrito: event.target.value })}
-                  disabled={!shippingAddress.provincia}
-                  className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none disabled:cursor-not-allowed disabled:bg-black/5"
-                >
-                  <option value="">Selecciona un distrito</option>
-                  {districts.map((district) => (
-                    <option key={district.code} value={district.name}>{district.name}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
+          <label className="block">
+            <span className="text-black/60">Provincia</span>
+            <select
+              value={shippingAddress.provincia}
+              onChange={(event) => setShippingAddress({
+                ...shippingAddress,
+                provincia: event.target.value,
+                distrito: '',
+              })}
+              disabled={!shippingAddress.departamento}
+              className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none disabled:cursor-not-allowed disabled:bg-black/5"
+            >
+              <option value="">Selecciona una provincia</option>
+              {provinces.map((province) => (
+                <option key={province.code} value={province.name}>
+                  {province.name}
+                </option>
+              ))}
+            </select>
+          </label>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Código postal</span>
-                <input
-                  type="text"
-                  value={shippingAddress.codigoPostal}
-                  onChange={(event) => setShippingAddress({ ...shippingAddress, codigoPostal: event.target.value })}
-                  className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                />
-              </label>
-              <label className="block">
-                <span className="text-xs uppercase tracking-[0.12em] text-zinc-500">Referencia</span>
-                <input
-                  type="text"
-                  value={shippingAddress.referencia}
-                  onChange={(event) => setShippingAddress({ ...shippingAddress, referencia: event.target.value })}
-                  className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
-                />
-              </label>
-            </div>
+          <label className="block">
+            <span className="text-black/60">Distrito</span>
+            <select
+              value={shippingAddress.distrito}
+              onChange={(event) => setShippingAddress({
+                ...shippingAddress,
+                distrito: event.target.value,
+              })}
+              disabled={!shippingAddress.provincia}
+              className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none disabled:cursor-not-allowed disabled:bg-black/5"
+            >
+              <option value="">Selecciona un distrito</option>
+              {districts.map((district) => (
+                <option key={district.code} value={district.name}>
+                  {district.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <motion.button
-                type="button"
-                onClick={() => setCheckoutStep('cart')}
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex-1 rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold uppercase tracking-[0.08em] text-black transition hover:bg-black/5"
-              >
-                Volver
-              </motion.button>
-              <motion.button
-                type="button"
-                onClick={() => setCheckoutStep('payment')}
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex-1 rounded-full bg-black px-5 py-3 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-red-600"
-              >
-                Continuar al pago
-              </motion.button>
-            </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-black/60">Código postal</span>
+            <input
+              type="text"
+              value={shippingAddress.codigoPostal}
+              onChange={(event) => setShippingAddress({ ...shippingAddress, codigoPostal: event.target.value })}
+              className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-black/60">Referencia</span>
+            <input
+              type="text"
+              value={shippingAddress.referencia}
+              onChange={(event) => setShippingAddress({ ...shippingAddress, referencia: event.target.value })}
+              className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
+            />
+          </label>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <motion.button
+            type="button"
+            onClick={() => setCheckoutStep('cart')}
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-black/5"
+          >
+            Volver
+          </motion.button>
+          <motion.button
+            type="button"
+            onClick={() => setCheckoutStep('payment')}
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
+          >
+            Continuar al pago
+          </motion.button>
+        </div>
           </div>
         </motion.div>
       ) : null}
 
       {checkoutStep === 'payment' ? (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-5 rounded-[1.25rem] border border-black/10 bg-white p-4 sm:p-5 lg:p-6 text-black shadow-[0_12px_30px_rgba(0,0,0,0.05)]">
-          <h3 className="text-lg font-bold uppercase tracking-[0.12em]">Pago — {paymentInfo.paymentMethod}</h3>
-          <p className="mt-1 text-sm text-black/60">Usa Yape o tarjeta con Mercado Pago. Si la integración real no está disponible, este paso queda simulado pero listo para reemplazar el handler.</p>
+          <h3 className="text-base font-semibold">Pago</h3>
+          <p className="mt-1 text-sm text-black/60">
+            Usa Yape o tarjeta con Mercado Pago. Si la integración real no está disponible, este paso queda simulado pero listo para reemplazar el handler.
+          </p>
 
           <div className="mt-4 space-y-4 text-sm">
             <label className="block">
@@ -251,7 +263,9 @@ export default function CartCheckout({
             {paymentInfo.paymentMethod === 'yape' ? (
               <div className="rounded-[1rem] border border-dashed border-black/15 bg-black/[0.02] p-4">
                 <p className="font-semibold text-black">Bloque preparado para Yape</p>
-                <p className="mt-1 text-black/60">espacio para la api de iape</p>
+                <p className="mt-1 text-black/60">
+                  espacio para la api de iape
+                </p>
                 <label className="mt-4 block">
                   <span className="text-black/60">Número Yape</span>
                   <input
@@ -265,7 +279,9 @@ export default function CartCheckout({
             ) : (
               <div className="rounded-[1rem] border border-dashed border-black/15 bg-black/[0.02] p-4">
                 <p className="font-semibold text-black">Bloque preparado para Mercado Pago</p>
-                <p className="mt-1 text-black/60">simula tarjeta falta api</p>
+                <p className="mt-1 text-black/60">
+                  simula tarjeta falta api
+                </p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <label className="block">
                     <span className="text-black/60">Número de tarjeta</span>
@@ -314,7 +330,7 @@ export default function CartCheckout({
                 onClick={() => setCheckoutStep('checkout')}
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex-1 rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold uppercase tracking-[0.08em] text-black transition hover:bg-black/5"
+                className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-black/5"
               >
                 Volver
               </motion.button>
@@ -326,21 +342,22 @@ export default function CartCheckout({
                       alert('Tu carrito está vacío.');
                       return;
                     }
-                    if (!isAuthenticated || !user) {
-                      alert('Inicia sesión para registrar tu compra.');
-                      return;
-                    }
+
                     const cleanName = paymentInfo.name.trim();
                     const cleanAddress = paymentInfo.address.trim();
+
                     if (!cleanName || !cleanAddress || !shippingAddress.departamento || !shippingAddress.provincia || !shippingAddress.distrito) {
                       alert('Completa nombre, dirección y ubicación para continuar.');
                       return;
                     }
+
                     const problemaStock = validarStockDelCarrito(selectedProducts, getProducts);
+
                     if (problemaStock) {
                       alert(problemaStock);
                       return;
                     }
+
                     try {
                       createAndPersistOrder({
                         selectedProducts,
@@ -359,6 +376,7 @@ export default function CartCheckout({
                           const lineDiscount = hasActivePlan
                             ? Number((lineSubtotal * (activePlan?.descuento ?? 0 / 100)).toFixed(2))
                             : 0;
+
                           return {
                             productId: item.id,
                             name: item.name,
@@ -375,12 +393,13 @@ export default function CartCheckout({
                           items,
                           subtotal,
                           discount: discountAmount,
-                          total: discountedTotal+shipping,
+                          total: discountedTotal + shipping,
                           paymentMethod: paymentInfo.paymentMethod,
                         }).catch((error) => {
                           console.warn('No se pudo sincronizar la compra en el perfil:', error);
                         });
                       }
+
                       clearCart();
                       alert('Pago simulado. Gracias.');
                       setCheckoutStep('cart');
@@ -391,7 +410,7 @@ export default function CartCheckout({
                   }}
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex-1 rounded-full bg-red-600 px-5 py-3 text-sm font-bold uppercase tracking-[0.08em] text-white transition hover:bg-black"
+                  className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
                 >
                   Confirmar pago
                 </motion.button>

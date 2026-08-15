@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, LogOut, Shield } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ClientesCrudPanel } from './Clientes';
+import { ClientesCrudPanel } from './Clientes/ClientesCrudPanel';
 import { InventarioCrudPanel } from './Inventario/InventarioCrudPanel';
 import { SistemaCrudPanel } from './Sistema/SistemaCrudPanel';
 import { PedidosCrudPanel } from './Ventas/pedidos/PedidosCrudPanel';

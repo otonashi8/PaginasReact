@@ -23,7 +23,7 @@ export const SearchDropdown = ({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2 }}
-          className="absolute left-0 right-0 top-full z-50 mt-3 overflow-hidden border border-black/15 bg-zinc-100 shadow-[0_20px_45px_rgba(0,0,0,0.16)]"
+          className="absolute left-0 right-0 top-full mt-3 z-50 overflow-hidden rounded-3xl border border-black/10 bg-white shadow-2xl"
         >
           {products.length > 0 ? (
             <>
@@ -40,7 +40,7 @@ export const SearchDropdown = ({
 
               <button
                 onClick={onViewAll}
-                className="w-full border-t border-black/15 p-4 text-sm font-semibold text-red-600 transition hover:bg-black hover:text-white"
+                className="w-full border-t border-black/10 p-4 text-sm font-semibold text-red-600 transition hover:bg-white"
               >
                 Ver todos los resultados ({products.length})
               </button>
@@ -65,7 +65,7 @@ export const SearchDropdown = ({
                 ].map((item) => (
                   <span
                     key={item}
-                    className="border border-black/15 bg-transparent px-3 py-1 text-sm"
+                    className="rounded-full bg-white px-3 py-1 text-sm"
                   >
                     {item}
                   </span>

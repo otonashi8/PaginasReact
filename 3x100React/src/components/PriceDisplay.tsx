@@ -18,10 +18,10 @@ export const PriceDisplay = ({ product, cantidad, className = '' }: Props) => {
       {hayDescuento ? (
         <>
           <span className="text-sm text-black/40 line-through">S/{precioOriginal.toFixed(2)}</span>
-          <span className="text-lg font-extrabold text-orange-600">S/{precioFinal.toFixed(2)}</span>
+          <span className="text-lg font-extrabold text-red-600">S/{precioFinal.toFixed(2)}</span>
         </>
       ) : (
-        <span className="text-lg font-semibold text-orange-600">S/{precioFinal.toFixed(2)}</span>
+        <span className="text-lg font-semibold text-red-600">S/{precioFinal.toFixed(2)}</span>
       )}
     </span>
   );

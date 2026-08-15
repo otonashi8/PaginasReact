@@ -42,12 +42,12 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 14 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full max-w-3xl overflow-hidden rounded-none border border-zinc-200/90 bg-white shadow-[0_26px_70px_rgba(0,0,0,0.16)]"
+            className="w-full max-w-3xl overflow-hidden rounded-[1.75rem] border border-zinc-200/90 bg-white shadow-[0_26px_70px_rgba(0,0,0,0.16)]"
           >
             <div className="grid md:grid-cols-[1.05fr_0.95fr]">
               <div className="relative border-b border-zinc-100 bg-zinc-50 md:border-b-0 md:border-r">
-                <img src={product.image} alt={product.name} className="h-64 w-full object-contain p-6 sm:h-72 md:h-full md:min-h-[520px] md:p-8 bg bg-white" />
-                <div className="absolute left-4 top-4 rounded-none border border-zinc-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-black/70 backdrop-blur">
+                <img src={product.image} alt={product.name} className="h-64 w-full object-contain p-6 sm:h-72 md:h-full md:min-h-[520px] md:p-8" />
+                <div className="absolute left-4 top-4 rounded-full border border-zinc-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-black/70 backdrop-blur">
                   Compra Rápida
                 </div>
               </div>
@@ -88,7 +88,7 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                     <select
                       value={selSize}
                       onChange={(e) => setSelSize(e.target.value)}
-                      className="mt-2 h-12 w-full rounded-none border border-zinc-200 bg-white px-4 text-sm text-black outline-none transition focus:border-zinc-400"
+                      className="mt-2 h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-black outline-none transition focus:border-zinc-400"
                     >
                       {product.sizes.map((s) => (
                         <option key={s} value={s}>{s}</option>

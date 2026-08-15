@@ -1,16 +1,24 @@
-import { useClientes } from "./hooks";
-import { useClientesDashboard } from "./hooks/useClientesDashboard";
-import { ClientesDashboard } from "./ClientesDashboard";
-import { TablaClientes } from "./TablaClientes";
-import { FiltrosClientes } from "./componentes/FiltrosClientes";
+import { useLocation } from 'react-router-dom';
+import { useClientes } from "./Clientes/hooks/useClientes";
+import { useClientesDashboard } from "./Clientes/hooks/useClientesDashboard";
+import { ClientesDashboard } from "./Clientes/ClientesDashboard";
+import { TablaClientes } from "./Clientes/TablaClientes";
+import { FiltrosClientes } from "./Clientes/componentes/FiltrosClientes";
 import { PaginacionClientes } from "../componentes/Paginacion";
-import { ModalClienteInfo } from "./componentes/ModalClienteInfo";
-import { ModalEditarCliente } from "./componentes/ModalEditarCliente";
+import { ModalClienteInfo } from "./Clientes/componentes/ModalClienteInfo";
+import { ModalEditarCliente } from "./Clientes/componentes/ModalEditarCliente";
 import { ExportButton } from "../componentes/ExportButton";
 import { buildCsv, downloadCsv, formatFilenameDateRange } from "../utils/exportCsv";
 import { registrarExportacion } from "../../services/auditService";
+import { FormulariosCrudPanel } from './Formularios/FormulariosCrudPanel';
 
 export const ClientesCrudPanel = () => {
+    const location = useLocation();
+    const esRutaFormularios = location.pathname.toLowerCase().includes('/clientes/formularios');
+
+    if (esRutaFormularios) {
+        return <FormulariosCrudPanel />;
+    }
     const {
         clientes,
         clientesOrdenados,

@@ -59,7 +59,9 @@ fun ProfileScreen(
     onAddressBookClick: () -> Unit,
     onPaymentMethodsClick: () -> Unit,
     onLoginClick: () -> Unit,
-    onMyProductsClick: () -> Unit
+    onLogout: () -> Unit,
+    onMyProductsClick: () -> Unit,
+    onMySalesClick: () -> Unit
 ) {
     val user by viewModel.currentUser.collectAsState()
     val isDarkTheme by viewModel.isDarkTheme.collectAsState()
@@ -197,6 +199,8 @@ fun ProfileScreen(
         )
     }
 
+    val myProducts by viewModel.myProducts.collectAsState()
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -282,8 +286,7 @@ fun ProfileScreen(
                     } else {
                         Button(
                             onClick = { 
-                                viewModel.logout(context)
-                                onLoginClick()
+                                onLogout()
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.error,
@@ -363,7 +366,10 @@ fun ProfileScreen(
             }
             
             item { ProfileMenuItem(icon = Icons.Default.ShoppingBag, title = "Mis pedidos", onClick = onOrdersClick) }
-            item { ProfileMenuItem(icon = Icons.Default.Inventory, title = "Mis productos", onClick = onMyProductsClick) }
+            if (myProducts.isNotEmpty()) {
+                item { ProfileMenuItem(icon = Icons.Default.Inventory, title = "Mis productos", onClick = onMyProductsClick) }
+                item { ProfileMenuItem(icon = Icons.Default.Storefront, title = "Mis ventas", onClick = onMySalesClick) }
+            }
             item { ProfileMenuItem(icon = Icons.Default.Favorite, title = "Lista de Deseos", onClick = onWishlistClick) }
             item { ProfileMenuItem(icon = Icons.Default.History, title = "Historial", onClick = onHistoryClick) }
             item { ProfileMenuItem(icon = Icons.Default.People, title = "Siguiendo", onClick = onFollowingClick) }

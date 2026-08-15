@@ -254,74 +254,67 @@ export const MembershipModal = ({
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 24, opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full max-w-5xl max-h-[92dvh] overflow-y-auto border border-white/10 bg-[#111111] text-white shadow-[0_40px_120px_rgba(0,0,0,0.6)] p-5 sm:p-7 lg:p-8"
+            className="relative w-full max-w-3xl max-h-[90dvh] overflow-y-auto rounded-[1.8rem] border border-black/10 bg-white p-4 shadow-[0_30px_75px_rgba(0,0,0,0.22)]
+                      sm:rounded-[2rem] sm:p-6 lg:p-8"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex flex-col gap-6 border-b border-white/10 pb-7 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-4 border-b border-black/10 pb-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <span className="inline-flex items-center border border-green-500 bg-green-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-green-400">● Activa</span>
-                <h2 className="mt-4 text-3xl font-bold uppercase tracking-[0.12em] text-white">{currentPlan.nombre}</h2>
-                <p className="mt-2 text-sm text-white/60">Panel de administración de tu membresía mayorista.</p>
+                <p className="text-xs uppercase tracking-[0.28em] text-black/50">Tu membresía</p>
+                <h2 className="mt-2 text-2xl sm:text-3xl font-semibold text-black">{currentPlan.nombre}</h2>
+                <p className="mt-2 max-w-2xl text-xs sm:text-sm text-black/70">
+                  Consulta los detalles de tu membresía activa y mejora tu plan cuando lo necesites.
+                </p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="self-end border border-white/10 bg-[#1A1A1A] px-4 py-2 text-sm font-medium text-white transition hover:border-red-600 hover:text-red-500"
+                className="self-end sm:self-auto rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:border-black/30"
               >
                 X
               </button>
             </div>
 
-            <div className="mt-8 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-              <div className="sticky top-0 border border-white/10 bg-[#111111] p-7">
-                <div className="space-y-2">
-                  <div className="flex h-12 w-12 items-center justify-center border border-white/10 bg-black">
-                    <UserRound size={18} className="text-white"/>
-                  </div>
-                  <div>
-                      <p className="text-xs uppercase tracking-[0.28em] text-white/40">Perfil</p>
-                      <h3 className="text-lg font-semibold text-white">Datos del usuario</h3>
-                  </div>
+            <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="rounded-[1.4rem] border border-black/10 bg-white p-5 shadow-[0_12px_30px_rgba(0,0,0,0.06)]">
+                <div className="flex items-center gap-2">
+                  <UserRound size={15} className="text-black" />
+                  <p className="text-sm uppercase tracking-[0.28em] text-black/60">Datos del usuario</p>
                 </div>
-                <div className="mt-4 space-y-3 text-sm text-white/75">
+                <div className="mt-4 space-y-3 text-sm text-black/75">
                   <div className="flex items-start justify-between gap-3">
-                    <span className="text-white/60">Nombre</span>
-                    <span className="font-medium text-white">{profileName || 'Cliente mayorista'}</span>
+                    <span className="text-black/60">Nombre</span>
+                    <span className="font-medium text-black">{profileName || 'Cliente mayorista'}</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
-                    <span className="text-white/60">Correo</span>
-                    <span className="font-medium text-white">{profileEmail || 'Sin correo registrado'}</span>
+                    <span className="text-black/60">Correo</span>
+                    <span className="font-medium text-black">{profileEmail || 'Sin correo registrado'}</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
-                    <span className="text-white/60">Plan</span>
-                    <span className="font-medium text-white">{currentPlan.nombre}</span>
+                    <span className="text-black/60">Plan</span>
+                    <span className="font-medium text-black">{currentPlan.nombre}</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
-                    <span className="text-white/60">Descuento</span>
-                    <span className="font-medium text-white">{user?.discount ?? currentPlan.descuento}%</span>
+                    <span className="text-black/60">Descuento</span>
+                    <span className="font-medium text-black">{user?.discount ?? currentPlan.descuento}%</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
-                    <span className="text-white/60">Renovación</span>
-                    <span className="font-medium text-white">{user?.renewalDate || 'Por confirmar'}</span>
+                    <span className="text-black/60">Renovación</span>
+                    <span className="font-medium text-black">{user?.renewalDate || 'Por confirmar'}</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
-                    <span className="text-white/60">Días restantes</span>
-                    <span className="font-medium text-white">{user?.daysRemaining ?? 0} días</span>
+                    <span className="text-black/60">Días restantes</span>
+                    <span className="font-medium text-black">{user?.daysRemaining ?? 0} días</span>
                   </div>
                 </div>
               </div>
 
-              <div className="sticky top-0 border border-white/10 bg-[#111111] p-7">
-                <div className="space-y-2">
-                  <div className="flex h-12 w-12 items-center justify-center border border-red-600/30 bg-red-600/10">
-                    <Sparkles size={18} className="text-red-500"/>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.28em] text-white/40">Membresía</p>
-                    <h3 className="text-lg font-semibold text-white">Beneficios incluidos</h3>
-                  </div>
+              <div className="rounded-[1.4rem] border border-black/10 bg-white p-5 shadow-[0_12px_30px_rgba(0,0,0,0.06)]">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-red-600" />
+                  <p className="text-sm uppercase tracking-[0.28em] text-black/60">Beneficios</p>
                 </div>
-                <ul className="mt-4 space-y-2 text-sm text-white/75">
+                <ul className="mt-4 space-y-2 text-sm text-black/75">
                   {currentPlan.beneficios.map((benefit) => (
                     <li key={benefit} className="flex items-start gap-2">
                       <Check size={15} className="mt-0.5 shrink-0 text-red-600" />
@@ -332,23 +325,20 @@ export const MembershipModal = ({
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col gap-5 border-t border-white/10 pt-6 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-white/40">Estado</p>
-                <p className="mt-1 text-white">
-                  Tu plan <span className="font-semibold">{currentPlan.nombre}</span> se encuentra activo y funcionando correctamente.
-                </p>
-              </div>
+            <div className="mt-6 flex flex-col gap-3 border-t border-black/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-center text-sm text-black/70 sm:text-left">
+                Tu membresía actual está activa con <span className="font-semibold text-black">{currentPlan.nombre}</span>.
+              </p>
               <PermissionGate permission={PERMISSIONS.subscriptionUpdate}>
-              <motion.button
-                type="button"
-                onClick={() => setView('select')}
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.98 }}
-                className="border border-red-600 bg-red-600 px-6 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-white transition hover:bg-red-500"
-              >
-                Administrar membresía →
-              </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => setView('select')}
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-red-600"
+                >
+                  ✨ Cambiar Plan
+                </motion.button>
               </PermissionGate>
             </div>
           </motion.div>
@@ -371,22 +361,22 @@ export const MembershipModal = ({
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 24, opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-          className="relative w-full max-w-6xl max-h-[90dvh] overflow-y-auto rounded-[1.8rem] sm:rounded-[2rem] border border-black/10 bg-[#1A1A1A] p-4 sm:p-6 lg:p-8 shadow-[0_30px_80px_rgba(0,0,0,0.22)]"
+          className="relative w-full max-w-6xl max-h-[90dvh] overflow-y-auto rounded-[1.8rem] sm:rounded-[2rem] border border-black/10 bg-white p-4 sm:p-6 lg:p-8 shadow-[0_30px_80px_rgba(0,0,0,0.22)]"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex flex-col gap-6 border-b border-white/10 pb-7 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-4 border-b border-black/10 pb-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <div className="space-y-2">
-                <Building2 size={15} className="text-white text-2xl" />
-                <p className="text-xs uppercase tracking-[0.28em] text-white/50">Membresía mayorista</p>
+              <div className="flex items-center gap-2">
+                <Building2 size={15} className="text-black" />
+                <p className="text-xs uppercase tracking-[0.28em] text-black/50">Membresía mayorista</p>
               </div>
-              <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-semibold text-white text-2xl">
+              <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-semibold text-black">
                 {flowStep === 'plan' && 'Elige tu plan'}
                 {flowStep === 'account' && 'Crea tu cuenta'}
                 {flowStep === 'payment' && 'Completa tu suscripción'}
                 {flowStep === 'success' && '¡Todo listo!'}
               </h2>
-              <p className="mt-2 max-w-2xl text-xs sm:text-sm text-white/70">
+              <p className="mt-2 max-w-2xl text-xs sm:text-sm text-black/70">
                 {flowStep === 'plan' && 'Compara beneficios, descuentos y duración para encontrar el plan ideal.'}
                 {flowStep === 'account' && 'Registra tus datos para activar tu membresía y disfrutar beneficios exclusivos.'}
                 {flowStep === 'payment' && 'Elige tu método de pago preferido y confirma la activación del plan.'}
@@ -396,13 +386,13 @@ export const MembershipModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="self-end border border-white/10 bg-[#1A1A1A] px-4 py-2 text-sm font-medium text-white transition hover:border-red-600 hover:text-red-500"
+              className="self-end sm:self-auto rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:border-black/30"
             >
               X
             </button>
           </div>
 
-          <div className="mt-8 grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#111111] p-3 sm:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {['plan', 'account', 'payment', 'success'].map((step, index) => {
               const isCompleted = ['plan', 'account', 'payment', 'success'].indexOf(flowStep) > index;
               const isActive = flowStep === step;
@@ -418,7 +408,7 @@ export const MembershipModal = ({
                 <motion.div
                   key={step}
                   whileHover={{ y: -1 }}
-                  className={`flex flex-col items-center justify-center gap-3 border px-4 py-4 text-xs uppercase tracking-[0.15em] transition-all duration-300 ${isActive ? 'border-red-600 bg-[#151515] text-white shadow-[0_0_35px_rgba(220,38,38,.18)]' : isCompleted ? 'border-red-600 bg-red-600 text-white' : 'border-white/10 bg-[#1A1A1A] text-white hover:border-red-600/60'}`}
+                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs uppercase tracking-[0.18em] ${isActive ? 'border-black bg-black text-white' : isCompleted ? 'border-red-600 bg-red-600 text-white' : 'border-black/10 bg-white text-black/70'}`}
                 >
                   <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-current/30">
                     <Icon size={13} />
@@ -443,13 +433,11 @@ export const MembershipModal = ({
                       whileHover={{ y: -3, scale: 1.01 }}
                       whileTap={{ scale: 0.995 }}
                       onClick={() => handlePlanSelect(plan)}
-                      className={`border p-6 text-left transition-all duration-300 ${isSelected ? 'border-red-600 bg-[#151515] text-white shadow-[0_0_35px_rgba(220,38,38,.18)]' : 'border-black/10 bg-white text-black hover:border-black/30'}`}
+                      className={`rounded-[1.4rem] border p-4 text-left shadow-[0_10px_24px_rgba(0,0,0,0.06)] transition ${isSelected ? 'border-black bg-black text-white' : 'border-black/10 bg-white text-black hover:border-black/30'}`}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2">
-                          <div className="flex h-12 w-12 items-center justify-center border border-red-600/30 bg-red-600/10 text-2xl">
-                            {plan.icono}
-                          </div>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{plan.icono}</span>
                           <span className="font-semibold">{plan.nombre}</span>
                         </div>
                         <span className="rounded-full border border-current/20 px-2 py-1 text-[10px] uppercase tracking-[0.25em]">
@@ -461,33 +449,33 @@ export const MembershipModal = ({
 
                       <div className="mt-4 flex items-end justify-between">
                         <div>
-                          <p className="text-4xl font-bold tracking-tight">S/{plan.precio}</p>
-                          <p className="mt-2 text-xs uppercase tracking-[0.18em] text-red-500">{plan.descuento}% de descuento</p>
+                          <p className="text-2xl font-semibold">S/{plan.precio}</p>
+                          <p className="mt-1 text-sm text-inherit/70">{plan.descuento}% de descuento</p>
                         </div>
-                        <div className="border border-white/10 bg-[#1A1A1A]/10 px-3 py-1 text-sm">{plan.duracion}</div>
+                        <div className="rounded-full bg-white/10 px-3 py-1 text-sm">{plan.duracion}</div>
                       </div>
                     </motion.button>
                   );
                 })}
               </div>
 
-              <div className="sticky top-0 border border-white/10 bg-[#111111] p-7">
-                <div className="flex items-start justify-between">
+              <div className="rounded-[1.4rem] border border-black/10 bg-white p-5 shadow-[0_12px_32px_rgba(0,0,0,0.07)]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.28em] text-white/40">Tu elección</p>
-                    <h3 className="mt-2 text-xl font-semibold text-white">{selectedPlan.nombre}</h3>
+                    <p className="text-sm uppercase tracking-[0.28em] text-black/60">Tu elección</p>
+                    <h3 className="mt-2 text-xl font-semibold text-black">{selectedPlan.nombre}</h3>
                   </div>
-                  <div className="border border-red-600 bg-red-600 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                  <div className="rounded-full bg-white px-3 py-1 text-sm font-medium text-black">
                     {selectedPlan.descuento}% dto.
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-[1.2rem] border border-black/10 bg-[#111111] p-4">
+                <div className="mt-5 rounded-[1.2rem] border border-black/10 bg-white p-4">
                   <div className="flex items-center gap-2 text-red-600">
                     <ShieldCheck size={16} />
                     <span className="text-sm font-semibold uppercase tracking-[0.2em]">Incluye</span>
                   </div>
-                  <ul className="mt-3 space-y-2 text-sm text-white/70 uppercase tracking-[0.12em]">
+                  <ul className="mt-3 space-y-2 text-sm text-black/75">
                     {selectedPlan.beneficios.map((benefit) => (
                       <li key={benefit} className="flex items-start gap-2">
                         <Check size={15} className="mt-0.5 shrink-0 text-red-600" />
@@ -496,63 +484,64 @@ export const MembershipModal = ({
                     ))}
                   </ul>
                 </div>
+
                 <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
-                <motion.button
-                  type="button"
-                  onClick={handleContinueToAccount}
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.99 }}
-                  className="mt-8 w-full border border-red-600 bg-red-600 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-red-500"
-                >
-                  Continuar al pago
-                </motion.button>
+                  <motion.button
+                    type="button"
+                    onClick={handleContinueToAccount}
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.99 }}
+                    className="mt-5 w-full rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
+                  >
+                    Continuar al pago
+                  </motion.button>
                 </PermissionGate>
               </div>
             </motion.div>
           ) : null}
 
           {flowStep === 'account' ? (
-            <motion.form key="account" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mt-8 grid grid-cols-1 gap-8 border border-white/10 bg-[#111111] p-7 lg:grid-cols-[1fr_1fr]" onSubmit={handleRegisterSubmit}>
-              <div className="space-y-5 border-r border-white/10 pr-0 lg:pr-8">
-                <label className="block text-sm text-white/70 uppercase tracking-[0.12em]">
+            <motion.form key="account" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mt-6 grid grid-cols-1 gap-5 rounded-2xl border border-black/10 bg-white p-4 sm:p-5 shadow-[0_12px_32px_rgba(0,0,0,0.07)] lg:grid-cols-2" onSubmit={handleRegisterSubmit}>
+              <div className="space-y-3 sm:space-y-4">
+                <label className="block text-sm text-black/75">
                   <span className="mb-1 block font-medium">Usuario</span>
-                  <input name="username" value={registerForm.username} onChange={handleRegisterChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-red-600" placeholder="Tu usuario" required />
+                  <input name="username" value={registerForm.username} onChange={handleRegisterChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="Tu usuario" required />
                 </label>
-                <label className="block text-sm text-white/70 uppercase tracking-[0.12em]">
+                <label className="block text-sm text-black/75">
                   <span className="mb-1 block font-medium">Correo</span>
-                  <input name="email" type="email" value={registerForm.email} onChange={handleRegisterChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-red-600" placeholder="correo@empresa.com" required />
+                  <input name="email" type="email" value={registerForm.email} onChange={handleRegisterChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="correo@empresa.com" required />
                 </label>
-                <label className="block text-sm text-white/70 uppercase tracking-[0.12em]">
+                <label className="block text-sm text-black/75">
                   <span className="mb-1 block font-medium">Teléfono</span>
-                  <input name="phone" value={registerForm.phone} onChange={handleRegisterChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-red-600" placeholder="987654321" required />
+                  <input name="phone" value={registerForm.phone} onChange={handleRegisterChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="987654321" required />
                 </label>
-                <label className="block text-sm text-white/70 uppercase tracking-[0.12em]">
+                <label className="block text-sm text-black/75">
                   <span className="mb-1 block font-medium">RUC (opcional)</span>
-                  <input name="ruc" value={registerForm.ruc || ''} onChange={handleRegisterChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-red-600" placeholder="20600000000" />
+                  <input name="ruc" value={registerForm.ruc || ''} onChange={handleRegisterChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="20600000000" />
                 </label>
               </div>
 
-              <div className="space-y-5 border-r border-white/10 pr-0 lg:pr-8">
-                <label className="block text-sm text-white/70 uppercase tracking-[0.12em]">
+              <div className="space-y-3 sm:space-y-4">
+                <label className="block text-sm text-black/75">
                   <span className="mb-1 block font-medium">Contraseña</span>
-                  <input name="password" type="password" value={registerForm.password} onChange={handleRegisterChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-red-600" placeholder="••••••••" required />
+                  <input name="password" type="password" value={registerForm.password} onChange={handleRegisterChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="••••••••" required />
                 </label>
-                <label className="block text-sm text-white/70 uppercase tracking-[0.12em]">
+                <label className="block text-sm text-black/75">
                   <span className="mb-1 block font-medium">Confirmar contraseña</span>
-                  <input name="confirmPassword" type="password" value={registerForm.confirmPassword} onChange={handleRegisterChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-red-600" placeholder="••••••••" required />
+                  <input name="confirmPassword" type="password" value={registerForm.confirmPassword} onChange={handleRegisterChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="••••••••" required />
                 </label>
-                <label className="block text-sm text-white/70 uppercase tracking-[0.12em]">
+                <label className="block text-sm text-black/75">
                   <span className="mb-1 block font-medium">Método de pago</span>
-                  <select name="paymentMethod" value={paymentForm.paymentMethod} onChange={handlePaymentChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-red-600">
+                  <select name="paymentMethod" value={paymentForm.paymentMethod} onChange={handlePaymentChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none">
                     <option value="card">Tarjeta</option>
                     <option value="yape">Yape</option>
                     <option value="paypal">PayPal</option>
                     <option value="cash">Contra entrega</option>
                   </select>
                 </label>
-                <label className="flex flex-col gap-4 border border-white/10 bg-[#181818] p-5 lg:flex-row lg:items-center lg:justify-between">
-                  <span className="text-white">Renovación automática</span>
-                  <select name="autoRenew" value={String(registerForm.autoRenew)} onChange={handleRegisterChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white outline-none focus:border-red-600">
+                <label className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm text-black/75">
+                  <span>Renovación automática</span>
+                  <select name="autoRenew" value={String(registerForm.autoRenew)} onChange={handleRegisterChange} className="w-full sm:w-auto rounded-full border border-black/10 bg-white px-3 py-2 text-sm outline-none">
                     <option value="true">Sí</option>
                     <option value="false">No</option>
                   </select>
@@ -562,48 +551,48 @@ export const MembershipModal = ({
               {error ? <p className="text-sm text-red-600 lg:col-span-2">{error}</p> : null}
 
               <div className="flex flex-col gap-3 sm:flex-row lg:col-span-2">
-                <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setFlowStep('plan')} className="flex-1 rounded-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm font-medium text-black transition hover:bg-red-600 uppercase tracking-[0.16em]/5">
+                <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setFlowStep('plan')} className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-black/5">
                   Volver
                 </motion.button>
                 <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
-                <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="submit" className="flex-1 rounded-full bg-red-600 uppercase tracking-[0.16em] px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600">
-                  Continuar
-                </motion.button>
+                  <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="submit" className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600">
+                    Continuar
+                  </motion.button>
                 </PermissionGate>
               </div>
             </motion.form>
           ) : null}
 
           {flowStep === 'payment' ? (
-            <motion.form key="payment" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mt-8 border border-white/10 bg-[#111111] p-7" onSubmit={handlePaymentSubmit}>
-              <div className="space-y-5 border-r border-white/10 pr-0 lg:pr-8">
-                <div className="rounded-[1.2rem] border border-white/10 bg-[#1A1A1A] p-4">
-                  <p className="text-xs uppercase tracking-[0.25em] text-white/50">Plan seleccionado</p>
+            <motion.form key="payment" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mt-6 rounded-2xl border border-black/10 bg-white p-4 sm:p-5 shadow-[0_12px_32px_rgba(0,0,0,0.07)]" onSubmit={handlePaymentSubmit}>
+              <div className="space-y-3 sm:space-y-4">
+                <div className="rounded-[1.2rem] border border-black/10 bg-white p-4">
+                  <p className="text-xs uppercase tracking-[0.25em] text-black/50">Plan seleccionado</p>
                   <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-lg font-semibold text-white">{selectedPlan.nombre}</p>
-                      <p className="text-center text-sm text-white/70 sm:text-left">{selectedPlan.descuento}% de descuento mensual</p>
+                      <p className="text-lg font-semibold text-black">{selectedPlan.nombre}</p>
+                      <p className="text-center text-sm text-black/70 sm:text-left">{selectedPlan.descuento}% de descuento mensual</p>
                     </div>
-                    <div className="self-start border border-white/10 bg-[#1A1A1A] px-3 py-1 text-sm font-medium text-white">S/{selectedPlan.precio}</div>
+                    <div className="self-start rounded-full bg-white px-3 py-1 text-sm font-medium text-black">S/{selectedPlan.precio}</div>
                   </div>
                 </div>
 
                 {paymentForm.paymentMethod === 'card' ? (
-                  <div className="space-y-4 rounded-[1.2rem] border border-white/10 bg-[#1A1A1A] p-4">
-                    <label className="block text-sm text-white/70 uppercase tracking-[0.12em]">
+                  <div className="space-y-4 rounded-[1.2rem] border border-black/10 bg-white p-4">
+                    <label className="block text-sm text-black/75">
                       <span className="mb-1 block font-medium">Número de tarjeta</span>
-                      <input name="cardNumber" value={paymentForm.cardNumber} onChange={handlePaymentChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-red-600" placeholder="4242 4242 4242 4242" required />
+                      <input name="cardNumber" value={paymentForm.cardNumber} onChange={handlePaymentChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="4242 4242 4242 4242" required />
                     </label>
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                      <label className="block text-sm text-white/70 uppercase tracking-[0.12em]">
+                      <label className="block text-sm text-black/75">
                         <span className="mb-1 block font-medium">Nombre en la tarjeta</span>
-                        <input name="cardName" value={paymentForm.cardName} onChange={handlePaymentChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-red-600" placeholder="Juan Pérez" required />
+                        <input name="cardName" value={paymentForm.cardName} onChange={handlePaymentChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="Juan Pérez" required />
                       </label>
-                      <label className="block text-sm text-white/70 uppercase tracking-[0.12em]">
+                      <label className="block text-sm text-black/75">
                         <span className="mb-1 block font-medium">Expiración / CVC</span>
                         <div className="flex flex-col gap-2 sm:flex-row">
-                          <input name="cardExpiry" value={paymentForm.cardExpiry} onChange={handlePaymentChange} className="w-full sm:w-1/2 rounded-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm outline-none" placeholder="MM/AA" required />
-                          <input name="cardCvc" value={paymentForm.cardCvc} onChange={handlePaymentChange} className="w-full sm:w-1/2 rounded-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm outline-none" placeholder="CVC" required />
+                          <input name="cardExpiry" value={paymentForm.cardExpiry} onChange={handlePaymentChange} className="w-full sm:w-1/2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="MM/AA" required />
+                          <input name="cardCvc" value={paymentForm.cardCvc} onChange={handlePaymentChange} className="w-full sm:w-1/2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="CVC" required />
                         </div>
                       </label>
                     </div>
@@ -611,14 +600,14 @@ export const MembershipModal = ({
                 ) : null}
 
                 {paymentForm.paymentMethod === 'yape' ? (
-                  <label className="block text-sm text-white/70 uppercase tracking-[0.12em]">
+                  <label className="block text-sm text-black/75">
                     <span className="mb-1 block font-medium">Número Yape</span>
-                    <input name="yapePhone" value={paymentForm.yapePhone} onChange={handlePaymentChange} className="w-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-red-600" placeholder="987654321" required />
+                    <input name="yapePhone" value={paymentForm.yapePhone} onChange={handlePaymentChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="987654321" required />
                   </label>
                 ) : null}
 
                 {paymentForm.paymentMethod === 'cash' ? (
-                  <div className="rounded-[1.2rem] border border-white/10 bg-[#1A1A1A] p-4 text-sm text-white/70">
+                  <div className="rounded-[1.2rem] border border-black/10 bg-white p-4 text-sm text-black/70">
                     Puedes pagar al recibir el pedido en la dirección indicada.
                   </div>
                 ) : null}
@@ -627,60 +616,32 @@ export const MembershipModal = ({
               {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setFlowStep(isAuthenticated ? 'plan' : 'account')} className="flex-1 rounded-full border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm font-medium text-white transition hover:bg-red-600 uppercase tracking-[0.16em]/5">
+                <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setFlowStep('account')} className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-black/5">
                   Volver
                 </motion.button>
                 <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
-                <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="submit" disabled={isSubmitting} className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-red-600 uppercase tracking-[0.16em]/70">
-                  {isSubmitting ? 'Activando...' : 'Iniciar membresía'}
-                </motion.button>
+                  <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="submit" disabled={isSubmitting} className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-black/70">
+                    {isSubmitting ? 'Activando...' : 'Iniciar membresía'}
+                  </motion.button>
                 </PermissionGate>
               </div>
             </motion.form>
           ) : null}
 
           {flowStep === 'success' ? (
-            <motion.div key="success" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mt-8 border border-white/10 bg-[#111111] p-7">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white">
+            <motion.div key="success" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mt-6 rounded-2xl border border-black/10 bg-white p-4 text-center shadow-[0_12px_32px_rgba(0,0,0,0.07)] sm:p-6">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white">
                 <CreditCard size={24} />
               </div>
-              <h3 className="mt-4 text-xl sm:text-2xl font-semibold text-white">¡Tu membresía ya está activa!</h3>
-              <p className="mt-3 text-sm text-white/70">
+              <h3 className="mt-4 text-xl sm:text-2xl font-semibold text-black">¡Tu miembrosía ya está activa!</h3>
+              <p className="mt-3 text-sm text-black/70">
                 {selectedPlan.nombre} quedó activado con un descuento del {selectedPlan.descuento}% y podrás seguir comprando con beneficios exclusivos.
               </p>
-              <div className="mt-10 border border-white/10 bg-[#1A1A1A] p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-white/40">
-                    RESUMEN
-                </p>
-
-                <div className="mt-5 space-y-3 text-sm">
-                    <div className="flex justify-between">
-                        <span className="text-white/50">Plan</span>
-                        <span className="text-white">{selectedPlan.nombre}</span>
-                    </div>
-
-                    <div className="flex justify-between">
-                        <span className="text-white/50">Descuento</span>
-                        <span className="text-red-500">
-                            {selectedPlan.descuento}%
-                        </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                        <span className="text-white/50">Duración</span>
-                        <span className="text-white">
-                            {selectedPlan.duracion}
-                        </span>
-                    </div>
-                </div>
-            </div>
-              <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} type="button" onClick={handleComplete} className="mt-8 flex w-full items-center justify-center border border-red-600 bg-red-600 px-6 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-red-700">
+              <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={handleComplete} className="mt-6 rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600">
                 Volver al inicio
               </motion.button>
             </motion.div>
-            
           ) : null}
-          
           </AnimatePresence>
         </motion.div>
       </motion.div>

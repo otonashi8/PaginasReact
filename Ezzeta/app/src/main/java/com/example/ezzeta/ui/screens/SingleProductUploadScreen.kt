@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
@@ -23,9 +24,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ezzeta.data.model.Product
+import com.example.ezzeta.data.model.RequestStatus
 import com.example.ezzeta.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -55,6 +59,10 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val imageUrls = remember { mutableStateListOf<String>() }
     var newImageUrl by remember { mutableStateOf("") }
 
+    // Flags de configuración flexible
+    var usePriceBySize by remember { mutableStateOf(false) }
+    var useStockBySize by remember { mutableStateOf(false) }
+
     // Variantes
     val variants = remember { mutableStateListOf<com.example.ezzeta.data.model.ProductVariant>() }
     var newVariantName by remember { mutableStateOf("") }
@@ -70,17 +78,40 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     var policiesAccepted by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
     val tooltipState = rememberTooltipState()
     val scope = rememberCoroutineScope()
+    val isModerating by viewModel.isModerating.collectAsState()
 
     val isFormValid = name.isNotBlank() && 
-                      price.toDoubleOrNull() != null && 
-                      stock.toIntOrNull() != null &&
                       description.isNotBlank() &&
                       contactName.isNotBlank() &&
                       contactPhone.isNotBlank() &&
-                      policiesAccepted
+                      policiesAccepted &&
+                      (if (usePriceBySize) variants.all { it.price >= 0 } && variants.isNotEmpty() else price.toDoubleOrNull() != null && (price.toDoubleOrNull() ?: -1.0) >= 0) &&
+                      (if (useStockBySize) variants.all { it.stock >= 0 } && variants.isNotEmpty() else stock.toIntOrNull() != null && (stock.toIntOrNull() ?: -1) >= 0) &&
+                      (if (usePriceBySize || useStockBySize) variants.isNotEmpty() else true) &&
+                      !isModerating
+
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showSuccessDialog = false
+                onBack()
+            },
+            title = { Text("Solicitud Enviada", fontWeight = FontWeight.Bold) },
+            text = { Text("Tu producto ha sido enviado correctamente. Será revisado por un administrador antes de ser publicado en el Marketplace.") },
+            confirmButton = {
+                Button(onClick = { 
+                    showSuccessDialog = false
+                    onBack()
+                }) {
+                    Text("Entendido")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -197,6 +228,55 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 singleLine = true
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Configuración de Tallas y Precios/Stocks
+            Text(text = "Configuración de Tallas", fontWeight = FontWeight.Bold)
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Precio por talla", style = MaterialTheme.typography.bodyMedium)
+                Switch(
+                    checked = usePriceBySize,
+                    onCheckedChange = { checked ->
+                        usePriceBySize = checked
+                        if (checked) {
+                            // Inicializar precios de variantes existentes con el precio general
+                            val currentBasePrice = price.toDoubleOrNull() ?: 0.0
+                            val updatedVariants = variants.map { it.copy(price = currentBasePrice) }
+                            variants.clear()
+                            variants.addAll(updatedVariants)
+                        }
+                    }
+                )
+            }
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Stock por talla", style = MaterialTheme.typography.bodyMedium)
+                Switch(
+                    checked = useStockBySize,
+                    onCheckedChange = { checked ->
+                        useStockBySize = checked
+                        if (checked) {
+                            // Inicializar stock de variantes existentes con el stock general
+                            val currentBaseStock = stock.toIntOrNull() ?: 1
+                            val updatedVariants = variants.map { it.copy(stock = currentBaseStock) }
+                            variants.clear()
+                            variants.addAll(updatedVariants)
+                        }
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(text = "Variantes / Tallas*", fontWeight = FontWeight.Bold)
             Text(text = "Elige un catálogo o crea tus propias opciones en 'Mis tallas'.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             
@@ -284,9 +364,11 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                     onClick = {
                         if (newVariantName.isNotBlank()) {
                             viewModel.addUserCustomSize(context, newVariantName)
-                            // Si puso precio, la agregamos directamente a la lista de variantes final
-                            val customPrice = newVariantPrice.toDoubleOrNull() ?: price.toDoubleOrNull() ?: 0.0
-                            variants.add(com.example.ezzeta.data.model.ProductVariant(newVariantName, customPrice))
+                            
+                            val customPrice = if (usePriceBySize) (newVariantPrice.toDoubleOrNull() ?: price.toDoubleOrNull() ?: 0.0) else (price.toDoubleOrNull() ?: 0.0)
+                            val customStock = if (useStockBySize) (stock.toIntOrNull() ?: 1) else (stock.toIntOrNull() ?: 1)
+                            
+                            variants.add(com.example.ezzeta.data.model.ProductVariant(newVariantName, customPrice, customStock))
                             
                             // También la marcamos como seleccionada si estamos en modo user_custom
                             if (selectedSystemId == "user_custom") {
@@ -302,14 +384,69 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 }
             }
 
-            // Mostrar variantes con precio si se han agregado manualmente o vienen de un sistema
-            if (variants.isNotEmpty()) {
-                Text(text = "Resumen de variantes con precio:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                variants.forEachIndexed { index, v ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("${v.name}: S/ ${v.price}", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                        IconButton(onClick = { variants.removeAt(index) }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Default.Remove, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
+            // Mostrar variantes con precio/stock si se han agregado manualmente o vienen de un sistema
+            if (selectedPredefinedSizes.isNotEmpty() || variants.isNotEmpty()) {
+                val basePrice = price.toDoubleOrNull() ?: 0.0
+                val baseStock = stock.toIntOrNull() ?: 1
+                
+                // Sincronizar variants con selectedPredefinedSizes
+                val currentSizeNames = variants.map { it.name }.toSet()
+                selectedPredefinedSizes.forEach { sizeName ->
+                    if (!currentSizeNames.contains(sizeName)) {
+                        variants.add(com.example.ezzeta.data.model.ProductVariant(sizeName, basePrice, baseStock))
+                    }
+                }
+
+                Text(text = "Resumen de Tallas:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                
+                variants.toList().forEachIndexed { index, v ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(text = v.name, modifier = Modifier.weight(0.8f), fontWeight = FontWeight.Bold)
+                            
+                            if (usePriceBySize) {
+                                OutlinedTextField(
+                                    value = v.price.toString(),
+                                    onValueChange = { newVal ->
+                                        newVal.toDoubleOrNull()?.let { p ->
+                                            variants[index] = v.copy(price = p)
+                                        }
+                                    },
+                                    label = { Text("Precio") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                )
+                            }
+                            
+                            if (useStockBySize) {
+                                OutlinedTextField(
+                                    value = v.stock.toString(),
+                                    onValueChange = { newVal ->
+                                        newVal.toIntOrNull()?.let { s ->
+                                            variants[index] = v.copy(stock = s)
+                                        }
+                                    },
+                                    label = { Text("Stock") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                )
+                            }
+
+                            IconButton(onClick = { 
+                                variants.removeAt(index)
+                                selectedPredefinedSizes.remove(v.name)
+                            }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Default.Remove, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
+                            }
                         }
                     }
                 }
@@ -474,63 +611,54 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 Button(
                     onClick = {
                         val basePrice = price.toDoubleOrNull() ?: 0.0
-                        // Combinar variantes manuales con las seleccionadas de chips (que toman precio base)
-                        val chipsVariants = selectedPredefinedSizes.map { com.example.ezzeta.data.model.ProductVariant(it, basePrice) }
+                        val baseStock = stock.toIntOrNull() ?: 1
+                        
+                        // Finalización de variantes: asegurar que todas las seleccionadas estén en la lista
+                        val chipsVariants = selectedPredefinedSizes.filter { name -> 
+                            variants.none { it.name == name } 
+                        }.map { com.example.ezzeta.data.model.ProductVariant(it, basePrice, baseStock) }
+                        
                         val finalVariants = (variants + chipsVariants).distinctBy { it.name }
                         
-                        viewModel.uploadSingleProduct(
-                            context = context,
+                        val productToRequest = Product(
+                            id = "cp_${System.currentTimeMillis()}",
                             name = name,
                             price = basePrice,
+                            description = "$description (Estado: $condition)",
+                            imageUrl = imageUrls.firstOrNull() ?: "",
+                            imageUrls = imageUrls.toList(),
                             categoryId = selectedCategoryId,
                             subCategories = selectedSubCategories.toList(),
-                            condition = condition,
-                            description = description,
-                            imageUrls = imageUrls.toList(),
-                            stock = stock.toIntOrNull() ?: 1,
-                            contactName = contactName,
-                            contactPhone = contactPhone,
+                            campaign = "Del cliente para el cliente",
+                            storeId = "client_store",
+                            sellerName = contactName,
+                            sellerId = user?.uuid ?: "unknown",
+                            isClientProduct = true,
+                            stock = baseStock,
+                            isVisible = false, // No visible hasta aprobación
                             variants = if (finalVariants.isEmpty()) null else finalVariants,
-                            sizeSystemId = if (selectedSystemId != "user_custom") selectedSystemId else null
+                            sizeSystemId = if (selectedSystemId != "user_custom") selectedSystemId else null,
+                            usePriceBySize = usePriceBySize,
+                            useStockBySize = useStockBySize
                         )
-                        onBack()
+
+                        viewModel.sendMarketplaceRequest(context, productToRequest) { success ->
+                            if (success) {
+                                showSuccessDialog = true
+                            }
+                        }
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     enabled = isFormValid,
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Por Correo", textAlign = TextAlign.Center)
-                }
-
-                Button(
-                    onClick = {
-                        val basePrice = price.toDoubleOrNull() ?: 0.0
-                        val chipsVariants = selectedPredefinedSizes.map { com.example.ezzeta.data.model.ProductVariant(it, basePrice) }
-                        val finalVariants = (variants + chipsVariants).distinctBy { it.name }
-                        
-                        viewModel.uploadSingleProductViaWhatsApp(
-                            context = context,
-                            name = name,
-                            price = basePrice,
-                            categoryId = selectedCategoryId,
-                            subCategories = selectedSubCategories.toList(),
-                            condition = condition,
-                            description = description,
-                            imageUrls = imageUrls.toList(),
-                            stock = stock.toIntOrNull() ?: 1,
-                            contactName = contactName,
-                            contactPhone = contactPhone,
-                            variants = if (finalVariants.isEmpty()) null else finalVariants,
-                            sizeSystemId = if (selectedSystemId != "user_custom") selectedSystemId else null
-                        )
-                        onBack()
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = isFormValid,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
-                ) {
-                    Text("Por WhatsApp", textAlign = TextAlign.Center)
+                    if (isModerating) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Validando...")
+                    } else {
+                        Text("Mandar solicitud", textAlign = TextAlign.Center)
+                    }
                 }
             }
             

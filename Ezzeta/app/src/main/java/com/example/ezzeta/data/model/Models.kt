@@ -2,7 +2,9 @@ package com.example.ezzeta.data.model
 
 data class ProductVariant(
     val name: String,
-    val price: Double
+    val price: Double,
+    val stock: Int = 0,
+    val oldPrice: Double? = null
 )
 
 data class SizeOption(
@@ -40,6 +42,9 @@ data class Product(
     val sellerName: String? = null,
     val sellerId: String? = null,
     val isClientProduct: Boolean = false,
+    val productType: String = if (isClientProduct) "MARKETPLACE" else "STORE",
+    val usePriceBySize: Boolean = false,
+    val useStockBySize: Boolean = if (productType == "STORE") true else false,
     val stock: Int = 1,
     val isVisible: Boolean = true,
     val customSizes: List<String>? = null,
@@ -53,6 +58,29 @@ data class Product(
             "4" -> listOf("28", "30", "32", "34", "36") 
             else -> listOf("S", "M", "L", "XL")
         }
+    }
+
+    fun getPriceForSize(size: String): Double {
+        if (productType == "STORE") return price
+        if (!usePriceBySize || variants.isNullOrEmpty()) return price
+        return variants.find { it.name == size }?.price ?: price
+    }
+
+    fun getOldPriceForSize(size: String): Double? {
+        if (productType == "STORE") return oldPrice
+        if (!usePriceBySize || variants.isNullOrEmpty()) return oldPrice
+        return variants.find { it.name == size }?.oldPrice ?: oldPrice
+    }
+
+    fun getStockForSize(size: String): Int {
+        // En productos oficiales Ezzeta (STORE), el stock es siempre independiente por talla si existen variantes
+        if (productType == "STORE") {
+            if (variants.isNullOrEmpty()) return stock
+            return variants.find { it.name == size }?.stock ?: 0
+        }
+        // En Marketplace depende de la configuración del usuario
+        if (!useStockBySize || variants.isNullOrEmpty()) return stock
+        return variants.find { it.name == size }?.stock ?: 0
     }
 }
 
@@ -131,10 +159,11 @@ data class CartItem(
     val product: Product,
     var quantity: Int,
     val size: String = "",
-    val priceAtAddition: Double? = null
+    val priceAtAddition: Double? = null,
+    val isSelected: Boolean = true
 ) {
     val effectivePrice: Double
-        get() = priceAtAddition ?: product.price
+        get() = priceAtAddition ?: product.getPriceForSize(size)
 }
 
 data class Comment(
@@ -144,9 +173,125 @@ data class Comment(
     val date: String
 )
 
+enum class RequestStatus {
+    PENDING, APPROVED, REJECTED
+}
+
+data class MarketplaceRequest(
+    val id: String,
+    val userId: String,
+    val userName: String,
+    val product: Product,
+    val createdAt: Long = System.currentTimeMillis(),
+    val status: RequestStatus = RequestStatus.PENDING
+)
+
+enum class OrderStatus {
+    PENDING, PAID, SHIPPED, DELIVERED, CANCELLED
+}
+
 data class Order(
     val id: String,
     val date: String,
     val items: List<CartItem>,
-    val total: Double
+    val total: Double,
+    val buyerId: String = "",
+    val buyerName: String = "",
+    val buyerEmail: String = "",
+    val buyerPhone: String = "",
+    val shippingAddress: String = "",
+    val shippingDept: String = "",
+    val shippingProv: String = "",
+    val shippingDist: String = "",
+    val status: OrderStatus = OrderStatus.PAID
+)
+
+data class ShippingRate(
+    val id: String,
+    val region: String, // "GENERAL" o Nombre del Departamento
+    val cost: Double,
+    val priority: Int, // 1: Específica, 2: General
+    val isActive: Boolean = true
+)
+
+data class ShippingConfig(
+    val freeShippingThreshold: Double = 100.0
+)
+
+enum class PriceRuleType {
+    PRODUCT, CATEGORY, ORDER_TOTAL, COMBO
+}
+
+data class ComboRequirement(
+    val productId: String? = null,
+    val categoryId: String? = null,
+    val quantity: Int
+)
+
+data class PriceRule(
+    val id: String,
+    val name: String,
+    val type: PriceRuleType,
+    val discountValue: Double, // Puede ser porcentaje o monto fijo
+    val isPercentage: Boolean = true,
+    val targetIds: List<String> = emptyList(), // IDs de productos o categorías
+    val minSubtotal: Double? = null,
+    val comboRequirements: List<ComboRequirement> = emptyList(),
+    val requiresCoupon: Boolean = false,
+    val couponCode: String? = null,
+    val priority: Int = 10,
+    val isActive: Boolean = true
+)
+
+data class AppliedPriceRule(
+    val ruleId: String,
+    val ruleName: String,
+    val discountAmount: Double
+)
+
+enum class AbandonedCartStatus {
+    ACTIVE, RECUPERABLE, PERDIDO, RECUPERADO
+}
+
+data class AbandonedCartItem(
+    val productId: String,
+    val productName: String,
+    val size: String,
+    val quantity: Int,
+    val unitPrice: Double,
+    val discount: Double,
+    val finalPrice: Double,
+    val storeId: String,
+    val sellerId: String?,
+    val imageUrl: String
+)
+
+data class AbandonedCart(
+    val id: String,
+    val userId: String? = null,
+    val items: List<AbandonedCartItem> = emptyList(),
+    val purchasedItems: List<AbandonedCartItem> = emptyList(),
+    val lastActivity: Long = System.currentTimeMillis(),
+    val createdAt: Long = System.currentTimeMillis(),
+    val status: AbandonedCartStatus = AbandonedCartStatus.ACTIVE,
+    val userEmail: String? = null,
+    val userName: String? = null,
+    val isGuest: Boolean = true
+)
+
+data class StatResult(
+    val id: String,
+    val name: String,
+    val units: Int,
+    val revenue: Double,
+    val ordersCount: Int,
+    val imageUrl: String? = null
+)
+
+data class CustomerStat(
+    val id: String,
+    val name: String,
+    val email: String,
+    val totalValue: Double,
+    val count: Int // Pedidos comprados o Unidades vendidas
 )

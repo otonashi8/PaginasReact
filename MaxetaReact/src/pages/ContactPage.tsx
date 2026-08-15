@@ -1,97 +1,351 @@
-import { useState } from 'react';
-import { Mail, Phone } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Mail, Phone, Send, MessageSquare } from 'lucide-react';
 import { MembershipModal } from '../components/MembershipModal';
-import { TypewriterTitle } from '../components/TypewriterTitle';
-import { PERMISSIONS } from '../utils/permissionCodes';
 import { PermissionGate } from '../components/PermissionGate';
+import { PERMISSIONS } from '../utils/permissionCodes';
+import { crearSolicitudAsistencia, type TipoSolicitudAsistencia } from '../admin/Clientes/Formularios/utils/solicitudesAsistencia';
+import { useAuth } from '../context/AuthContext';
 
+type TipoSolicitud = TipoSolicitudAsistencia;
 export const ContactPage = () => {
+  const { user: authUser, isAuthenticated } = useAuth();
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
-
+  const [tipo, setTipo] = useState<TipoSolicitud>('Queja');
+  const [nombre, setNombre] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [pedido, setPedido] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [mensaje, setMensaje] = useState('');
+  const [enviado, setEnviado] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (!isAuthenticated || !authUser) {
+      return;
+    }
+    setNombre((current) => current || authUser.username || authUser.email || 'Cliente registrado');
+    setCorreo((current) => current || authUser.email || '');
+    setTelefono((current) => current || authUser.phone || '');
+  }, [authUser, isAuthenticated]);
+  const limpiarFormulario = () => {
+    setTipo('Queja');
+    setNombre('');
+    setCorreo('');
+    setPedido('');
+    setTelefono('');
+    setMensaje('');
+  };
+  const enviarSolicitud = () => {
+    setError('');
+    if (
+      !nombre.trim() ||
+      !correo.trim() ||
+      !telefono.trim() ||
+      !mensaje.trim()
+    ) {
+      setError('Completa todos los campos obligatorios.');
+      return;
+    }
+    const nuevaSolicitud = crearSolicitudAsistencia({
+      tipo,
+      nombre: nombre.trim(),
+      correo: correo.trim(),
+      pedido: pedido.trim(),
+      telefono: telefono.trim(),
+      mensaje: mensaje.trim(),
+      estado: 'Pendiente',
+      fecha: new Date().toISOString(),
+      clienteId: isAuthenticated && authUser ? authUser.id : null,
+      tipoCliente: isAuthenticated && authUser ? 'registrado' : 'guest',
+    });
+    limpiarFormulario();
+    setEnviado(true);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('maxeta:solicitudes-asistencia-changed'));
+    }
+    return nuevaSolicitud;
+  };
   return (
-    <section className="space-y-10 sm:space-y-12">
-      <div className="rounded-[2rem] border border-black/10 bg-white p-5 shadow-[0_14px_42px_rgba(0,0,0,0.05)] sm:p-8 lg:p-10">
-        <p className="text-xs uppercase tracking-[0.28em] text-black/55">Atencion personalizada</p>
-        <TypewriterTitle as="h1" text="Contacto y soporte" className="mt-3 text-3xl font-semibold uppercase tracking-[0.14em] text-black sm:text-4xl" />
-        <p className="mt-4 max-w-3xl text-sm leading-relaxed text-black/70 sm:text-base">
-          Respondemos consultas de pedidos, envios, devoluciones y oportunidades de alianza comercial con una atencion rapida y directa.
-        </p>
-      </div>
-
-      <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr] lg:gap-6">
-        <div className="rounded-[1.8rem] border border-black/10 bg-white p-5 shadow-[0_12px_34px_rgba(0,0,0,0.05)] sm:p-7">
-          <div className="flex items-center justify-between gap-3">
-            <TypewriterTitle as="h2" text="FAQ" className="text-xl font-semibold uppercase tracking-[0.16em] text-black sm:text-2xl" />
-            <span className="text-xs uppercase tracking-[0.22em] text-black/45">Respuestas rapidas</span>
+    <section className="space-y-16 sm:space-y-20">
+      {/* HEADER */}
+      <header className="relative border-b border-black/10 pb-10 sm:pb-14">
+        <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+          <div>
+            <div className="mb-5 flex items-center gap-3">
+              <span className="h-2 w-2 rounded-full bg-red-600" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-black/45">Atención personalizada</span>
+            </div>
+            <h1 className="max-w-3xl text-4xl font-black uppercase leading-[0.9] tracking-[-0.04em] text-black sm:text-6xl lg:text-7xl">
+              Contacto
+              <span className="ml-2 text-red-600">& soporte.</span>
+            </h1>
           </div>
-
-          <div className="mt-6 space-y-3 text-sm text-black/70">
-            <div className="rounded-[1.1rem] border border-black/10 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-red-600/40 hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
-              <p className="font-semibold text-black">¿Cuánto tarda el envío?</p>
-              <p className="mt-2">El tiempo estimado suele ser de 2 a 5 días hábiles.</p>
+          <p className="max-w-md text-lg leading-6 text-black/55 lg:pb-1">
+            Estamos aquí para ayudarte con tus pedidos, envíos,
+            devoluciones, cambios y cualquier inconveniente relacionado
+            con tu compra.
+          </p>
+        </div>
+      </header>
+      {/* FAQ */}
+      <section>
+        <div className="mb-7 flex items-end justify-between border-b border-black pb-4">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-red-600">Preguntas frecuentes</span>
+            <h2 className="mt-2 text-2xl font-black uppercase tracking-tight sm:text-3xl">FAQ</h2>
+          </div>
+          <span className="hidden text-[10px] uppercase tracking-[0.2em] text-black/35 sm:block">03 preguntas</span>
+        </div>
+        <div className="divide-y divide-black/10 border-b border-black/10">
+          <div className="group grid gap-5 py-6 sm:grid-cols-[70px_1fr] sm:py-8">
+            <span className="text-lg font-black text-red-600">01</span>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-10">
+              <p className="font-bold uppercase tracking-wide text-black">¿Cuánto tarda el envío?</p>
+              <p className="max-w-xl text-lg leading-6 text-black/50">El tiempo estimado suele ser de 2 a 5 días hábiles.</p>
             </div>
-            <div className="rounded-[1.1rem] border border-black/10 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-red-600/40 hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
-              <p className="font-semibold text-black">¿Puedo devolver una prenda?</p>
-              <p className="mt-2">Sí, puedes solicitar devolución dentro de los 14 días posteriores a la entrega.</p>
+          </div>
+          <div className="group grid gap-5 py-6 sm:grid-cols-[70px_1fr] sm:py-8">
+            <span className="text-lg font-black text-red-600">02</span>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-10">
+              <p className="font-bold uppercase tracking-wide text-black">¿Puedo devolver una prenda?</p>
+              <p className="max-w-xl text-lg leading-6 text-black/50">Sí, puedes solicitar devolución dentro de los 14 días posteriores a la entrega.</p>
             </div>
-            <div className="rounded-[1.1rem] border border-black/10 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-red-600/40 hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
-              <p className="font-semibold text-black">¿Ofrecen asesoría personalizada?</p>
-              <p className="mt-2">Claro, nuestro equipo puede ayudarte con recomendaciones de estilo.</p>
+          </div>
+          <div className="group grid gap-5 py-6 sm:grid-cols-[70px_1fr] sm:py-8">
+            <span className="text-lg font-black text-red-600">03</span>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-10">
+              <p className="font-bold uppercase tracking-wide text-black">¿Ofrecen asesoría personalizada?</p>
+              <p className="max-w-xl text-lg leading-6 text-black/50">Claro, nuestro equipo puede ayudarte con recomendaciones de estilo.</p>
             </div>
           </div>
         </div>
-
-        <div className="rounded-[1.8rem] border border-black/10 bg-white p-5 shadow-[0_12px_34px_rgba(0,0,0,0.05)] sm:p-7">
-          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTU1agQ0JWH1FRSXAzg8c0EJ0q-w1lNc4P3IQQRrLw5lj_lD3Zl020i5S7A&s=10" alt="Asistencia" className="h-56 w-full rounded-[1.25rem] object-cover sm:h-64" />
-          <TypewriterTitle as="h2" text="Asistencia" className="mt-6 text-xl font-semibold uppercase tracking-[0.16em] text-black sm:text-2xl" />
-          <p className="mt-4 text-sm leading-relaxed text-black/70">Estamos aquí para ayudarte con tu pedido, seguimiento y cualquier consulta relacionada con compras.</p>
-
-          <div className="mt-6 space-y-3 rounded-[1.25rem] border border-black/10 bg-white p-4 sm:p-5">
-            <a href="tel:+51929370461" className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-black/15 bg-white px-4 py-3 text-sm font-medium text-black transition-colors hover:border-red-600 hover:text-red-600 sm:justify-start">
-              <Phone size={16} /> +51 929370461
-            </a>
-            <a href="mailto:contacto@maxeta.com.pe" className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-black/15 bg-white px-4 py-3 text-sm font-medium text-black transition-colors hover:border-red-600 hover:text-red-600 sm:justify-start">
-              <Mail size={16} /> contacto@maxeta.com.pe
-            </a>
-            <p className="text-sm text-black/65">Atendemos consultas de pedidos, cambios, entregas y soporte general.</p>
+      </section>
+      {/* ASISTENCIA */}
+      <section className="grid gap-10 lg:grid-cols-[0.55fr_1.45fr]">
+        {/* INTRO */}
+        <div className="lg:sticky lg:top-8 lg:self-start">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black text-white">
+            <MessageSquare size={19} />
           </div>
-        </div>
-      </div>
-
-      <div className="grid gap-5 lg:grid-cols-[1fr_1fr] lg:gap-6">
-        <div className="relative overflow-hidden rounded-[1.8rem] border border-black/10 bg-white shadow-[0_12px_34px_rgba(0,0,0,0.05)]">
-          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTU1agQ0JWH1FRSXAzg8c0EJ0q-w1lNc4P3IQQRrLw5lj_lD3Zl020i5S7A&s=10" alt="Emprende con nosotros" className="h-64 w-full object-cover transition-transform duration-500 hover:scale-[1.03] sm:h-80 lg:h-full" />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-transparent" />
-        </div>
-
-        <div className="rounded-[1.8rem] border border-black/10 bg-white p-5 shadow-[0_12px_34px_rgba(0,0,0,0.05)] sm:p-7">
-          <TypewriterTitle as="h2" text="Emprende con Nosotros" className="text-xl font-semibold uppercase tracking-[0.16em] text-black sm:text-2xl" />
-          <p className="mt-3 text-sm leading-relaxed text-black/70">Únete a nuestra comunidad de aliados, distribuidores y creadores de contenido.</p>
-
-          <div className="mt-6 rounded-[1.3rem] border border-black/10 bg-white p-4 sm:p-5">
-            <h3 className="text-lg font-semibold text-black">Formulario para Afiliados</h3>
+          <span className="mt-6 block text-[10px] font-bold uppercase tracking-[0.28em] text-red-600">Atención al cliente</span>
+          <h2 className="mt-3 text-3xl font-black uppercase leading-[0.95] tracking-tight text-black sm:text-4xl">
+            ¿Necesitas
+            <span className="block">ayuda?</span>
+          </h2>
+          <p className="mt-5 max-w-sm text-lg leading-6 text-black/50">Completa el formulario y nuestro equipo revisará tu solicitud lo antes posible.</p>
+          <div className="mt-8 border-t border-black/10 pt-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/35">Contacto directo</p>
             <div className="mt-4 space-y-3">
-              <input className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-red-600" placeholder="Tu nombre" />
-              <input className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-red-600" placeholder="Tu negocio o marca" />
-              <PermissionGate permission={PERMISSIONS.affiliateCreate}>
-              <button type="button" className="w-full rounded-xl border border-black bg-black px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors duration-200 hover:border-red-600 hover:bg-red-600">
-                Solicitar afiliación
-              </button>
-              </PermissionGate>
-              <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
+              <a
+                href="tel:+51929370461"
+                className="group flex items-center gap-3 text-lg font-medium text-black transition-colors hover:text-red-600"
+              ><Phone size={15} />+51 929 370 461
+              </a>
+              <a
+                href="mailto:contacto@ezzeta.com"
+                className="group flex items-center gap-3 text-lg font-medium text-black transition-colors hover:text-red-600"
+              ><Mail size={15} />contacto@ezzeta.com
+              </a>
+            </div>
+          </div>
+        </div>
+        {/* FORMULARIO */}
+        <div className="border-t border-black pt-7 sm:pt-8">
+          {enviado ? (
+            <div className="flex min-h-[400px] flex-col items-center justify-center border-b border-black/10 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-xl text-white">✓</div>
+              <h3 className="mt-6 text-2xl font-black uppercase tracking-tight">Solicitud enviada</h3>
+              <p className="mt-3 max-w-md text-lg leading-6 text-black/50">
+                Hemos recibido tu solicitud correctamente. Nuestro equipo
+                la revisará y se pondrá en contacto contigo.
+              </p>
               <button
                 type="button"
-                onClick={() => setIsMembershipModalOpen(true)}
-                className="w-full rounded-xl border border-black/20 bg-white px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-black transition-colors duration-200 hover:border-red-600 hover:text-red-600"
+                onClick={() => setEnviado(false)}
+                className="mt-7 border-b-2 border-black pb-1 text-lg font-bold uppercase tracking-[0.18em] text-black transition-colors hover:border-red-600 hover:text-red-600"
               >
-                Benefíciate
+                Enviar otra solicitud
               </button>
+            </div>
+          ) : (
+            <div className="space-y-7">
+              {/* TIPO */}
+              <label className="block">
+                <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-black/50">
+                  Motivo de la solicitud
+                  <b className="ml-1 text-red-600">*</b>
+                </span>
+                <select
+                  value={tipo}
+                  onChange={(event) =>
+                    setTipo(event.target.value as TipoSolicitud)
+                  }
+                  className="w-full border-0 border-b border-black/20 bg-transparent px-0 py-3 text-lg font-medium text-black outline-none transition-colors focus:border-red-600 focus:ring-0"
+                >
+                  <option value="Queja">Queja</option>
+                  <option value="Problema con pedido">
+                    Problema con pedido
+                  </option>
+                  <option value="Devolución">Devolución</option>
+                  <option value="Cambio">Cambio</option>
+                  <option value="Envío">Envío</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </label>
+              {/* NOMBRE + CORREO */}
+              <div className="grid gap-7 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-black/50">
+                    Nombre
+                    <b className="ml-1 text-red-600">*</b>
+                  </span>
+                  <input
+                    value={nombre}
+                    onChange={(event) =>
+                      setNombre(event.target.value)
+                    }
+                    placeholder="Tu nombre completo"
+                    className="w-full border-0 border-b border-black/20 bg-transparent px-0 py-3 text-lg text-black placeholder:text-black/25 outline-none transition-colors focus:border-red-600 focus:ring-0"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-black/50">
+                    Correo
+                    <b className="ml-1 text-red-600">*</b>
+                  </span>
+                  <input
+                    type="email"
+                    value={correo}
+                    onChange={(event) =>
+                      setCorreo(event.target.value)
+                    }
+                    placeholder="ejemplo@mail.com"
+                    className="w-full border-0 border-b border-black/20 bg-transparent px-0 py-3 text-lg text-black placeholder:text-black/25 outline-none transition-colors focus:border-red-600 focus:ring-0"
+                  />
+                </label>
+              </div>
+              {/* PEDIDO + TELEFONO */}
+              <div className="grid gap-7 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-black/50">N.º de pedido</span>
+                  <input
+                    value={pedido}
+                    onChange={(event) =>
+                      setPedido(event.target.value)
+                    }
+                    placeholder="PED-000123"
+                    className="w-full border-0 border-b border-black/20 bg-transparent px-0 py-3 text-lg text-black placeholder:text-black/25 outline-none transition-colors focus:border-red-600 focus:ring-0"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-black/50">
+                    Teléfono
+                    <b className="ml-1 text-red-600">*</b>
+                  </span>
+                  <input
+                    type="tel"
+                    value={telefono}
+                    onChange={(event) =>
+                      setTelefono(event.target.value)
+                    }
+                    placeholder="+51 9XXXXXXXX"
+                    className="w-full border-0 border-b border-black/20 bg-transparent px-0 py-3 text-lg text-black placeholder:text-black/25 outline-none transition-colors focus:border-red-600 focus:ring-0"
+                  />
+                </label>
+              </div>
+              {/* MENSAJE */}
+              <label className="block">
+                <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-black/50">
+                  Describe tu problema o queja
+                  <b className="ml-1 text-red-600">*</b>
+                </span>
+                <textarea
+                  value={mensaje}
+                  onChange={(event) =>
+                    setMensaje(event.target.value)
+                  }
+                  placeholder="Cuéntanos qué ocurrió..."
+                  rows={5}
+                  className="w-full resize-none border-0 border-b border-black/20 bg-transparent px-0 py-3 text-lg leading-6 text-black placeholder:text-black/25 outline-none transition-colors focus:border-red-600 focus:ring-0"
+                />
+              </label>
+              {error && (
+                <div className="border-l-2 border-red-600 bg-red-50 px-4 py-3 text-lg text-red-700">
+                  {error}
+                </div>
+              )}
+              {/* BOTON */}
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={enviarSolicitud}
+                  className="group inline-flex w-full items-center justify-center gap-3 bg-black px-7 py-4 text-lg font-bold uppercase tracking-[0.18em] text-white transition-all hover:bg-red-600 sm:w-auto"
+                >Enviar solicitud
+                  <Send
+                    size={15}
+                    className="transition-transform duration-200 group-hover:translate-x-1"
+                  />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+      {/* EMPRENDE CON NOSOTROS */}
+      <section className="relative overflow-hidden bg-black">
+        <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
+          {/* IMAGEN */}
+          <div className="relative min-h-[320px] overflow-hidden sm:min-h-[430px]">
+            <img
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHle0SgIyxenqvV50xLhtsRNbcYWTdMVzucJTLqXsV15Z2X8uQ1Khv4IFJ&s=10"
+              alt="Emprende con nosotros"
+              className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-black/20" />
+            <div className="absolute bottom-7 left-7 sm:bottom-10 sm:left-10">
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/60">Pablo Ezzeta</span>
+              <p className="mt-2 text-3xl font-black uppercase leading-none tracking-tight text-white sm:text-5xl">
+                Inspira.
+                <span className="block text-red-600">Emprende.</span>
+              </p>
+            </div>
+          </div>
+          {/* CONTENIDO */}
+          <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14">
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-600">Emprende con nosotros</span>
+            <h2 className="mt-4 text-3xl font-black uppercase leading-[0.95] tracking-tight text-white sm:text-4xl">
+              ¿Quieres ser como
+              <span className="block text-red-600">Pablo Ezzeta?</span>
+            </h2>
+            <p className="mt-6 text-lg leading-7 text-white/55">
+              Forma parte de una comunidad pensada para quienes quieren
+              crecer, emprender y llevar su proyecto al siguiente nivel.
+              Descubre nuevas oportunidades, aprende y conecta con personas
+              que comparten tu misma visión.
+            </p>
+            <p className="mt-4 text-lg leading-7 text-white/55">
+              Conoce el Club Pablo Ezzeta y descubre todo lo que tiene
+              preparado para ti.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a
+                href="https://pabloezzeta.pe/club/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center bg-white px-6 py-4 text-lg font-bold uppercase tracking-[0.18em] text-black transition-colors hover:bg-red-600 hover:text-white"
+              >Conoce el Club
+              </a>
+              <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
+                <button
+                  type="button"
+                  onClick={() => setIsMembershipModalOpen(true)}
+                  className="inline-flex items-center justify-center border border-white/20 px-6 py-4 text-lg font-bold uppercase tracking-[0.18em] text-white transition-colors hover:border-red-600 hover:bg-red-600"
+                >Benefíciate
+                </button>
               </PermissionGate>
             </div>
           </div>
         </div>
-      </div>
-
+      </section>
       <MembershipModal
         isOpen={isMembershipModalOpen}
         onClose={() => setIsMembershipModalOpen(false)}

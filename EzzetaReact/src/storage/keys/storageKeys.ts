@@ -25,6 +25,7 @@ export const StorageKeys = {
 	SEARCH_HISTORY: 'ezzeta.wholesale.searchHistory',
 	GUEST: 'ezzeta.wholesale.guest',
 	SYNC: 'ezzeta.wholesale.sync',
+	SOLICITUDES_ASISTENCIA: 'ezzeta.wholesale.solicitudesAsistencia',
 	CONFIGURACION: 'maxeta.configuracion',
 } as const;
 

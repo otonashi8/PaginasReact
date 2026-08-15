@@ -25,6 +25,9 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     object StoreDetail : Screen("store_detail/{storeId}") {
         fun createRoute(storeId: String) = "store_detail/$storeId"
     }
+    object SellerCatalog : Screen("seller_catalog/{sellerId}") {
+        fun createRoute(sellerId: String) = "seller_catalog/$sellerId"
+    }
     object History : Screen("history")
     object Wishlist : Screen("wishlist")
     object Orders : Screen("orders")
@@ -35,15 +38,34 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     object AddressBook : Screen("address_book")
     object PaymentMethods : Screen("payment_methods")
     object MyProducts : Screen("my_products")
+    object MyProductEdit : Screen("my_product_edit/{productId}") {
+        fun createRoute(productId: String) = "my_product_edit/$productId"
+    }
+    object MySales : Screen("my_sales")
+    object MySaleDetail : Screen("my_sale_detail/{orderId}/{productId}") {
+        fun createRoute(orderId: String, productId: String) = "my_sale_detail/$orderId/$productId"
+    }
     
     // Admin Screens
     object AdminDashboard : Screen("admin_dashboard")
     object AdminProductManagement : Screen("admin_product_management/{type}") {
         fun createRoute(type: String) = "admin_product_management/$type"
     }
+    object AdminProductEdit : Screen("admin_product_edit/{productId}") {
+        fun createRoute(productId: String) = "admin_product_edit/$productId"
+    }
+    object AdminMarketplaceRequests : Screen("admin_marketplace_requests")
+    object AdminMarketplaceRequestDetail : Screen("admin_marketplace_request_detail/{requestId}") {
+        fun createRoute(requestId: String) = "admin_marketplace_request_detail/$requestId"
+    }
     object AdminCategoryManagement : Screen("admin_category_management")
     object AdminSizeManagement : Screen("admin_size_management")
     object AdminClientSizes : Screen("admin_client_sizes")
+    object AdminShipping : Screen("admin_shipping")
+    object AdminPriceRules : Screen("admin_price_rules")
+    object AdminStats : Screen("admin_stats")
+    object AdminCustomers : Screen("admin_customers")
+    object AdminAbandonedCarts : Screen("admin_abandoned_carts")
 }
 
 val bottomNavItems = listOf(

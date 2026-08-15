@@ -1,5 +1,3 @@
-import { TypewriterTitle } from './TypewriterTitle';
-
 type SectionTitleProps = {
   eyebrow: string;
   title: string;
@@ -11,7 +9,7 @@ export const SectionTitle = ({ eyebrow, title, align = 'left', className = '' }:
   return (
     <div className={`${align === 'center' ? 'text-center' : 'text-left'} ${className}`}>
       <p className="text-sm uppercase tracking-[0.3em] text-black/60">{eyebrow}</p>
-      <TypewriterTitle as="h2" text={title} className="mt-2 text-2xl font-semibold uppercase tracking-[0.2em] text-black" />
+      <h2 className="mt-2 text-2xl font-semibold uppercase tracking-[0.2em] text-black">{title}</h2>
     </div>
   );
 };

@@ -18,7 +18,10 @@ type NavigationLink = {
 
 const navigationLinks: NavigationLink[] = [
   { label: 'Inicio', href: '/' },
+  { label: '3x100', href: 'https://3x100.pe', external: true },
   { label: 'Tienda', href: '/tienda' },
+  { label: 'Outfit S/200', href: '/outfit-s200' },
+  { label: 'Contacto', href: '/contacto' },
   { label: 'Beneficios', href: '/beneficios' },
 ];
 
@@ -33,6 +36,7 @@ export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -87,6 +91,66 @@ export const Header = () => {
     };
   }, [isAuthenticated, isLoading, user]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = document.documentElement.scrollTop || window.scrollY || document.body.scrollTop;
+      setIsScrolled(scrollTop > 0);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const headerTextClass = isScrolled ? 'text-white' : 'text-black';
+  const headerBackgroundClass = isScrolled ? 'border-white/10 bg-black' : 'border-zinc-200 bg-white/95';
+  const headerButtonClass = isScrolled
+    ? 'border-white/20 bg-white/10 text-white hover:border-red-500 hover:text-red-400'
+    : 'border-black/10 bg-white text-black hover:border-red-600 hover:text-red-600';
+  const headerIconButtonClass = isScrolled
+    ? 'border-white/20 bg-white/10 text-white hover:border-red-500 hover:text-red-400'
+    : 'border-black/10 bg-white text-black';
+  const headerSearchClass = isScrolled
+    ? 'border-white/20 bg-black/10 text-white placeholder:text-white/70'
+    : 'border-zinc-200 bg-white text-black/60 placeholder:text-black/40';
+  const headerNavLinkClass = (isActive: boolean) =>
+    isActive
+      ? isScrolled
+        ? 'text-white'
+        : 'text-black'
+      : isScrolled
+      ? 'text-white/80 hover:text-red-400'
+      : 'text-black/80 hover:text-red-600';
+
+  const renderNavItem = (link: NavigationLink) => {
+    const baseClassName = 'transition';
+
+    if (link.external) {
+      return (
+        <a
+          key={link.href}
+          href={link.href}
+          target="_blank"
+          rel="noreferrer"
+          className={`${baseClassName} ${isScrolled ? 'text-white hover:text-red-400' : 'text-black/80 hover:text-red-600'}`}
+        >
+          {link.label}
+        </a>
+      );
+    }
+
+    return (
+      <NavLink
+        key={link.href}
+        to={link.href}
+        className={({ isActive }) => `${baseClassName} ${headerNavLinkClass(isActive)}`}
+      >
+        {link.label}
+      </NavLink>
+    );
+  };
+
   const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoginError('');
@@ -117,75 +181,20 @@ export const Header = () => {
     setSearch('');
   };
 
-  const renderNavItem = (link: NavigationLink) => {
-    const baseClassName = 'transition hover:text-orange-600';
-
-    if (link.external) {
-      return (
-        <a
-          key={link.href}
-          href={link.href}
-          target="_blank"
-          rel="noreferrer"
-          className={baseClassName}
-        >
-          {link.label}
-        </a>
-      );
-    }
-
-    return (
-      <NavLink
-        key={link.href}
-        to={link.href}
-        className={({ isActive }) => `${baseClassName} ${isActive ? 'text-black' : 'text-black/80'}`}
-      >
-        {link.label}
-      </NavLink>
-    );
-  };
-
   return (
     <>
-      <style>{`
-        @keyframes headerMarquee {
-          0% { transform: translateX(100%); }
-          100% { transform: translateX(-100%); }
-        }
-
-        .header-marquee-track {
-          display: inline-flex;
-          align-items: center;
-          animation: headerMarquee 18s linear infinite;
-          will-change: transform;
-          min-width: max-content;
-          width: max-content;
-        }
-
-        .header-marquee-track:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
-      <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/90">
-        <div className="overflow-hidden bg-orange-500">
-          <div className="relative flex items-center overflow-hidden py-2.5 text-center">
-            <div className="header-marquee-track flex min-w-max items-center gap-8 whitespace-nowrap px-0 text-sm font-semibold uppercase tracking-[0.28em] text-white sm:text-base">
-              <span className="flex-shrink-0">🔥3 X S/100 EN TODA LA TIENDA🔥 ENVIOS A TODO EL PERÚ </span>
-              <span aria-hidden="true" className="flex-shrink-0">🔥3 X S/100 EN TODA LA TIENDA🔥 ENVIOS A TODO EL PERÚ</span>
-            </div>
-          </div>
-        </div>
+      <header className={`sticky top-0 z-50 w-full border-b backdrop-blur-xl transition duration-300 ${headerBackgroundClass}`}>
         <div className="mx-auto flex w-full max-w-[1920px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="rounded-full border border-zinc-200 bg-white p-2.5 text-black lg:hidden"
+            className={`rounded-full border p-2.5 ${isScrolled ? 'border-white/20 bg-white/5 text-white' : 'border-zinc-200 bg-white text-black'} lg:hidden`}
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          <Link to="/" className="text-base font-semibold uppercase tracking-[0.3em] text-black sm:text-xl lg:mr-auto">
-            3x100
+          <Link to="/" className={`text-base font-semibold uppercase tracking-[0.3em] sm:text-xl lg:mr-auto ${headerTextClass}`}>
+            EZZETA
           </Link>
 
           <nav className="hidden flex-1 items-center justify-center gap-6 text-sm font-medium uppercase tracking-[0.24em] lg:flex">
@@ -197,7 +206,7 @@ export const Header = () => {
               <button
                 type="button"
                 onClick={() => setIsMembershipModalOpen(true)}
-                className="hidden items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-medium text-black transition hover:border-orange-600 hover:text-orange-600 sm:inline-flex"
+                className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
               >
                 <span className="text-base leading-none" aria-hidden>
                   {membership.plan.icono}
@@ -215,7 +224,7 @@ export const Header = () => {
                   setLoginError('');
                   setIsLoginModalOpen(true);
                 }}
-                className="hidden rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-medium text-black transition hover:border-orange-600 hover:text-orange-600 sm:inline-flex"
+                className={`hidden rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
               >
                 Iniciar sesión
               </button>
@@ -228,7 +237,7 @@ export const Header = () => {
                   await logout();
                   navigate('/');
                 }}
-                className="hidden rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-medium text-black transition hover:border-orange-600 hover:text-orange-600 sm:inline-flex"
+                className={`hidden rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
               >
                 Cerrar sesión
               </button>
@@ -237,14 +246,14 @@ export const Header = () => {
             <div className="relative hidden h-full sm:block" ref={searchRef}>
               <form
                 onSubmit={handleSearch}
-                className="hidden items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm text-black/60 sm:flex"
+                className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-sm sm:flex ${headerSearchClass}`}
               >
                 <Search size={16} />
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Buscar"
-                  className="w-72 bg-transparent outline-none placeholder:text-black/40"
+                  className="w-72 bg-transparent outline-none placeholder:text-current/40"
                 />
               </form>
               <SearchDropdown
@@ -258,19 +267,19 @@ export const Header = () => {
               />
             </div>
 
-            <Link to="/deseados" className="relative rounded-full border border-zinc-200 bg-white p-2.5 text-black">
+            <Link to="/deseados" className={`relative rounded-full border p-2.5 ${headerIconButtonClass}`}>
               <Heart size={18} />
               {favorites.length > 0 ? (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-600 text-[10px] font-semibold text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-semibold text-white">
                   {favorites.length}
                 </span>
               ) : null}
             </Link>
 
-            <button className="relative rounded-full border border-zinc-200 bg-white p-2.5 text-black" type="button" onClick={toggleCart}>
+            <button className={`relative rounded-full border p-2.5 ${headerIconButtonClass}`} type="button" onClick={toggleCart}>
               <ShoppingBag size={18} />
               {cart.length > 0 ? (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-600 text-[10px] font-semibold text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-semibold text-white">
                   {cart.reduce((sum, item) => sum + item.quantity, 0)}
                 </span>
               ) : null}
@@ -305,16 +314,30 @@ export const Header = () => {
                 </form>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMembershipModalOpen(true);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-orange-600 hover:text-orange-600"
-                  >
-                    Ver planes
-                  </button>
+                  {membership ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMembershipModalOpen(true);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
+                    >
+                      <span aria-hidden>{membership.plan.icono}</span>
+                      <span className="truncate">{user?.username ?? 'Usuario'}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMembershipModalOpen(true);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
+                    >
+                      Ver planes
+                    </button>
+                  )}
 
                   {!isAuthenticated ? (
                     <button
@@ -326,7 +349,7 @@ export const Header = () => {
                         setIsLoginModalOpen(true);
                         setIsMobileMenuOpen(false);
                       }}
-                      className="flex-1 rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
+                      className="flex-1 rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
                     >
                       Iniciar sesión
                     </button>
@@ -336,9 +359,9 @@ export const Header = () => {
                       onClick={async () => {
                         await logout();
                         setIsMobileMenuOpen(false);
-                        navigate('/');
+                        navigate('/login');
                       }}
-                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-orange-600 hover:text-orange-600"
+                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
                     >
                       Cerrar sesión
                     </button>
@@ -355,7 +378,7 @@ export const Header = () => {
                           target="_blank"
                           rel="noreferrer"
                           onClick={() => setIsMobileMenuOpen(false)}
-                          className="block rounded-xl px-4 py-3 text-sm font-medium uppercase tracking-[0.18em] text-black/70 transition hover:bg-orange-50 hover:text-orange-600"
+                          className="block rounded-xl px-4 py-3 text-sm font-medium uppercase tracking-[0.18em] text-black/70 transition hover:bg-red-50 hover:text-red-600"
                         >
                           {link.label}
                         </a>
@@ -369,7 +392,7 @@ export const Header = () => {
                         onClick={() => setIsMobileMenuOpen(false)}
                         className={({ isActive }) =>
                           `block rounded-xl px-4 py-3 text-sm font-medium uppercase tracking-[0.18em] transition ${
-                            isActive ? 'bg-black text-white' : 'text-black/70 hover:bg-orange-50 hover:text-orange-600'
+                            isActive ? 'bg-black text-white' : 'text-black/70 hover:bg-red-50 hover:text-red-600'
                           }`
                         }
                       >
@@ -419,7 +442,7 @@ export const Header = () => {
                     type="email"
                     value={loginIdentifier}
                     onChange={(event) => setLoginIdentifier(event.target.value)}
-                    className="w-full rounded-full border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-orange-500/20"
+                    className="w-full rounded-full border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-red-500/20"
                     placeholder="correo@empresa.com"
                     required
                   />
@@ -434,17 +457,17 @@ export const Header = () => {
                     type="password"
                     value={loginPassword}
                     onChange={(event) => setLoginPassword(event.target.value)}
-                    className="w-full rounded-full border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-orange-500/20"
+                    className="w-full rounded-full border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black focus:ring-2 focus:ring-red-500/20"
                     placeholder="••••••••"
                     required
                   />
                 </div>
 
-                {loginError ? <p className="text-sm text-orange-600">{loginError}</p> : null}
+                {loginError ? <p className="text-sm text-red-600">{loginError}</p> : null}
 
                 <button
                   type="submit"
-                  className="w-full rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-black/50"
+                  className="w-full rounded-full bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-black/50"
                   disabled={isLoginSubmitting}
                 >
                   {isLoginSubmitting ? 'Iniciando sesión...' : 'Iniciar sesión'}
@@ -464,7 +487,7 @@ export const Header = () => {
                   setIsLoginModalOpen(false);
                   setIsMembershipModalOpen(true);
                 }}
-                className="mt-4 w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:border-orange-600 hover:text-orange-600 sm:w-auto"
+                className="mt-4 w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600 sm:w-auto"
               >
                 ✨ Lo que te pierdes
               </button>

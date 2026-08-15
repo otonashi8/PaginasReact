@@ -40,7 +40,7 @@ export const SearchDropdown = ({
 
               <button
                 onClick={onViewAll}
-                className="w-full border-t border-black/10 p-4 text-sm font-semibold text-red-600 transition hover:bg-[#F7F3EC]"
+                className="w-full border-t border-black/10 p-4 text-sm font-semibold text-red-600 transition hover:bg-white"
               >
                 Ver todos los resultados ({products.length})
               </button>
@@ -65,7 +65,7 @@ export const SearchDropdown = ({
                 ].map((item) => (
                   <span
                     key={item}
-                    className="rounded-full bg-[#F7F3EC] px-3 py-1 text-sm"
+                    className="rounded-full bg-white px-3 py-1 text-sm"
                   >
                     {item}
                   </span>

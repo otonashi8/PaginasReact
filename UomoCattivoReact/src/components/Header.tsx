@@ -1,24 +1,47 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Heart, Menu, Search, ShoppingBag, X } from 'lucide-react';
-import { useMemo, useState, type FormEvent, type MouseEvent as ReactMouseEvent, useRef, useEffect} from 'react';
-import { Link, NavLink, useLocation, useNavigate} from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import { getPlanById } from '../plans';
-import { getHeaderData } from '../services/headerService';
 import { CartDrawer } from './CartDrawer';
 import { MembershipModal } from './MembershipModal';
-import { SearchDropdown } from "./SearchDropdown";
-import { getProducts } from "../services/contentService";
+import { SearchDropdown } from './SearchDropdown';
+import { getProducts } from '../services/contentService';
+
+type NavigationLink = {
+  label: string;
+  href: string;
+  external?: boolean;
+};
+
+const navigationLinks: NavigationLink[] = [
+  { label: 'Inicio', href: '/' },
+  { label: '3x100', href: 'https://3x100.pe', external: true },
+  { label: 'Tienda', href: '/tienda' },
+  { label: 'Outfit S/200', href: '/outfit-s200' },
+  { label: 'Contacto', href: '/contacto' },
+  { label: 'Beneficios', href: '/beneficios' },
+];
 
 export const Header = () => {
   const { favorites, cart, toggleCart } = useWishlist();
   const { user, isAuthenticated, isLoading, logout, login } = useAuth();
-  
-  //buqueda
+  const navigate = useNavigate();
+
   const products = getProducts();
-  const searchRef = useRef<HTMLDivElement>(null); 
-  const [search, setSearch] = useState("");
+  const searchRef = useRef<HTMLDivElement>(null);
+  const [search, setSearch] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
+
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
 
@@ -32,39 +55,20 @@ export const Header = () => {
       )
       .slice(0, 6);
   }, [search, products]);
+
   useEffect(() => {
     const handleClickOutside = (event: globalThis.MouseEvent) => {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
-        setSearch("");
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setSearch('');
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  const navigate = useNavigate();
-  const headerData = getHeaderData();
-  const { links } = headerData;
-  const megaMenuTriggers = (headerData as any).megaMenuTriggers || ['Inicio', 'Nosotros', 'Contacto','Tienda','Beneficios'];
-  const megaMenus = (headerData as any).megaMenus || {};
-
-  const location = useLocation();
-  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
-  const [activeMegaTrigger, setActiveMegaTrigger] = useState<string | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [loginIdentifier, setLoginIdentifier] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
-  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
 
   const membership = useMemo(() => {
     if (!isAuthenticated || !user || isLoading) {
@@ -87,7 +91,65 @@ export const Header = () => {
     };
   }, [isAuthenticated, isLoading, user]);
 
-  const membershipButtonLabel = membership ? `${user?.username || 'Cliente'} ${membership.plan.icono}` : null;
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = document.documentElement.scrollTop || window.scrollY || document.body.scrollTop;
+      setIsScrolled(scrollTop > 0);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const headerTextClass = isScrolled ? 'text-white' : 'text-black';
+  const headerBackgroundClass = isScrolled ? 'border-white/10 bg-black' : 'border-zinc-200 bg-white/95';
+  const headerButtonClass = isScrolled
+    ? 'border-white/20 bg-white/10 text-white hover:border-red-500 hover:text-red-400'
+    : 'border-black/10 bg-white text-black hover:border-red-600 hover:text-red-600';
+  const headerIconButtonClass = isScrolled
+    ? 'border-white/20 bg-white/10 text-white hover:border-red-500 hover:text-red-400'
+    : 'border-black/10 bg-white text-black';
+  const headerSearchClass = isScrolled
+    ? 'border-white/20 bg-black/10 text-white placeholder:text-white/70'
+    : 'border-zinc-200 bg-white text-black/60 placeholder:text-black/40';
+  const headerNavLinkClass = (isActive: boolean) =>
+    isActive
+      ? isScrolled
+        ? 'text-white'
+        : 'text-black'
+      : isScrolled
+      ? 'text-white/80 hover:text-red-400'
+      : 'text-black/80 hover:text-red-600';
+
+  const renderNavItem = (link: NavigationLink) => {
+    const baseClassName = 'transition';
+
+    if (link.external) {
+      return (
+        <a
+          key={link.href}
+          href={link.href}
+          target="_blank"
+          rel="noreferrer"
+          className={`${baseClassName} ${isScrolled ? 'text-white hover:text-red-400' : 'text-black/80 hover:text-red-600'}`}
+        >
+          {link.label}
+        </a>
+      );
+    }
+
+    return (
+      <NavLink
+        key={link.href}
+        to={link.href}
+        className={({ isActive }) => `${baseClassName} ${headerNavLinkClass(isActive)}`}
+      >
+        {link.label}
+      </NavLink>
+    );
+  };
 
   const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -106,245 +168,37 @@ export const Header = () => {
       setIsLoginSubmitting(false);
     }
   };
-  
-  const handleSearch = (e: FormEvent) => {
-    e.preventDefault();
+
+  const handleSearch = (event: FormEvent) => {
+    event.preventDefault();
 
     if (!search.trim()) {
-      navigate("/tienda");
+      navigate('/tienda');
       return;
     }
 
     navigate(`/tienda?search=${encodeURIComponent(search.trim())}`);
-    setSearch("");
-  };
-
-  const scrollToSection = (section: string) => {
-    const target = document.getElementById(section) || document.querySelector(`[data-section="${section}"]`);
-
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-
-    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-  };
-
-  const handleNavClick = (event: ReactMouseEvent<HTMLAnchorElement>, link: { label: string; href: string }) => {
-    const isSamePage = location.pathname === link.href;
-
-    if (megaMenuTriggers.includes(link.label) && isSamePage) {
-      event.preventDefault();
-      const sectionId = link.label === 'Inicio' ? 'inicio' : link.label.toLowerCase();
-      scrollToSection(sectionId);
-      setIsMegaMenuOpen(false);
-      setActiveMegaTrigger(null);
-      return;
-    }
-
-    if (megaMenuTriggers.includes(link.label)) {
-      setActiveMegaTrigger(link.label);
-      setIsMegaMenuOpen(true);
-    }
-  };
-
-  const renderMegaMenu = (trigger: string) => {
-    const menuContent = megaMenus[trigger];
-    
-    if (!menuContent) return null;
-
-    const slugify = (s: string) => s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
-
-    const computeHref = (
-      trigger: string,
-      item: string
-    ) => {
-
-      if (trigger === "Tienda" || trigger === "Inicio") {
-
-        // Categorías principales
-        if (["Polos", "Shorts", "Joggers", "Pantalón"].includes(item)) {
-          return `/tienda?category=${encodeURIComponent(item)}`;
-        }
-
-        // Subcategorías Polos
-        if (
-          [
-            "Luxury",
-            "Supremo",
-            "Prime",
-            "Caffarena",
-            "Bottoncini",
-          ].includes(item)
-        ) {
-          return `/tienda?category=Polos&subcategory=${encodeURIComponent(item)}`;
-        }
-
-        // Subcategorías Shorts
-        if (item === "Set Vittoria") {
-          return `/tienda?category=Shorts&subcategory=${encodeURIComponent(item)}`;
-        }
-
-        // Subcategorías Joggers
-        if (item === "Set Signorile") {
-          return `/tienda?category=Joggers&subcategory=${encodeURIComponent(item)}`;
-        }
-
-        // Subcategorías Pantalón
-        if (["Clásico", "Sastre"].includes(item)) {
-          return `/tienda?category=Pantalón&subcategory=${encodeURIComponent(item)}`;
-        }
-
-        return "/tienda";
-      }
-
-      if (trigger === "Nosotros") {
-        return `/nosotros#${slugify(item)}`;
-      }
-
-      if (trigger === "Contacto") {
-        return `/contacto#${slugify(item)}`;
-      }
-
-      if (trigger === "Beneficios") {
-        return `/beneficios#${slugify(item)}`;
-      }
-
-      return "/";
-    };
-
-  [];
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 10 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="fixed inset-x-0 top-16 z-40 max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-black/10 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
-      >
-        <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-          {trigger === 'Contacto' ? (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {menuContent.map((group: any) => (
-                  <div key={group.section}>
-                    <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] text-black/50">
-                      {group.section}
-                    </p>
-                    <div className="mt-3 space-y-2">
-                      {group.items.map((item: string) => {
-                        const isContactInfo = item.includes(':');
-                        if (isContactInfo) {
-                          return (
-                            <p key={item} className="text-center text-sm text-black/70 sm:text-left">
-                              {item}
-                            </p>
-                          );
-                        }
-
-                        const href = computeHref(trigger, item);
-
-                        return (
-                          <Link
-                            key={item}
-                            to={href}
-                            className="block rounded-lg px-2 py-2 text-sm text-black/70 transition hover:bg-red-50 hover:text-red-600"
-                          >
-                            {item}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-              <div className={`grid gap-6 ${trigger === 'Tienda' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
-                {menuContent.map((group: any) => (
-                  <div key={group.section}>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-black/50">
-                      {group.section}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {group.items.map((item: string) => {
-                        const href = computeHref(trigger, item);
-                        return (
-                          <Link
-                            key={item}
-                            to={href}
-                            className="rounded-full border border-black/10 px-3 py-2 text-xs sm:text-sm text-black/70 transition hover:border-red-600 hover:bg-red-600 hover:text-white"
-                          >
-                            {item}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </motion.div>
-    );
+    setSearch('');
   };
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-black/10 bg-[#F7F3EC]/95 backdrop-blur-xl supports-[backdrop-filter]:bg-[#F7F3EC]/90">
+      <header className={`sticky top-0 z-50 w-full border-b backdrop-blur-xl transition duration-300 ${headerBackgroundClass}`}>
         <div className="mx-auto flex w-full max-w-[1920px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden rounded-full border border-black/10 bg-white p-2.5 text-black"
+            className={`rounded-full border p-2.5 ${isScrolled ? 'border-white/20 bg-white/5 text-white' : 'border-zinc-200 bg-white text-black'} lg:hidden`}
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          <Link to="/" className="text-base font-semibold uppercase tracking-[0.3em] text-black sm:text-xl lg:mr-auto">
-            UOMO CATTIVO
+          <Link to="/" className={`text-base font-semibold uppercase tracking-[0.3em] sm:text-xl lg:mr-auto ${headerTextClass}`}>
+            EZZETA
           </Link>
 
-          <nav className="hidden flex-1 items-center justify-center gap-6 text-sm font-medium uppercase tracking-[0.24em] text-black/80 lg:flex">
-            {links.map((link) => {
-              const isMegaTrigger = megaMenuTriggers.includes(link.label);
-
-              return (
-                <div
-                  key={link.href}
-                  className="relative"
-                  onMouseEnter={() => {
-                    if (isMegaTrigger) {
-                      setActiveMegaTrigger(link.label);
-                      setIsMegaMenuOpen(true);
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    if (isMegaTrigger) {
-                      setIsMegaMenuOpen(false);
-                      setActiveMegaTrigger(null);
-                    }
-                  }}
-                >
-                  <NavLink
-                    to={link.href}
-                    onClick={(event) => handleNavClick(event, link)}
-                    className={({ isActive }) => `transition hover:text-red-600 ${isActive ? 'text-black' : ''}`}
-                  >
-                    {link.label}
-                  </NavLink>
-
-                  {isMegaTrigger && (
-                    <AnimatePresence>
-                      {isMegaMenuOpen && activeMegaTrigger === link.label && renderMegaMenu(link.label)}
-                    </AnimatePresence>
-                  )}
-                </div>
-              );
-            })}
+          <nav className="hidden flex-1 items-center justify-center gap-6 text-sm font-medium uppercase tracking-[0.24em] lg:flex">
+            {navigationLinks.map((link) => renderNavItem(link))}
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -352,9 +206,12 @@ export const Header = () => {
               <button
                 type="button"
                 onClick={() => setIsMembershipModalOpen(true)}
-                className="hidden rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600 sm:inline-flex"
+                className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
               >
-                {membershipButtonLabel}
+                <span className="text-base leading-none" aria-hidden>
+                  {membership.plan.icono}
+                </span>
+                <span className="max-w-[10rem] truncate">{user?.username ?? 'Usuario'}</span>
               </button>
             ) : null}
 
@@ -367,7 +224,7 @@ export const Header = () => {
                   setLoginError('');
                   setIsLoginModalOpen(true);
                 }}
-                className="hidden rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600 sm:inline-flex"
+                className={`hidden rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
               >
                 Iniciar sesión
               </button>
@@ -380,38 +237,37 @@ export const Header = () => {
                   await logout();
                   navigate('/');
                 }}
-                className="hidden rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600 sm:inline-flex"
+                className={`hidden rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
               >
                 Cerrar sesión
               </button>
             ) : null}
-            
+
             <div className="relative hidden h-full sm:block" ref={searchRef}>
               <form
                 onSubmit={handleSearch}
-                className="hidden items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-2 text-sm text-black/60 sm:flex"
+                className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-sm sm:flex ${headerSearchClass}`}
               >
                 <Search size={16} />
-
                 <input
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(event) => setSearch(event.target.value)}
                   placeholder="Buscar"
-                  className="w-72 bg-transparent outline-none placeholder:text-black/40"
+                  className="w-72 bg-transparent outline-none placeholder:text-current/40"
                 />
               </form>
               <SearchDropdown
                 products={searchResults}
                 search={search}
-                onClose={() => setSearch("")}
+                onClose={() => setSearch('')}
                 onViewAll={() => {
                   navigate(`/tienda?search=${encodeURIComponent(search)}`);
-                  setSearch("");
+                  setSearch('');
                 }}
               />
             </div>
 
-            <Link to="/deseados" className="relative rounded-full border border-black/10 bg-white p-2.5 text-black">
+            <Link to="/deseados" className={`relative rounded-full border p-2.5 ${headerIconButtonClass}`}>
               <Heart size={18} />
               {favorites.length > 0 ? (
                 <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-semibold text-white">
@@ -420,7 +276,7 @@ export const Header = () => {
               ) : null}
             </Link>
 
-            <button className="relative rounded-full border border-black/10 bg-white p-2.5 text-black" type="button" onClick={toggleCart}>
+            <button className={`relative rounded-full border p-2.5 ${headerIconButtonClass}`} type="button" onClick={toggleCart}>
               <ShoppingBag size={18} />
               {cart.length > 0 ? (
                 <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-semibold text-white">
@@ -438,7 +294,7 @@ export const Header = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden overflow-hidden border-b border-black/10 bg-white"
+              className="overflow-hidden border-b border-black/10 bg-white lg:hidden"
             >
               <div className="flex flex-col gap-3 px-4 py-3 sm:px-6">
                 <form
@@ -446,7 +302,7 @@ export const Header = () => {
                     handleSearch(event);
                     setIsMobileMenuOpen(false);
                   }}
-                  className="flex items-center gap-2 rounded-full border border-black/10 bg-[#F7F3EC] px-3 py-2 text-sm text-black/60"
+                  className="flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-2 text-sm text-black/60"
                 >
                   <Search size={16} />
                   <input
@@ -458,16 +314,30 @@ export const Header = () => {
                 </form>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMembershipModalOpen(true);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
-                  >
-                    Ver planes
-                  </button>
+                  {membership ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMembershipModalOpen(true);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
+                    >
+                      <span aria-hidden>{membership.plan.icono}</span>
+                      <span className="truncate">{user?.username ?? 'Usuario'}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMembershipModalOpen(true);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
+                    >
+                      Ver planes
+                    </button>
+                  )}
 
                   {!isAuthenticated ? (
                     <button
@@ -489,7 +359,7 @@ export const Header = () => {
                       onClick={async () => {
                         await logout();
                         setIsMobileMenuOpen(false);
-                        navigate('/');
+                        navigate('/login');
                       }}
                       className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
                     >
@@ -499,23 +369,37 @@ export const Header = () => {
                 </div>
 
                 <nav className="flex flex-col divide-y divide-black/10 rounded-2xl border border-black/10 bg-white">
-                  {links.map((link) => (
-                    <div key={link.href}>
+                  {navigationLinks.map((link) => {
+                    if (link.external) {
+                      return (
+                        <a
+                          key={link.href}
+                          href={link.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="block rounded-xl px-4 py-3 text-sm font-medium uppercase tracking-[0.18em] text-black/70 transition hover:bg-red-50 hover:text-red-600"
+                        >
+                          {link.label}
+                        </a>
+                      );
+                    }
+
+                    return (
                       <NavLink
+                        key={link.href}
                         to={link.href}
                         onClick={() => setIsMobileMenuOpen(false)}
                         className={({ isActive }) =>
                           `block rounded-xl px-4 py-3 text-sm font-medium uppercase tracking-[0.18em] transition ${
-                            isActive
-                              ? 'bg-black text-white'
-                              : 'text-black/70 hover:bg-red-50 hover:text-red-600'
+                            isActive ? 'bg-black text-white' : 'text-black/70 hover:bg-red-50 hover:text-red-600'
                           }`
                         }
                       >
                         {link.label}
                       </NavLink>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </nav>
               </div>
             </motion.div>
@@ -539,7 +423,7 @@ export const Header = () => {
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 24, opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-xl max-h-[92dvh] overflow-y-auto rounded-[1.5rem] border border-black/10 bg-[#F7F3EC] p-5 shadow-2xl sm:rounded-[2rem] sm:p-8"
+              className="w-full max-w-xl max-h-[92dvh] overflow-y-auto rounded-[1.5rem] border border-black/10 bg-white p-5 shadow-2xl sm:rounded-[2rem] sm:p-8"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mb-5 text-center sm:mb-6 sm:text-left">

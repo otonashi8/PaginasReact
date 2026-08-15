@@ -104,7 +104,7 @@ fun WelcomeScreen(navController: NavHostController, viewModel: MainViewModel) {
                 if (alias.isNotBlank()) {
                     viewModel.setUserName(context, alias)
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Welcome.route) { inclusive = true }
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
                     }
                 } else {
                     showError = true

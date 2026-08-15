@@ -8,7 +8,7 @@ export interface ChatMessage {
 export const chatbotResponses = {
   welcome: `Hola 👋
 
-Soy el asistente virtual de MAXETA.
+Soy el asistente virtual de Ezzeta.
 
 Estoy aquí para ayudarte con productos, pedidos, métodos de pago, envíos y nuestro programa de membresías.
 
@@ -107,7 +107,7 @@ Si nos escribes fuera del horario de atención, responderemos lo antes posible.`
 Si necesitas algo más, aquí estaré para ayudarte.`,
 
   // ===== Despedida =====
-  goodbye: `¡Gracias por visitar MAXETA!
+  goodbye: `¡Gracias por visitar Ezzeta!
 
 Esperamos verte nuevamente muy pronto. 👋`,
 

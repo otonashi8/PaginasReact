@@ -82,12 +82,12 @@ fun LoginScreen(navController: NavHostController, viewModel: MainViewModel) {
                         if (email == "admin" && password == "admin123") {
                             viewModel.loginUser(context, email, isAdmin = true)
                             navController.navigate(Screen.AdminDashboard.route) {
-                                popUpTo(Screen.Welcome.route) { inclusive = true }
+                                popUpTo(navController.graph.id) { inclusive = true }
                             }
                         } else {
                             viewModel.loginUser(context, email, isAdmin = false)
                             navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Welcome.route) { inclusive = true }
+                                popUpTo(navController.graph.id) { inclusive = true }
                             }
                         }
                     }

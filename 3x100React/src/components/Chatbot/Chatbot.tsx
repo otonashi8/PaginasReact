@@ -112,7 +112,7 @@ const Chatbot = () => {
     const greeting = user?.username
       ? `Hola ${user.username} 👋
 
-Soy el asistente virtual de 3x100.
+Soy el asistente virtual de Ezzeta.
 
 Veo que perteneces al programa mayorista.
 
@@ -134,7 +134,7 @@ Veo que perteneces al programa mayorista.
     const greeting = user?.username
       ? `Hola ${user.username} 👋
 
-Soy el asistente virtual de 3x100.
+Soy el asistente virtual de Ezzeta.
 
 ¿En qué puedo ayudarte hoy?`
       : chatbotResponses.welcome;
@@ -170,7 +170,7 @@ Soy el asistente virtual de 3x100.
         addBotMessage(chatbotResponses.membership);
         break;
       case 'advisor':
-        window.open('https://wa.me/51933141678?text=Hola,%20necesito%20ayuda%20en%203x100.', '_blank', 'noopener,noreferrer');
+        window.open('https://wa.me/51933141678?text=Hola,%20necesito%20ayuda%20en%20Ezzeta.', '_blank', 'noopener,noreferrer');
         break;
       default:
         break;
@@ -183,7 +183,7 @@ Soy el asistente virtual de 3x100.
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.94 }}
         onClick={() => setIsOpen((prev) => !prev)}
-        className="fixed bottom-4 right-4 sm:bottom-6 sm:bottom-6 z-[999] flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-orange-600 text-white shadow-2xl"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:bottom-6 z-[999] flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl"
         aria-label="Abrir asistente virtual"
       >
         {isOpen ? <X size={26} /> : <MessageCircle size={28} />}
@@ -196,12 +196,12 @@ Soy el asistente virtual de 3x100.
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
             transition={{ duration: 0.25 }}
-            className="fixed bottom-2 right-2 left-2 z-[999] flex flex-col h-[88vh] w-auto flex-col overflow-hidden rounded-2xl border border-orange-600 bg-[#101010] shadow-2x1
+            className="fixed bottom-2 right-2 left-2 z-[999] flex flex-col h-[88vh] w-auto flex-col overflow-hidden rounded-2xl border border-red-600 bg-[#101010] shadow-2x1
                       sm:left-auto sm:bottom-24 sm:right-6 sm:h-[650px] sm:w-[380px] sm:rounded-3xl"
           >
             <div className="flex items-center justify-between border-b border-white/10 bg-black px-4 sm:px-5 py-3 sm:py-4">
               <div>
-                <h2 className="text-sm sm:text-base font-semibold text-white">Asistente 3x100</h2>
+                <h2 className="text-sm sm:text-base font-semibold text-white">Asistente Ezzeta</h2>
                 <p className="text-xs text-white/50">Siempre disponible</p>
               </div>
               <button
@@ -254,7 +254,7 @@ Soy el asistente virtual de 3x100.
                 Planes
               </button>
               <a
-                href="https://wa.me/51933141678?text=Hola,%20necesito%20ayuda%20en%203x100."
+                href="https://wa.me/51933141678?text=Hola,%20necesito%20ayuda%20en%20Ezzeta."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-green-600 p-3 font-medium text-white transition hover:bg-green-500"

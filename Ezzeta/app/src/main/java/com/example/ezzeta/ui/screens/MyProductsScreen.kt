@@ -1,5 +1,6 @@
 package com.example.ezzeta.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,7 +28,11 @@ import com.example.ezzeta.ui.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyProductsScreen(viewModel: MainViewModel, onBack: () -> Unit) {
+fun MyProductsScreen(
+    viewModel: MainViewModel, 
+    onBack: () -> Unit,
+    onEditProduct: (String) -> Unit
+) {
     val myProducts by viewModel.myProducts.collectAsState()
     val context = LocalContext.current
 
@@ -60,15 +65,7 @@ fun MyProductsScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 items(myProducts, key = { it.id }) { product ->
                     MyProductItem(
                         product = product,
-                        onUpdateStock = { newStock ->
-                            viewModel.updateProductStock(context, product.id, newStock)
-                        },
-                        onUpdatePrice = { newPrice ->
-                            viewModel.updateProductPrice(context, product.id, newPrice)
-                        },
-                        onToggleVisibility = {
-                            viewModel.toggleProductVisibility(context, product.id)
-                        }
+                        onEdit = { onEditProduct(product.id) }
                     )
                 }
             }
@@ -79,46 +76,10 @@ fun MyProductsScreen(viewModel: MainViewModel, onBack: () -> Unit) {
 @Composable
 fun MyProductItem(
     product: Product,
-    onUpdateStock: (Int) -> Unit,
-    onUpdatePrice: (Double) -> Unit,
-    onToggleVisibility: () -> Unit
+    onEdit: () -> Unit
 ) {
-    var showPriceDialog by remember { mutableStateOf(false) }
-    var priceInput by remember { mutableStateOf(product.price.toString()) }
-
-    if (showPriceDialog) {
-        AlertDialog(
-            onDismissRequest = { showPriceDialog = false },
-            title = { Text("Editar Precio") },
-            text = {
-                OutlinedTextField(
-                    value = priceInput,
-                    onValueChange = { priceInput = it },
-                    label = { Text("Nuevo precio (S/)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    priceInput.toDoubleOrNull()?.let {
-                        onUpdatePrice(it)
-                        showPriceDialog = false
-                    }
-                }) {
-                    Text("Guardar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showPriceDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
-
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -141,18 +102,21 @@ fun MyProductItem(
                     Text(text = product.name, fontWeight = FontWeight.Bold, maxLines = 1)
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (product.oldPrice != null && product.oldPrice > product.price) {
+                            Text(
+                                text = "S/ ${String.format(java.util.Locale.US, "%.2f", product.oldPrice)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray,
+                                textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
                         Text(
-                            text = "S/ ${product.price}",
+                            text = "S/ ${String.format(java.util.Locale.US, "%.2f", product.price)}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
                         )
-                        IconButton(onClick = { 
-                            priceInput = product.price.toString()
-                            showPriceDialog = true 
-                        }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Default.Edit, contentDescription = "Editar precio", modifier = Modifier.size(16.dp))
-                        }
                     }
                     
                     Spacer(modifier = Modifier.height(4.dp))
@@ -177,59 +141,28 @@ fun MyProductItem(
                     }
                 }
                 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Stock", style = MaterialTheme.typography.labelSmall)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = { if (product.stock > 0) onUpdateStock(product.stock - 1) },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(Icons.Default.Remove, contentDescription = null, modifier = Modifier.size(18.dp))
-                        }
-                        
-                        Text(
-                            text = product.stock.toString(),
-                            fontWeight = FontWeight.Black,
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                            fontSize = 16.sp
-                        )
-                        
-                        IconButton(
-                            onClick = { onUpdateStock(product.stock + 1) },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Stock Total", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text(
+                        text = product.variants?.sumOf { it.stock }?.toString() ?: product.stock.toString(),
+                        fontWeight = FontWeight.Black,
+                        fontSize = 18.sp
+                    )
+                    
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
             
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = if (product.isVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = if (product.isVisible) MaterialTheme.colorScheme.primary else Color.Gray
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (product.isVisible) "Visible en la tienda" else "Oculto para clientes",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (product.isVisible) Color.Unspecified else Color.Gray
-                    )
-                }
-                
-                Switch(
-                    checked = product.isVisible,
-                    onCheckedChange = { onToggleVisibility() },
-                    scale = 0.8f
+            if (!product.variants.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Tallas: " + product.variants.joinToString(", ") { "${it.name}(${it.stock})" },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
         }

@@ -25,10 +25,10 @@ export const Footer = () => {
   const socialLinks = (
     <>
       <a
-        href="https://www.tiktok.com/@crepante.store0"
+        href="https://www.tiktok.com/@ezzetacompany"
         target="_blank"
         rel="noreferrer"
-        className="inline-flex w-full justify-center items-center gap-2 rounded-full border border-white/20 bg-black px-4 py-2 text-sm font-medium text-white transition hover:border-red-600 hover:bg-red-600"
+        className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-gray px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path d="M9 3v10a4 4 0 1 0 4-4V5a6 6 0 1 1-4 1z" fill="white"/>
@@ -37,10 +37,10 @@ export const Footer = () => {
       </a>
 
       <a
-        href="https://www.instagram.com/crepante/?hl=es-la"
+        href="https://www.instagram.com/ezzetacompany"
         target="_blank"
         rel="noreferrer"
-        className="inline-flex w-full justify-center items-center gap-2 rounded-full border border-white/20 bg-pink-700 px-4 py-2 text-sm font-medium text-white transition hover:border-red-600 hover:bg-red-600"
+        className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-gradient-to-r from-[#f58529] via-[#dd2a7b] to-[#8134af] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <rect x="3" y="3" width="18" height="18" rx="5" stroke="white" strokeWidth="1.2"/>
@@ -51,10 +51,10 @@ export const Footer = () => {
       </a>
 
       <a
-        href="https://www.facebook.com/p/Crepante-100085842814872/"
+        href="https://www.facebook.com/Ezzetacompany"
         target="_blank"
         rel="noreferrer"
-        className="inline-flex w-full justify-center items-center gap-2 rounded-full border border-white/20 bg-blue-500 px-4 py-2 text-sm font-medium text-white transition hover:border-red-600 hover:bg-red-600"
+        className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-[#1877F2] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path d="M18 2h-3a4 4 0 0 0-4 4v3H8v4h3v8h4v-8h3l1-4h-4V6a1 1 0 0 1 1-1h3V2z" fill="white"/>
@@ -62,6 +62,18 @@ export const Footer = () => {
         Facebook
       </a>
 
+      <a
+        href="https://www.youtube.com/@Pabloezzeta"
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-[#FF0000] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M22 7.5s-.2-1.5-.8-2.2c-.8-.9-1.7-.9-2.1-1C16.2 4 12 4 12 4s-4.2 0-7.1.3c-.4.1-1.3.1-2.1 1C2.2 6 2 7.5 2 7.5S1.8 9.2 1.8 10.8v1.4C1.8 13.8 2 15.5 2 15.5s.2 1.5.8 2.2c.8.9 1.8.9 2.3 1 1.7.2 6.9.3 6.9.3s4.2 0 7.1-.3c.4-.1 1.3-.1 2.1-1 .6-.7.8-2.2.8-2.2s.2-1.7.2-3.3v-1.4c0-1.6-.2-3.3-.2-3.3z" fill="white"/>
+          <path d="M10 9.5v5l4.5-2.5-4.5-2.5z" fill="#FF0000"/>
+        </svg>
+        YouTube
+      </a>
     </>
   );
 
@@ -74,7 +86,7 @@ export const Footer = () => {
           {/* Logo */}
           <div className="text-center lg:text-left">
             <p className="text-sm uppercase tracking-[0.3em] text-white/70">
-              CREPANTE
+              EZZETA
             </p>
 
             <h2 className="mt-3 text-2xl font-semibold">
@@ -87,9 +99,9 @@ export const Footer = () => {
 
             <div className="mt-6 flex justify-center lg:block">
               <img
-                src="/icono.jpg"
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRtR0xkrj_2RuK9RzeXNqdSDl2boknRmgrjLLUMccTPnX6Z0K7mXfQJkg&s=10"
                 alt="Logo"
-                className="h-40 w-55 rounded-xl"
+                className="h-40 w-75 rounded-xl"
               />
             </div>
 
@@ -201,18 +213,23 @@ export const Footer = () => {
                       className="overflow-hidden mt-4 space-y-3 text-left text-sm text-white/80"
                     >
                       <li>
-                        <a href="https://www.tiktok.com/@crepante.store0" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
+                        <a href="https://www.tiktok.com/@ezzetacompany" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
                           TikTok
                         </a>
                       </li>
                       <li>
-                        <a href="https://www.instagram.com/crepante/?hl=es-la" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
+                        <a href="https://www.instagram.com/ezzetacompany" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
                           Instagram
                         </a>
                       </li>
                       <li>
-                        <a href="https://www.facebook.com/p/Crepante-100085842814872/" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
+                        <a href="https://www.facebook.com/Ezzetacompany" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
                           Facebook
+                        </a>
+                      </li>
+                      <li>
+                        <a href="https://www.youtube.com/@Pabloezzeta" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
+                          YouTube
                         </a>
                       </li>
                     </motion.ul>
@@ -275,7 +292,7 @@ export const Footer = () => {
       <div className="border-t border-white/10 bg-black/90">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-4 text-sm text-white/60 sm:flex-row lg:px-8">
 
-          <p>© 2026 CREPANTE. Todos los derechos reservados.</p>
+          <p>© 2026 EZZETA. Todos los derechos reservados.</p>
 
           <Link
             to="/tienda"

@@ -60,6 +60,9 @@ fun CheckoutScreen(
     val planDiscount by viewModel.planDiscount.collectAsState()
     val userPlan by viewModel.userPlan.collectAsState()
     val shippingCost by viewModel.shippingCost.collectAsState()
+    val appliedRules by viewModel.appliedRules.collectAsState()
+    val totalRulesDiscount by viewModel.totalRulesDiscount.collectAsState()
+    val couponInput by viewModel.couponInput.collectAsState()
     val total by viewModel.total.collectAsState()
     
     var paymentMethod by remember { mutableStateOf("card") } // "tarjeta" o"yape"
@@ -79,7 +82,6 @@ fun CheckoutScreen(
     var saveCardInfo by remember { mutableStateOf(false) }
     var selectedCardId by remember { mutableStateOf<String?>(null) }
 
-    var couponCode by remember { mutableStateOf("") }
     var termsAccepted by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -205,6 +207,7 @@ fun CheckoutScreen(
                             onClick = {
                                 if (selectedDept != dept) {
                                     selectedDept = dept
+                                    viewModel.onShippingDeptChanged(dept)
                                     selectedProv = ""
                                     selectedDistrict = ""
                                     selectedUbigeoCode = null
@@ -505,15 +508,17 @@ fun CheckoutScreen(
             Spacer(modifier = Modifier.height(32.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
-                    value = couponCode,
-                    onValueChange = { couponCode = it },
+                    value = couponInput,
+                    onValueChange = { viewModel.onCouponInputChanged(it) },
                     label = { Text("Código de cupón") },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    trailingIcon = {
+                        if (couponInput.isNotEmpty() && totalRulesDiscount > 0) {
+                            Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF2E7D32))
+                        }
+                    }
                 )
-                Button(onClick = {}, shape = RoundedCornerShape(8.dp)) {
-                    Text("Aplicar")
-                }
             }
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -551,6 +556,13 @@ fun CheckoutScreen(
                             Text("- S/ ${String.format(java.util.Locale.US, "%.2f", planDiscount)}", color = Color(0xFF1976D2))
                         }
                     }
+                    
+                    appliedRules.forEach { rule ->
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(rule.ruleName, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            Text("- S/ ${String.format(java.util.Locale.US, "%.2f", rule.discountAmount)}", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                        }
+                    }
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Envío")
                         Text(if (shippingCost == 0.0) "GRATIS" else "S/ ${String.format(java.util.Locale.US, "%.2f", shippingCost)}")
@@ -579,7 +591,16 @@ fun CheckoutScreen(
                             expiryDate = cardExpiry
                         ))
                     }
-                    viewModel.checkout(context)
+                    viewModel.checkout(
+                        context = context,
+                        name = "$name $lastName",
+                        email = email,
+                        phone = phone,
+                        address = address,
+                        dept = selectedDept,
+                        prov = selectedProv,
+                        dist = selectedDistrict
+                    )
                     onOrderComplete()
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),

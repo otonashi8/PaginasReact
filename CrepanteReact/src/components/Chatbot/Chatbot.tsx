@@ -112,7 +112,7 @@ const Chatbot = () => {
     const greeting = user?.username
       ? `Hola ${user.username} 👋
 
-Soy el asistente virtual de CREPANTE.
+Soy el asistente virtual de Ezzeta.
 
 Veo que perteneces al programa mayorista.
 
@@ -134,7 +134,7 @@ Veo que perteneces al programa mayorista.
     const greeting = user?.username
       ? `Hola ${user.username} 👋
 
-Soy el asistente virtual de CREPANTE.
+Soy el asistente virtual de Ezzeta.
 
 ¿En qué puedo ayudarte hoy?`
       : chatbotResponses.welcome;
@@ -170,7 +170,7 @@ Soy el asistente virtual de CREPANTE.
         addBotMessage(chatbotResponses.membership);
         break;
       case 'advisor':
-        window.open('https://wa.me/51933141678?text=Hola,%20necesito%20ayuda%20en%20CREPANTE.', '_blank', 'noopener,noreferrer');
+        window.open('https://wa.me/51933141678?text=Hola,%20necesito%20ayuda%20en%20Ezzeta.', '_blank', 'noopener,noreferrer');
         break;
       default:
         break;
@@ -201,7 +201,7 @@ Soy el asistente virtual de CREPANTE.
           >
             <div className="flex items-center justify-between border-b border-white/10 bg-black px-4 sm:px-5 py-3 sm:py-4">
               <div>
-                <h2 className="text-sm sm:text-base font-semibold text-white">Asistente CREPANTE</h2>
+                <h2 className="text-sm sm:text-base font-semibold text-white">Asistente Ezzeta</h2>
                 <p className="text-xs text-white/50">Siempre disponible</p>
               </div>
               <button
@@ -254,7 +254,7 @@ Soy el asistente virtual de CREPANTE.
                 Planes
               </button>
               <a
-                href="https://wa.me/51933141678?text=Hola,%20necesito%20ayuda%20en%20CREPANTE."
+                href="https://wa.me/51933141678?text=Hola,%20necesito%20ayuda%20en%20Ezzeta."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-green-600 p-3 font-medium text-white transition hover:bg-green-500"

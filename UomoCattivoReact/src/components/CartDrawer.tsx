@@ -179,13 +179,8 @@ export const CartDrawer = () => {
   const canProceedToCheckout = checkoutDepartamento.trim().length > 0 && shippingResult.shippingCalculable;
 
   const shipping = shippingResult.shippingAmount ?? 0;
-  const discountedSubtotal = Number(
-    Math.max(0, selectedProductsSubtotal - discountAmount - promoDiscountAmount).toFixed(2)
-  );
-
-  const discountedTotal = Number(
-    Math.max(0, discountedSubtotal + shipping).toFixed(2)
-  );
+  const discountedSubtotal = Number(Math.max(0, selectedProductsSubtotal - discountAmount - promoDiscountAmount).toFixed(2));
+  const discountedTotal = Number(Math.max(0, discountedSubtotal + shipping).toFixed(2));
 
   useEffect(() => {
     if (user?.plan) {
@@ -280,7 +275,7 @@ export const CartDrawer = () => {
       return;
     }
 
-if (selectedProductsSubtotal < foundPromo.minPurchase) {
+    if (selectedProductsSubtotal < foundPromo.minPurchase) {
       setPromoMessage({ text: `✕ Compra mínima de S/${foundPromo.minPurchase}`, type: 'error' });
       return;
     }
@@ -318,22 +313,22 @@ if (selectedProductsSubtotal < foundPromo.minPurchase) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-            className="fixed right-0 top-0 z-[80] flex h-full w-full sm:max-w-lg flex-col border-l border-red-600 bg-black text-white shadow-2xl shadow-black/40"
+            className="fixed right-0 top-0 z-[80] flex h-full w-full sm:max-w-xl flex-col border-l border-black/10 bg-white text-black shadow-[0_24px_70px_rgba(0,0,0,0.18)]"
           >
-            <div className="flex items-center justify-between border-b border-black/10 bg-black px-4 py-4 sm:px-6 sm:py-5">
+            <div className="flex items-center justify-between border-b border-black/10 bg-white px-5 py-5 sm:px-7 sm:py-6">
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-white">Carrito</p>
-                <h2 className="text-xl font-semibold text-white">Tu compra</h2>
+                <p className="text-xs uppercase tracking-[0.28em] text-black/50">Carrito</p>
+                <h2 className="mt-1 text-2xl font-semibold text-black">Tu compra</h2>
               </div>
-              <button type="button" onClick={closeCart} className="text-white/80 hover:text-white">
+              <motion.button type="button" onClick={closeCart} whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }} className="rounded-full border border-black/10 p-2 text-black transition hover:border-black/30">
                 <X size={20} />
-              </button>
+              </motion.button>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-black px-4 py-4 sm:px-6 sm:py-5">
+            <div className="flex-1 overflow-y-auto bg-white px-5 py-6 sm:px-7 sm:py-7">
               {checkoutStep === 'cart' ? (
                 selectedProducts.length === 0 ? (
-                  <div className="rounded-[1.5rem] border border-dashed border-white bg-bone p-6 text-center text-sm text-white">
+                  <div className="rounded-[1.5rem] border border-dashed border-black/20 bg-white p-8 text-center text-sm text-black/60">
                     Tu carrito está vacío.
                   </div>
                 ) : (
@@ -395,8 +390,8 @@ if (selectedProductsSubtotal < foundPromo.minPurchase) {
                 />
               ) : null}
 
-              <div className="rounded-[1.25rem] border border-white bg-white/5 p-4 mt-4">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Nuestras Recomendaciones</p>
+              <div className="mt-5 rounded-[1.25rem] border border-black/10 bg-white p-4 shadow-[0_12px_30px_rgba(0,0,0,0.05)]">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-black">Nuestras Recomendaciones</p>
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {products.slice(0, 8).map((product) => {
                     const isFavorite = favorites.includes(product.id);
@@ -406,9 +401,9 @@ if (selectedProductsSubtotal < foundPromo.minPurchase) {
                         key={product.id}
                         to={`/producto/${product.slug}`}
                         onClick={() => closeCart()}
-                        className="group overflow-hidden rounded-lg border border-black/10 bg-white transition hover:border-red-600"
+                        className="group overflow-hidden rounded-xl border border-black/10 bg-white transition hover:-translate-y-0.5 hover:border-red-600 hover:shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
                       >
-                        <div className="relative h-40 sm:h-48 lg:h-52 xl:h-56 bg-[#F7F3EC] flex items-center justify-center">
+                        <div className="relative h-40 sm:h-48 lg:h-52 xl:h-56 bg-white flex items-center justify-center">
                           {product.image ? (
                             <ProductHoverImage
                               product={product}
@@ -429,7 +424,7 @@ if (selectedProductsSubtotal < foundPromo.minPurchase) {
                               }}
                               className={`absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full border p-2 transition ${
                                 isFavorite
-                                  ? 'border-red-600 bg-red-600 text-bone'
+                                  ? 'border-red-600 bg-red-600 text-white'
                                   : 'border-black/10 bg-white text-black hover:border-red-600 hover:text-red-600'
                               }`}
                             >
@@ -473,12 +468,12 @@ if (selectedProductsSubtotal < foundPromo.minPurchase) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/50 px-4 py-4 sm:py-6">
+                  className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/45 px-4 py-4 sm:py-6 backdrop-blur-[2px]">
                   <motion.div
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.95, opacity: 0 }}
-                    className="my-auto w-full max-w-xl rounded-[1.5rem] border border-black/10 bg-bone p-4 sm:p-6 shadow-2xl">
+                    className="my-auto w-full max-w-xl rounded-[1.5rem] border border-black/10 bg-white p-4 sm:p-6 shadow-[0_26px_70px_rgba(0,0,0,0.2)]">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="text-xl sm:text-2xl font-semibold text-black">Agregar al carrito</h3>
@@ -487,12 +482,12 @@ if (selectedProductsSubtotal < foundPromo.minPurchase) {
                       <button
                         type="button"
                         onClick={() => setRecommendedModalProduct(null)}
-                        className="rounded-full border border-black/10 bg-bone p-2 text-black transition hover:border-red-600 hover:text-red-600"
+                        className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:border-red-600 hover:text-red-600"
                       >✕</button>
                     </div>
 
                     <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-                      <div className="overflow-hidden rounded-[1.5rem] bg-[#F7F3EC] h-64 sm:h-80 lg:h-auto">
+                      <div className="overflow-hidden rounded-[1.5rem] bg-white h-64 sm:h-80 lg:h-auto">
                         <img
                           src={recommendedModalProduct.image}
                           alt={recommendedModalProduct.name}
@@ -502,14 +497,14 @@ if (selectedProductsSubtotal < foundPromo.minPurchase) {
                       <div className="space-y-4">
                         <div>
                           <span className="text-sm uppercase tracking-[0.2em] text-black/60">Precio</span>
-                          <PriceDisplay product={recommendedModalProduct} />
+                          <p><PriceDisplay product={recommendedModalProduct} /></p>
                         </div>
                         <label className="block">
                           <span className="text-sm uppercase tracking-[0.2em] text-black/60">Talla</span>
                           <select
                             value={recommendedSize}
                             onChange={(event) => setRecommendedSize(event.target.value)}
-                            className="mt-2 w-full rounded-full border border-black/10 bg-[#F7F3EC] px-4 py-3 text-sm outline-none"
+                            className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none"
                           >
                             {recommendedModalProduct.sizes.map((sizeOption) => (
                               <option key={sizeOption} value={sizeOption}>
@@ -525,7 +520,7 @@ if (selectedProductsSubtotal < foundPromo.minPurchase) {
                               type="button"
                               onMouseDown={() => startRecommendedChange(-1)}
                               onTouchStart={() => startRecommendedChange(-1)}
-                              className="rounded-full border border-black/10 bg-bone p-2 text-black transition hover:bg-black/5 hover:text-white"
+                              className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:bg-black/5 hover:text-white"
                             >
                               <Minus size={16} />
                             </button>
@@ -539,14 +534,14 @@ if (selectedProductsSubtotal < foundPromo.minPurchase) {
                                 const v = e.target.value.replace(/\D/g, '');
                                 setRecommendedQuantity(v === '' ? 1 : Number(v));
                               }}
-                              className="w-16 rounded-full border border-black/10 bg-bone py-2 text-center text-lg font-semibold text-black outline-none"
+                              className="w-16 rounded-full border border-black/10 bg-white py-2 text-center text-lg font-semibold text-black outline-none"
                             />
 
                             <button
                               type="button"
                               onMouseDown={() => startRecommendedChange(1)}
                               onTouchStart={() => startRecommendedChange(1)}
-                              className="rounded-full border border-black/10 bg-bone p-2 text-black transition hover:bg-black/5 hover:text-white"
+                              className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:bg-black/5 hover:text-white"
                             >
                               <Plus size={16} />
                             </button>
@@ -579,32 +574,36 @@ if (selectedProductsSubtotal < foundPromo.minPurchase) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/50 px-4 py-4"
+                className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/45 px-4 py-4 backdrop-blur-[2px]"
               >
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
-                  className="my-auto w-full max-w-sm rounded-[1.5rem] border border-black/10 bg-bone p-5 sm:p-6 shadow-2xl"
+                  className="my-auto w-full max-w-sm rounded-[1.5rem] border border-black/10 bg-white p-5 sm:p-6 shadow-[0_26px_70px_rgba(0,0,0,0.2)]"
                 >
                   <h3 className="text-lg font-semibold text-black">¿Eliminar producto?</h3>
                   <p className="mt-2 text-sm text-black/70">¿Está seguro de que desea eliminar este artículo del carrito?</p>
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                    <button
+                    <motion.button
                       type="button"
                       onClick={() => setDeleteConfirm(null)}
-                      className="flex-1 rounded-full border border-black/10 bg-bone px-4 py-2 text-sm font-medium text-black transition hover:bg-black/5 hover:text-white"
+                      whileHover={{ y: -1 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-black/5"
                     >
                       Cancelar
-                    </button>
+                    </motion.button>
                     <PermissionGate permission={PERMISSIONS.salesDelete}>
-                      <button
+                      <motion.button
                         type="button"
                         onClick={handleConfirmDelete}
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.98 }}
                         className="flex-1 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
                       >
                         Eliminar
-                      </button>
+                      </motion.button>
                     </PermissionGate>
                   </div>
                 </motion.div>

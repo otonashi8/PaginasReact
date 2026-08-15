@@ -1,12 +1,15 @@
 package com.example.ezzeta.ui.screens.admin
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,7 +32,9 @@ import com.example.ezzeta.ui.viewmodel.MainViewModel
 fun AdminProductManagementScreen(
     viewModel: MainViewModel,
     managementType: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onAddProduct: () -> Unit,
+    onEditProduct: (String) -> Unit
 ) {
     val context = LocalContext.current
     val products by viewModel.allProducts.collectAsState()
@@ -44,13 +49,20 @@ fun AdminProductManagementScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (managementType == "client") "Productos Clientes" else "Productos Ezzeta") },
+                title = { Text(if (managementType == "client") "Productos Clientes" else "Productos Tienda") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            if (managementType != "client") {
+                FloatingActionButton(onClick = onAddProduct) {
+                    Icon(Icons.Default.Add, contentDescription = "Añadir Producto")
+                }
+            }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
@@ -80,7 +92,8 @@ fun AdminProductManagementScreen(
                         },
                         onDelete = {
                             viewModel.deleteProduct(context, product.id)
-                        }
+                        },
+                        onEdit = { onEditProduct(product.id) }
                     )
                 }
             }
@@ -93,7 +106,8 @@ fun AdminProductItem(
     product: Product,
     viewModel: MainViewModel,
     onUpdate: (Product) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
 ) {
     var priceText by remember(product) { mutableStateOf(product.price.toString()) }
     var stockText by remember(product) { mutableStateOf(product.stock.toString()) }
@@ -130,7 +144,7 @@ fun AdminProductItem(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onEdit() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -149,6 +163,10 @@ fun AdminProductItem(
                     Text(text = "ID: ${product.id}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                 }
                 
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar detalladamente", tint = MaterialTheme.colorScheme.primary)
+                }
+
                 IconButton(onClick = { showDeleteDialog = true }) {
                     Icon(
                         imageVector = Icons.Default.Delete,

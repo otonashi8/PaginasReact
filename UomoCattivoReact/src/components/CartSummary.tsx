@@ -30,16 +30,16 @@ export default function CartSummary({
   const departments = useMemo(() => getPeruDepartments(), []);
   return (
     <>
-      <div className="mt-8 space-y-5 border-t border-white pt-6 sm:pt-7">
-        <div className="rounded-[1.2rem] border border-white bg-black p-5 text-sm text-white shadow-[0_12px_30px_rgba(0,0,0,0.05)]">
-          <p className="font-semibold uppercase tracking-[0.2em] text-white">Código promocional</p>
+      <div className="mt-8 space-y-5 border-t border-black/10 pt-6 sm:pt-7">
+        <div className="rounded-[1.2rem] border border-black/10 bg-white p-5 text-sm text-black shadow-[0_12px_30px_rgba(0,0,0,0.05)]">
+          <p className="font-semibold uppercase tracking-[0.2em] text-black">Código promocional</p>
           <div className="mt-3 flex flex-col gap-3 sm:flex-row">
             <input
               type="text"
               value={promoCodeInput}
               onChange={(event) => setPromoCodeInput(event.target.value)}
               placeholder="Ingresa tu cupón"
-              className="w-full rounded-full border border-white bg-black px-4 py-3 text-white outline-none transition-all duration-300 focus:border-white/30"
+              className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-black outline-none transition-all duration-300 focus:border-black/30"
             />
             <PermissionGate permission={PERMISSIONS.promoApply}>
               <motion.button
@@ -47,7 +47,7 @@ export default function CartSummary({
                 onClick={onApplyPromo}
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                className="rounded-full bg-red-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
+                className="rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
               >
                 Aplicar
               </motion.button>
@@ -113,9 +113,9 @@ export default function CartSummary({
         </div>
 
         {!hasActivePlan && (
-          <div className="rounded-[1rem] border border-white bg-black p-4 text-sm text-white/75">
-            <p className="font-semibold text-white">¿Quieres unirte al programa mayorista?</p>
-            <p className="mt-2 text-sm text-white">Elige un plan y continúa con un descuento especial.</p>
+          <div className="rounded-[1rem] border border-black/10 bg-white p-4 text-sm text-black/75">
+            <p className="font-semibold text-black">¿Quieres unirte al programa mayorista?</p>
+            <p className="mt-2 text-sm text-black/60">Elige un plan y continúa con un descuento especial.</p>
             <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
               <motion.button
                 type="button"
@@ -131,25 +131,25 @@ export default function CartSummary({
         )}
 
         {hasActivePlan && (
-          <div className="rounded-[1rem] border border-white bg-black p-3 sm:p-4 text-sm text-white/80">
+          <div className="rounded-[1rem] border-2 border-red-600 bg-red-50 p-4 sm:p-5 text-sm text-black/80 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-white">Plan activo</p>
-                <p className="mt-1 font-semibold text-white">{activePlan.nombre}</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-black/50">Plan activo</p>
+                <p className="mt-1 font-semibold text-black">{activePlan.nombre}</p>
               </div>
-              <span className="rounded-full border border-white bg-black px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">{activePlan.descuento}%</span>
+              <span className="rounded-full border border-red-600 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-600">{activePlan.descuento}%</span>
             </div>
 
             <div className="mt-4 space-y-2 text-sm">
-              <div className="flex justify-between text-white">
+              <div className="flex justify-between text-black/70">
                 <span>Subtotal</span>
                 <span>S/{subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-green-600">
+              <div className="flex justify-between text-green-700 font-semibold">
                 <span>Ahorro obtenido</span>
                 <span>S/{(subtotal * (activePlan.descuento / 100)).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-white">
+              <div className="flex justify-between text-black/80">
                 <span>Total</span>
                 <span className="font-semibold">S/{discountedSubtotal.toFixed(2)}</span>
               </div>
@@ -158,8 +158,8 @@ export default function CartSummary({
           </div>
         )}
 
-        <div className="space-y-3 rounded-[1.2rem] border border-white bg-black p-5 text-sm shadow-[0_14px_36px_rgba(0,0,0,0.07)]">
-          <div className="flex justify-between text-white">
+        <div className="space-y-3 rounded-[1.2rem] border border-black/10 bg-white p-5 text-sm shadow-[0_14px_36px_rgba(0,0,0,0.07)]">
+          <div className="flex justify-between text-black/70">
             <span>Total</span>
             <span>S/{discountedSubtotal.toFixed(2)}</span>
           </div>
@@ -169,9 +169,9 @@ export default function CartSummary({
               <span>-S/{promoDiscountAmount.toFixed(2)}</span>
             </div>
           ) : null}
-          <div className="flex justify-between text-white/60">
+          <div className="flex justify-between text-black/60">
             <span>{shippingLabel === 'GRATIS' ? 'Envío (Gratis)' : `Envío (> S/${montoMinimoEnvioGratis.toFixed(2)})`}</span>
-            <span className={shippingLabel === 'GRATIS' ? 'font-semibold text-green-600' : shippingNotConfigured ? 'text-orange-600' : 'text-white/80'}>
+            <span className={shippingLabel === 'GRATIS' ? 'font-semibold text-green-600' : shippingNotConfigured ? 'text-orange-600' : 'text-black/80'}>
               {shippingLabel === 'GRATIS' ? 'GRATIS' : shippingLabel}
             </span>
           </div>
@@ -179,7 +179,7 @@ export default function CartSummary({
             <p className="text-xs text-orange-600">Selecciona un departamento con tarifa configurada para calcular el envío.</p>
           ) : null}
           <div className="flex flex-col gap-3 border-t border-black/10 pt-3">
-            <div className="flex items-center justify-between text-lg font-semibold text-white sm:text-2xl">
+            <div className="flex items-center justify-between text-lg font-semibold text-black sm:text-2xl">
               <span>Total final</span>
               <span>S/{discountedTotal.toFixed(2)}</span>
             </div>

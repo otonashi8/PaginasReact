@@ -1,4 +1,4 @@
-﻿import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Heart, Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useHoldNumber } from '../hooks/useHoldNumber';
@@ -317,21 +317,15 @@ export const CartDrawer = () => {
           >
             <div className="flex items-center justify-between border-b border-black/10 bg-white px-5 py-5 sm:px-7 sm:py-6">
               <div>
-                <h2 className="text-3xl font-bold uppercase tracking-wide text-black">Tu carrito</h2>
-                <p className="mt-1 text-sm text-black/50">{selectedProducts.length} producto{selectedProducts.length !== 1 ? 's' : ''}</p>
+                <p className="text-xs uppercase tracking-[0.28em] text-black/50">Carrito</p>
+                <h2 className="mt-1 text-2xl font-semibold text-black">Tu compra</h2>
               </div>
-              <motion.button
-                type="button"
-                onClick={closeCart}
-                whileHover={{ scale: 1.06 }}
-                whileTap={{ scale: 0.95 }}
-                className="p-2 text-black transition duration-200 hover:bg-black hover:text-white"
-              >
+              <motion.button type="button" onClick={closeCart} whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }} className="rounded-full border border-black/10 p-2 text-black transition hover:border-black/30">
                 <X size={20} />
               </motion.button>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-white px-4 py-5 sm:px-6 sm:py-6">
+            <div className="flex-1 overflow-y-auto bg-white px-5 py-6 sm:px-7 sm:py-7">
               {checkoutStep === 'cart' ? (
                 selectedProducts.length === 0 ? (
                   <div className="rounded-[1.5rem] border border-dashed border-black/20 bg-white p-8 text-center text-sm text-black/60">
@@ -396,9 +390,9 @@ export const CartDrawer = () => {
                 />
               ) : null}
 
-              <div className="mt-6 border-t-2 border-black bg-white pt-6">
-                <p className="text-base font-bold uppercase tracking-[0.18em] text-black">Nuestras Recomendaciones</p>
-                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="mt-5 rounded-[1.25rem] border border-black/10 bg-white p-4 shadow-[0_12px_30px_rgba(0,0,0,0.05)]">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-black">Nuestras Recomendaciones</p>
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {products.slice(0, 8).map((product) => {
                     const isFavorite = favorites.includes(product.id);
 
@@ -407,60 +401,60 @@ export const CartDrawer = () => {
                         key={product.id}
                         to={`/producto/${product.slug}`}
                         onClick={() => closeCart()}
-                        className="group overflow-hidden border border-zinc-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-red-600"
+                        className="group overflow-hidden rounded-xl border border-black/10 bg-white transition hover:-translate-y-0.5 hover:border-red-600 hover:shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
                       >
-                        <div className="relative aspect-[4/5] overflow-hidden bg-zinc-100">
+                        <div className="relative h-40 sm:h-48 lg:h-52 xl:h-56 bg-white flex items-center justify-center">
                           {product.image ? (
                             <ProductHoverImage
                               product={product}
                               alt={product.name}
-                              className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                              className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
                             />
                           ) : (
                             <ImagePlaceholder label="Producto" className="h-full w-full" />
                           )}
+
                           <PermissionGate permission={PERMISSIONS.productUpdate}>
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              toggleFavorite(product.id);
-                            }}
-                            className={`absolute right-3 top-3 border bg-red p-2 transition-all duration-300 ${
-                              isFavorite
-                                ? 'border-red-600 bg-red-600 text-white shadow-md'
-                                : 'border-black/10 bg-white text-black hover:border-red-600 hover:text-red-600'
-                            }`}
-                          >
-                            <Heart size={16} />
-                          </button>
-                          </PermissionGate>
-                        </div>
-
-                        <div className="border-t border-zinc-200 p-4">
-                          <p className="line-clamp-2 text-sm font-bold uppercase tracking-[0.05em] text-black">{product.name}</p>
-
-                          <div className="mt-3 flex items-center justify-between">
-                            {product.previousPrice ? (
-                            <p className="text-sm text-black/40 line-through">S/{resolveProductPrice(product).precioOriginal.toFixed(2)}</p>
-                            ) : null}
-                            <p className="text-base font-semibold text-red-600">S/{resolveProductPrice(product).precioFinal.toFixed(2)}</p>
-                            <p></p>
-                            <PermissionGate permission={PERMISSIONS.salesCreate}>
                             <button
                               type="button"
                               onClick={(event) => {
                                 event.preventDefault();
                                 event.stopPropagation();
-                                setRecommendedModalProduct(product);
-                                setRecommendedSize(product.sizes[0] ?? 'M');
-                                setRecommendedQuantity(1);
+                                toggleFavorite(product.id);
                               }}
-                              className="inline-flex items-center justify-center border border-black bg-black p-2.5 text-white transition-all duration-300 hover:border-red-600 hover:bg-red-600"
+                              className={`absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full border p-2 transition ${
+                                isFavorite
+                                  ? 'border-red-600 bg-red-600 text-white'
+                                  : 'border-black/10 bg-white text-black hover:border-red-600 hover:text-red-600'
+                              }`}
                             >
-                              <ShoppingBag size={16} />
+                              <Heart size={16} />
                             </button>
+                          </PermissionGate>
+                        </div>
+
+                        <div className="p-2.5 sm:p-3">
+                          <p className="line-clamp-2 text-sm font-semibold text-black">
+                            {product.name}
+                          </p>
+
+                          <div className="mt-3 flex items-center justify-between">
+                            <PriceDisplay product={product} />
+
+                            <PermissionGate permission={PERMISSIONS.salesCreate}>
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  setRecommendedModalProduct(product);
+                                  setRecommendedSize(product.sizes[0] ?? 'M');
+                                  setRecommendedQuantity(1);
+                                }}
+                                className="inline-flex items-center justify-center rounded-full border border-black/10 bg-black p-2 text-white transition hover:bg-red-600"
+                              >
+                                <ShoppingBag size={16} />
+                              </button>
                             </PermissionGate>
                           </div>
                         </div>
@@ -469,20 +463,17 @@ export const CartDrawer = () => {
                   })}
                 </div>
               </div>
-
               {recommendedModalProduct ? (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/45 px-4 py-4 sm:py-6 backdrop-blur-[2px]"
-                >
+                  className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/45 px-4 py-4 sm:py-6 backdrop-blur-[2px]">
                   <motion.div
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.95, opacity: 0 }}
-                    className="my-auto w-full max-w-xl rounded-[1.5rem] border border-black/10 bg-white p-4 sm:p-6 shadow-[0_26px_70px_rgba(0,0,0,0.2)]"
-                  >
+                    className="my-auto w-full max-w-xl rounded-[1.5rem] border border-black/10 bg-white p-4 sm:p-6 shadow-[0_26px_70px_rgba(0,0,0,0.2)]">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="text-xl sm:text-2xl font-semibold text-black">Agregar al carrito</h3>
@@ -497,12 +488,16 @@ export const CartDrawer = () => {
 
                     <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
                       <div className="overflow-hidden rounded-[1.5rem] bg-white h-64 sm:h-80 lg:h-auto">
-                        <img src={recommendedModalProduct.image} alt={recommendedModalProduct.name} className="h-full w-full object-cover" />
+                        <img
+                          src={recommendedModalProduct.image}
+                          alt={recommendedModalProduct.name}
+                          className="h-full w-full object-cover"
+                        />
                       </div>
                       <div className="space-y-4">
                         <div>
                           <span className="text-sm uppercase tracking-[0.2em] text-black/60">Precio</span>
-                          <p className="mt-2 text-2xl sm:text-3xl font-semibold text-red-600"><PriceDisplay product={recommendedModalProduct} /></p>
+                          <p><PriceDisplay product={recommendedModalProduct} /></p>
                         </div>
                         <label className="block">
                           <span className="text-sm uppercase tracking-[0.2em] text-black/60">Talla</span>
@@ -512,25 +507,57 @@ export const CartDrawer = () => {
                             className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none"
                           >
                             {recommendedModalProduct.sizes.map((sizeOption) => (
-                              <option key={sizeOption} value={sizeOption}>{sizeOption}</option>
+                              <option key={sizeOption} value={sizeOption}>
+                                {sizeOption}
+                              </option>
                             ))}
                           </select>
                         </label>
                         <label className="block">
                           <span className="text-sm uppercase tracking-[0.2em] text-black/60">Cantidad</span>
                           <div className="mt-2 flex items-center justify-center sm:justify-start gap-3">
-                            <button type="button" onMouseDown={() => startRecommendedChange(-1)} onTouchStart={() => startRecommendedChange(-1)} className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:bg-black/5 hover:text-white"><Minus size={16} /></button>
-                            <input type="text" inputMode="numeric" pattern="[0-9]*" value={recommendedQuantity} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setRecommendedQuantity(v === '' ? 1 : Number(v)); }} className="w-16 rounded-full border border-black/10 bg-white py-2 text-center text-lg font-semibold text-black outline-none" />
-                            <button type="button" onMouseDown={() => startRecommendedChange(1)} onTouchStart={() => startRecommendedChange(1)} className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:bg-black/5 hover:text-white"><Plus size={16} /></button>
+                            <button
+                              type="button"
+                              onMouseDown={() => startRecommendedChange(-1)}
+                              onTouchStart={() => startRecommendedChange(-1)}
+                              className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:bg-black/5 hover:text-white"
+                            >
+                              <Minus size={16} />
+                            </button>
+
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={recommendedQuantity}
+                              onChange={(e) => {
+                                const v = e.target.value.replace(/\D/g, '');
+                                setRecommendedQuantity(v === '' ? 1 : Number(v));
+                              }}
+                              className="w-16 rounded-full border border-black/10 bg-white py-2 text-center text-lg font-semibold text-black outline-none"
+                            />
+
+                            <button
+                              type="button"
+                              onMouseDown={() => startRecommendedChange(1)}
+                              onTouchStart={() => startRecommendedChange(1)}
+                              className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:bg-black/5 hover:text-white"
+                            >
+                              <Plus size={16} />
+                            </button>
                           </div>
                         </label>
                         <PermissionGate permission={PERMISSIONS.salesCreate}>
-                        <button 
-                        type="button" 
-                        onClick={() => { addToCart(recommendedModalProduct.id, recommendedSize, recommendedQuantity); setRecommendedModalProduct(null); }} 
-                        className="w-full rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600">
-                          Agregar al carrito
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              addToCart(recommendedModalProduct.id, recommendedSize, recommendedQuantity);
+                              setRecommendedModalProduct(null);
+                            }}
+                            className="w-full rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
+                          >
+                            Agregar al carrito
+                          </button>
                         </PermissionGate>
                       </div>
                     </div>
@@ -543,19 +570,40 @@ export const CartDrawer = () => {
 
           <AnimatePresence>
             {deleteConfirm ? (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/45 px-4 py-4 backdrop-blur-[2px]">
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="my-auto w-full max-w-sm rounded-[1.5rem] border border-black/10 bg-white p-5 sm:p-6 shadow-[0_26px_70px_rgba(0,0,0,0.2)]">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/45 px-4 py-4 backdrop-blur-[2px]"
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="my-auto w-full max-w-sm rounded-[1.5rem] border border-black/10 bg-white p-5 sm:p-6 shadow-[0_26px_70px_rgba(0,0,0,0.2)]"
+                >
                   <h3 className="text-lg font-semibold text-black">¿Eliminar producto?</h3>
                   <p className="mt-2 text-sm text-black/70">¿Está seguro de que desea eliminar este artículo del carrito?</p>
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                    <motion.button type="button" onClick={() => setDeleteConfirm(null)} whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-black/5">Cancelar</motion.button>
-                    <PermissionGate permission={PERMISSIONS.salesDelete}>
-                    <motion.button 
-                    type="button" 
-                    onClick={handleConfirmDelete} whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} 
-                    className="flex-1 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600">
-                      Eliminar
+                    <motion.button
+                      type="button"
+                      onClick={() => setDeleteConfirm(null)}
+                      whileHover={{ y: -1 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-black/5"
+                    >
+                      Cancelar
                     </motion.button>
+                    <PermissionGate permission={PERMISSIONS.salesDelete}>
+                      <motion.button
+                        type="button"
+                        onClick={handleConfirmDelete}
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex-1 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                      >
+                        Eliminar
+                      </motion.button>
                     </PermissionGate>
                   </div>
                 </motion.div>
@@ -563,7 +611,11 @@ export const CartDrawer = () => {
             ) : null}
           </AnimatePresence>
 
-          <MembershipModal isOpen={isMembershipModalOpen} onClose={() => setIsMembershipModalOpen(false)} onSelectPlan={handleMembershipPlanSelect} />
+          <MembershipModal
+            isOpen={isMembershipModalOpen}
+            onClose={() => setIsMembershipModalOpen(false)}
+            onSelectPlan={handleMembershipPlanSelect}
+          />
         </>
       ) : null}
     </AnimatePresence>

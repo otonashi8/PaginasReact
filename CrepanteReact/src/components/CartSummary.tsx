@@ -1,4 +1,4 @@
-﻿import { motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 import { PermissionGate } from './PermissionGate';
 import { getPeruDepartments } from '../services/peruUbigeoService';
@@ -29,42 +29,43 @@ export default function CartSummary({
 }: any) {
   const departments = useMemo(() => getPeruDepartments(), []);
   return (
-    <div className="mt-8 space-y-5 border-t border-black/10 pt-6 sm:pt-7">
-      <div className="border-t border-black/10 pt-6 text-sm text-black">
-        <p className="font-semibold uppercase tracking-[0.2em] text-black">Código promocional</p>
-        <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-          <input
-            type="text"
-            value={promoCodeInput}
-            onChange={(event) => setPromoCodeInput(event.target.value)}
-            placeholder="Ingresa tu cupón"
-            className="w-full border border-neutral-300 bg-white px-4 py-3 text-black outline-none transition focus:border-black"
-          />
-          <PermissionGate permission={PERMISSIONS.promoApply}>
-          <motion.button
-            type="button"
-            onClick={onApplyPromo}
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            className="border border-black bg-black px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-red-600 hover:border-red-600"
-          >
-            Aplicar
-          </motion.button>
-          </PermissionGate>
-        </div>
-        {promoMessage ? (
-          <p className={`mt-3 text-sm ${promoMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-            {promoMessage.text}
-          </p>
-        ) : null}
+    <>
+      <div className="mt-8 space-y-5 border-t border-black/10 pt-6 sm:pt-7">
+        <div className="rounded-[1.2rem] border border-black/10 bg-white p-5 text-sm text-black shadow-[0_12px_30px_rgba(0,0,0,0.05)]">
+          <p className="font-semibold uppercase tracking-[0.2em] text-black">Código promocional</p>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+            <input
+              type="text"
+              value={promoCodeInput}
+              onChange={(event) => setPromoCodeInput(event.target.value)}
+              placeholder="Ingresa tu cupón"
+              className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-black outline-none transition-all duration-300 focus:border-black/30"
+            />
+            <PermissionGate permission={PERMISSIONS.promoApply}>
+              <motion.button
+                type="button"
+                onClick={onApplyPromo}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                className="rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
+              >
+                Aplicar
+              </motion.button>
+            </PermissionGate>
+          </div>
+          {promoMessage ? (
+            <p className={`mt-3 text-sm ${promoMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+              {promoMessage.text}
+            </p>
+          ) : null}
 
-        <div className="mt-4">
+          <div className="mt-4">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-black">Departamento</p>
             <label className="mt-2 block">
               <select
                 value={checkoutDepartamento}
                 onChange={(event) => onDepartamentoChange(event.target.value)}
-                className={`mt-2 w-full rounded-none border px-4 py-3 text-black outline-none transition ${departamentoError ? 'border-red-500' : 'border-black/10'} bg-white`}
+                className={`mt-2 w-full rounded-full border px-4 py-3 text-black outline-none transition ${departamentoError ? 'border-red-500' : 'border-black/10'} bg-white`}
               >
                 <option value="">Seleccionar departamento</option>
                 {departments.map((department) => (
@@ -75,90 +76,89 @@ export default function CartSummary({
               </select>
             </label>
             {departamentoError ? (
-            <p className="mt-2 text-xs text-red-600">Selecciona tu departamento para continuar.</p>
+              <p className="mt-2 text-xs text-red-600">Selecciona tu departamento para continuar.</p>
+            ) : null}
+          </div>
+
+          {appliedCoupon ? (
+            <div className="mt-4 rounded-[1rem] border border-black/10 bg-white p-3 text-sm text-black">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold">Cupón aplicado</p>
+                  <p className="text-black/60">
+                    {appliedCoupon.code}{' '}
+                    {appliedCoupon.type === 'percentage'
+                      ? `(-${appliedCoupon.value}%)`
+                      : appliedCoupon.type === 'fixed'
+                      ? `(-S/${appliedCoupon.value})`
+                      : appliedCoupon.type === 'price_fixed'
+                      ? `(Precio final S/${appliedCoupon.value})`
+                      : '(Envío gratis)'}
+                  </p>
+                </div>
+                <PermissionGate permission={PERMISSIONS.promoApply}>
+                  <motion.button
+                    type="button"
+                    onClick={removeAppliedPromo}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
+                  >
+                    Eliminar
+                  </motion.button>
+                </PermissionGate>
+              </div>
+            </div>
           ) : null}
         </div>
 
-        {appliedCoupon ? (
-          <div className="mt-4 border border-green-600 bg-green-50 p-4 text-sm">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-semibold">Cupón aplicado</p>
-                <p className="text-xs uppercase tracking-[0.12em] text-zinc-500">
-                  {appliedCoupon.code}{' '}
-                  {appliedCoupon.type === 'percentage'
-                    ? `(-${appliedCoupon.value}%)`
-                    : appliedCoupon.type === 'fixed'
-                    ? `(-S/${appliedCoupon.value})`
-                    : appliedCoupon.type === 'price_fixed'
-                    ? `(Precio final S/${appliedCoupon.value})`
-                    : '(Envío gratis)'}
-                </p>
-              </div>
-              <PermissionGate permission={PERMISSIONS.promoApply}>
+        {!hasActivePlan && (
+          <div className="rounded-[1rem] border border-black/10 bg-white p-4 text-sm text-black/75">
+            <p className="font-semibold text-black">¿Quieres unirte al programa mayorista?</p>
+            <p className="mt-2 text-sm text-black/60">Elige un plan y continúa con un descuento especial.</p>
+            <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
               <motion.button
                 type="button"
-                onClick={removeAppliedPromo}
-                whileHover={{ scale: 1.03 }}
+                onClick={() => setIsMembershipModalOpen(true)}
+                whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                className="border border-red-600 px-4 py-2 text-sm font-semibold uppercase text-red-600 transition hover:bg-red-600 hover:text-white"
+                className="mt-4 w-full sm:w-auto rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
               >
-                Eliminar
+                Quiero unirme
               </motion.button>
-              </PermissionGate>
+            </PermissionGate>
+          </div>
+        )}
+
+        {hasActivePlan && (
+          <div className="rounded-[1rem] border-2 border-red-600 bg-red-50 p-4 sm:p-5 text-sm text-black/80 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.25em] text-black/50">Plan activo</p>
+                <p className="mt-1 font-semibold text-black">{activePlan.nombre}</p>
+              </div>
+              <span className="rounded-full border border-red-600 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-600">{activePlan.descuento}%</span>
+            </div>
+
+            <div className="mt-4 space-y-2 text-sm">
+              <div className="flex justify-between text-black/70">
+                <span>Subtotal</span>
+                <span>S/{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-green-700 font-semibold">
+                <span>Ahorro obtenido</span>
+                <span>S/{(subtotal * (activePlan.descuento / 100)).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-black/80">
+                <span>Total</span>
+                <span className="font-semibold">S/{discountedSubtotal.toFixed(2)}</span>
+              </div>
+              
             </div>
           </div>
-        ) : null}
-      </div>
+        )}
 
-      {!hasActivePlan && (
-        <div className="border-l-4 border-red-600 bg-neutral-50 p-5 text-sm">
-          <p className="font-semibold text-black">¿Quieres unirte al programa mayorista?</p>
-          <p className="mt-2 text-sm text-black/60">Elige un plan y continúa con el mismo flujo de registro compartido por toda la app.</p>
-          <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
-          <motion.button
-            type="button"
-            onClick={() => setIsMembershipModalOpen(true)}
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            className="mt-5 w-full border border-black bg-black px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:border-red-600 hover:bg-red-600"
-          >Quiero unirme
-          </motion.button>
-          </PermissionGate>
-        </div>
-      )}
-
-      {hasActivePlan && (
-        <div className="border-l-4 border-green-600 bg-green-50 p-5 text-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-black/50">Plan activo</p>
-              <p className="mt-1 font-semibold text-black">{activePlan.nombre}</p>
-            </div>
-            <span className="border border-green-600 px-3 py-1 text-xs font-bold uppercase tracking-wide text-green-700">
-              {activePlan.descuento}%
-            </span>
-          </div>
-
-          <div className="mt-4 space-y-2 text-sm">
-            <div className="flex justify-between text-black/70">
-              <span>Subtotal</span>
-              <span>S/{subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-green-600">
-              <span>Ahorro obtenido</span>
-              <span>S/{(subtotal * (activePlan.descuento / 100)).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-black/70">
-              <span>Total</span>
-              <span className="font-semibold">S/{discountedSubtotal.toFixed(2)}</span>
-            </div>
-            
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-3 rounded-[1.2rem] border border-black/10 bg-white p-5 text-sm shadow-[0_14px_36px_rgba(0,0,0,0.07)]">
+        <div className="space-y-3 rounded-[1.2rem] border border-black/10 bg-white p-5 text-sm shadow-[0_14px_36px_rgba(0,0,0,0.07)]">
           <div className="flex justify-between text-black/70">
             <span>Total</span>
             <span>S/{discountedSubtotal.toFixed(2)}</span>
@@ -196,6 +196,7 @@ export default function CartSummary({
             </PermissionGate>
           </div>
         </div>
-    </div>
+      </div>
+    </>
   );
 }

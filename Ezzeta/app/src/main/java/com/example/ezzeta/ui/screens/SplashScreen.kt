@@ -15,10 +15,13 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(navController: NavHostController, viewModel: MainViewModel) {
     val user by viewModel.currentUser.collectAsState()
+    var hasNavigated by remember { mutableStateOf(false) }
 
     LaunchedEffect(user) {
+        if (hasNavigated) return@LaunchedEffect
         // Garantizamos al menos 2 segundos de splash
         delay(2000)
+        hasNavigated = true
         
         // Navegación segura basada en el estado del usuario
         val currentUser = user

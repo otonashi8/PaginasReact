@@ -111,6 +111,15 @@ const getAccessPermissionCodes = (access: Record<string, unknown>): string[] => 
   return [];
 };
 
+const isClientesFormsAccess = (moduleLabel: string, accessLabel: string, path: string | null) => {
+  const normalizedModule = normalizeText(moduleLabel).toLowerCase();
+  const normalizedLabel = normalizeText(accessLabel).toLowerCase();
+  const normalizedPath = normalizeText(path).toLowerCase();
+
+  return (normalizedModule === 'clientes' || normalizedPath.includes('/clientes/'))
+    && (normalizedLabel === 'formularios' || normalizedPath.includes('/clientes/formularios'));
+};
+
 const getAccessActions = (accessMap: Record<string, unknown>, permissionCodes: string[]) => {
   const actionMap = {
     view: null as string | null,
@@ -205,7 +214,9 @@ export const usePermissions = () => {
             if (!accessLabel) {return null;}
 
             const accessPermissionCodes = getAccessPermissionCodes(accessMap);
-            const isVisible = accessPermissionCodes.length === 0 || accessPermissionCodes.some((permissionCode) => hasPermission(permissionCode));
+            const isVisible = isClientesFormsAccess(label, accessLabel, path)
+              || accessPermissionCodes.length === 0
+              || accessPermissionCodes.some((permissionCode) => hasPermission(permissionCode));
 
             if (!isVisible) {return null;}
 

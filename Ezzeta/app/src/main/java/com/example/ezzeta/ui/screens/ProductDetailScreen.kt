@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,7 +56,8 @@ fun ProductDetailScreen(
     viewModel: MainViewModel, 
     onBack: () -> Unit,
     onStoreClick: (String) -> Unit,
-    onProductClick: (String) -> Unit
+    onProductClick: (String) -> Unit,
+    onSellerClick: (String) -> Unit
 ) {
     val context = LocalContext.current
     val allProducts by viewModel.allProducts.collectAsState()
@@ -166,18 +168,30 @@ fun ProductDetailScreen(
                         Button(
                             onClick = { 
                                 if (selectedSize.isNotEmpty()) {
-                                    viewModel.addToCart(context, product, selectedSize, quantity, currentPrice)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Producto añadido a la cesta")
+                                    val availableStock = product.getStockForSize(selectedSize)
+                                    if (quantity <= availableStock) {
+                                        viewModel.addToCart(context, product, selectedSize, quantity, currentPrice)
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Producto añadido a la cesta")
+                                        }
+                                    } else {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Stock insuficiente. Disponible: $availableStock")
+                                        }
                                     }
                                 }
                             },
-                            enabled = selectedSize.isNotEmpty(),
+                            enabled = selectedSize.isNotEmpty() && product.getStockForSize(selectedSize) > 0,
                             modifier = Modifier.weight(1.5f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
+                            val stockForSelected = if (selectedSize.isNotEmpty()) product.getStockForSize(selectedSize) else 1
                             Text(
-                                text = if (selectedSize.isEmpty()) "Elige Talla" else "Añadir a la Cesta",
+                                text = when {
+                                    selectedSize.isEmpty() -> "Elige Talla"
+                                    stockForSelected <= 0 -> "Agotado"
+                                    else -> "Añadir a la Cesta"
+                                },
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -296,9 +310,10 @@ fun ProductDetailScreen(
                         }
                         
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (product.oldPrice != null && product.variants.isNullOrEmpty()) {
+                            val oldP = product.getOldPriceForSize(selectedSize)
+                            if (oldP != null && oldP > currentPrice) {
                                 Text(
-                                    text = "S/ ${String.format(Locale.US, "%.2f", product.oldPrice)}",
+                                    text = "S/ ${String.format(Locale.US, "%.2f", oldP)}",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = Color.Gray,
                                     textDecoration = TextDecoration.LineThrough,
@@ -323,23 +338,41 @@ fun ProductDetailScreen(
                             ) {
                                 sizes.forEach { size ->
                                     val isSelected = selectedSize == size
+                                    val stock = product.getStockForSize(size)
+                                    val isAvailable = stock > 0
+                                    
                                     Surface(
                                         modifier = Modifier
-                                            .size(width = 60.dp, height = 40.dp)
+                                            .size(width = 60.dp, height = 48.dp)
                                             .clip(RoundedCornerShape(8.dp))
-                                            .clickable { selectedSize = size }
+                                            .clickable(enabled = isAvailable) { selectedSize = size }
                                             .border(
                                                 width = 1.dp,
-                                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                                color = when {
+                                                    isSelected -> MaterialTheme.colorScheme.primary
+                                                    !isAvailable -> Color.LightGray.copy(alpha = 0.5f)
+                                                    else -> Color.LightGray
+                                                },
                                                 shape = RoundedCornerShape(8.dp)
                                             ),
-                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+                                        color = when {
+                                            isSelected -> MaterialTheme.colorScheme.primary
+                                            !isAvailable -> Color.LightGray.copy(alpha = 0.2f)
+                                            else -> Color.Transparent
+                                        }
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             Text(
-                                                text = size,
-                                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                                                fontWeight = FontWeight.Bold
+                                                text = if (isAvailable) size else "$size\n(Agotado)",
+                                                color = when {
+                                                    isSelected -> Color.White
+                                                    !isAvailable -> Color.Gray
+                                                    else -> MaterialTheme.colorScheme.onSurface
+                                                },
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = if (isAvailable) 14.sp else 10.sp,
+                                                textAlign = TextAlign.Center,
+                                                lineHeight = 12.sp
                                             )
                                         }
                                     }
@@ -350,9 +383,12 @@ fun ProductDetailScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text(text = "Cantidad", fontWeight = FontWeight.Bold)
+                        val maxStock = if (selectedSize.isNotEmpty()) product.getStockForSize(selectedSize) else 1
                         QuantitySelector(
-                            quantity = quantity,
-                            onQuantityChange = { quantity = it },
+                            quantity = quantity.coerceAtMost(maxStock.coerceAtLeast(1)),
+                            onQuantityChange = { 
+                                quantity = it.coerceAtMost(maxStock)
+                            },
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
 
@@ -513,6 +549,78 @@ fun ProductDetailScreen(
                                     )
                                 }
                             }
+                        }
+                    }
+                }
+
+                item(key = "seller_info") {
+                    if (product.isClientProduct && product.sellerId != null) {
+                        val sellerName = product.sellerName ?: "Vendedor Marketplace"
+                        val userFollows by viewModel.userFollows.collectAsState()
+                        
+                        val followerCount = remember(userFollows, product.sellerId) { 
+                            viewModel.getFollowerCount(product.sellerId) 
+                        }
+                        
+                        val isFollowing = remember(userFollows, product.sellerId) {
+                            viewModel.isFollowingUser(product.sellerId)
+                        }
+                        
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Vendido por",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray
+                            )
+                            Text(
+                                text = sellerName,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                            
+                            Text(
+                                text = "$followerCount seguidores",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Button(
+                                    onClick = { viewModel.toggleFollowUser(context, product.sellerId) },
+                                    modifier = Modifier.weight(1f),
+                                    colors = if (isFollowing) {
+                                        ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    } else {
+                                        ButtonDefaults.buttonColors()
+                                    },
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(if (isFollowing) "Siguiendo" else "Seguir")
+                                }
+                                
+                                OutlinedButton(
+                                    onClick = { 
+                                        onSellerClick(product.sellerId) 
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("Ver productos")
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            HorizontalDivider()
                         }
                     }
                 }

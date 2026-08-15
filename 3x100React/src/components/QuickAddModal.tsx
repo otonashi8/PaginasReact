@@ -65,7 +65,7 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                       <button
                         type="button"
                         onClick={() => toggleFavorite(product.id)}
-                        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${isFavorite(product.id) ? 'border-orange-600 bg-orange-600 text-white shadow-[0_8px_20px_rgba(220,38,38,0.3)]' : 'border-zinc-300 bg-white text-black hover:border-zinc-400'}`}
+                        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${isFavorite(product.id) ? 'border-red-600 bg-red-600 text-white shadow-[0_8px_20px_rgba(220,38,38,0.3)]' : 'border-zinc-300 bg-white text-black hover:border-zinc-400'}`}
                         aria-label={isFavorite(product.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
                       >
                         <Heart size={16} />

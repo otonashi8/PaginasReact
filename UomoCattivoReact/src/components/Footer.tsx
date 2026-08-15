@@ -1,12 +1,21 @@
 import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getNavigation } from '../services/contentService';
 import { AnimatePresence, motion } from "framer-motion";
 
-export const Footer = () => {
-  const links = getNavigation();
+const aboutLinks = [
+  { label: 'Nosotros', href: '/nosotros' },
+  { label: 'Contáctanos', href: '/contacto' },
+];
 
+const companyLinks = [
+  { label: 'Políticas', href: '/politicas' },
+  { label: 'Términos', href: '/terminos' },
+  { label: 'Libro de reclamaciones', href: '/reclamaciones' },
+  { label: 'Forma parte de la comunidad', href: '/comunidad' },
+];
+
+export const Footer = () => {
   const [openSection, setOpenSection] = useState<string | null>(null);
 
   const toggleSection = (section: string) => {
@@ -16,7 +25,7 @@ export const Footer = () => {
   const socialLinks = (
     <>
       <a
-        href="https://www.tiktok.com/@uomocattivo"
+        href="https://www.tiktok.com/@ezzetacompany"
         target="_blank"
         rel="noreferrer"
         className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-gray px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
@@ -28,7 +37,7 @@ export const Footer = () => {
       </a>
 
       <a
-        href="https://www.instagram.com/uomocattivo_/"
+        href="https://www.instagram.com/ezzetacompany"
         target="_blank"
         rel="noreferrer"
         className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-gradient-to-r from-[#f58529] via-[#dd2a7b] to-[#8134af] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
@@ -42,7 +51,7 @@ export const Footer = () => {
       </a>
 
       <a
-        href="https://web.facebook.com/p/UOMO-Cattivo-61552419367774"
+        href="https://www.facebook.com/Ezzetacompany"
         target="_blank"
         rel="noreferrer"
         className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-[#1877F2] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
@@ -52,11 +61,24 @@ export const Footer = () => {
         </svg>
         Facebook
       </a>
+
+      <a
+        href="https://www.youtube.com/@Pabloezzeta"
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-[#FF0000] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M22 7.5s-.2-1.5-.8-2.2c-.8-.9-1.7-.9-2.1-1C16.2 4 12 4 12 4s-4.2 0-7.1.3c-.4.1-1.3.1-2.1 1C2.2 6 2 7.5 2 7.5S1.8 9.2 1.8 10.8v1.4C1.8 13.8 2 15.5 2 15.5s.2 1.5.8 2.2c.8.9 1.8.9 2.3 1 1.7.2 6.9.3 6.9.3s4.2 0 7.1-.3c.4-.1 1.3-.1 2.1-1 .6-.7.8-2.2.8-2.2s.2-1.7.2-3.3v-1.4c0-1.6-.2-3.3-.2-3.3z" fill="white"/>
+          <path d="M10 9.5v5l4.5-2.5-4.5-2.5z" fill="#FF0000"/>
+        </svg>
+        YouTube
+      </a>
     </>
   );
 
   return (
-    <footer className="border-t border-black/10 bg-black text-white">
+    <footer className="border-t border-zinc-200 bg-black text-white">
       <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
 
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr_0.8fr_0.8fr]">
@@ -64,20 +86,20 @@ export const Footer = () => {
           {/* Logo */}
           <div className="text-center lg:text-left">
             <p className="text-sm uppercase tracking-[0.3em] text-white/70">
-              UOMO CATTIVO
+              EZZETA
             </p>
 
             <h2 className="mt-3 text-2xl font-semibold">
-              Estilo masculino, identidad seria y presencia.
+              Diseño moderno, piezas claras y estilo para todos los días.
             </h2>
 
             <p className="mt-3 text-sm text-white/70">
-              La colección editorial de prendas pensadas para quienes prefieren distinción y actitud.
+              Una propuesta urbana, accesible y versátil que combina comodidad, identidad y actitud.
             </p>
 
             <div className="mt-6 flex justify-center lg:block">
               <img
-                src="./public/icon.jpg"
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRtR0xkrj_2RuK9RzeXNqdSDl2boknRmgrjLLUMccTPnX6Z0K7mXfQJkg&s=10"
                 alt="Logo"
                 className="h-40 w-75 rounded-xl"
               />
@@ -86,7 +108,7 @@ export const Footer = () => {
             {/* Mobile Accordion */}
             <div className="mt-10 space-y-5 lg:hidden">
 
-              {/* Empresa */}
+              {/* Acerca de Nosotros */}
 
               <div className="border-t border-white/10 pt-4">
 
@@ -94,7 +116,7 @@ export const Footer = () => {
                   onClick={() => toggleSection('empresa')}
                   className="flex w-full items-center justify-between text-sm uppercase tracking-[0.2em]"
                 >
-                  <span>LA EMPRESA</span>
+                  <span>ACERCA DE NOSOTROS</span>
                   <span>{openSection === 'empresa' ? '△' : '▽'}</span>
                 </button>
 
@@ -110,7 +132,7 @@ export const Footer = () => {
                       }}
                       className="overflow-hidden mt-4 space-y-3 text-left text-sm text-white/80"
                     >
-                      {links.slice(0, 5).map((link) => (
+                      {aboutLinks.map((link) => (
                         <li key={link.href}>
                           <Link
                             to={link.href}
@@ -126,20 +148,20 @@ export const Footer = () => {
 
               </div>
 
-              {/* Comunidad */}
+              {/* La Empresa */}
 
               <div className="border-t border-white/10 pt-4">
 
                 <button
-                  onClick={() => toggleSection('comunidad')}
+                  onClick={() => toggleSection('empresa-info')}
                   className="flex w-full items-center justify-between text-sm uppercase tracking-[0.2em]"
                 >
-                  <span>NUESTRA COMUNIDAD</span>
-                  <span>{openSection === 'comunidad' ? '△' : '▽'}</span>
+                  <span>LA EMPRESA</span>
+                  <span>{openSection === 'empresa-info' ? '△' : '▽'}</span>
                 </button>
 
                 <AnimatePresence initial={false}>
-                  {openSection === "comunidad" && (
+                  {openSection === "empresa-info" && (
                     <motion.ul
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
@@ -150,7 +172,7 @@ export const Footer = () => {
                       }}
                       className="overflow-hidden mt-4 space-y-3 text-left text-sm text-white/80"
                     >
-                      {links.slice(0, 5).map((link) => (
+                      {companyLinks.map((link) => (
                         <li key={link.href}>
                           <Link
                             to={link.href}
@@ -190,16 +212,26 @@ export const Footer = () => {
                       }}
                       className="overflow-hidden mt-4 space-y-3 text-left text-sm text-white/80"
                     >
-                      {links.slice(0, 5).map((link) => (
-                        <li key={link.href}>
-                          <Link
-                            to={link.href}
-                            className="block rounded-lg px-2 py-2 transition hover:bg-white/10"
-                          >
-                            {link.label}
-                          </Link>
-                        </li>
-                      ))}
+                      <li>
+                        <a href="https://www.tiktok.com/@ezzetacompany" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
+                          TikTok
+                        </a>
+                      </li>
+                      <li>
+                        <a href="https://www.instagram.com/ezzetacompany" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
+                          Instagram
+                        </a>
+                      </li>
+                      <li>
+                        <a href="https://www.facebook.com/Ezzetacompany" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
+                          Facebook
+                        </a>
+                      </li>
+                      <li>
+                        <a href="https://www.youtube.com/@Pabloezzeta" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
+                          YouTube
+                        </a>
+                      </li>
                     </motion.ul>
                   )}
                 </AnimatePresence>
@@ -214,13 +246,13 @@ export const Footer = () => {
 
           <div className="hidden lg:block">
             <h3 className="text-sm uppercase tracking-[0.2em] text-white/60">
-              La Empresa
+              Acerca de Nosotros
             </h3>
 
             <ul className="mt-3 space-y-2 text-sm text-white/80">
-              {links.slice(0,5).map(link=>(
+              {aboutLinks.map(link=>(
                 <li key={link.href}>
-                  <Link to={link.href} className="hover:text-[#F7F3EC]">
+                  <Link to={link.href} className="hover:text-white">
                     {link.label}
                   </Link>
                 </li>
@@ -230,13 +262,13 @@ export const Footer = () => {
 
           <div className="hidden lg:block">
             <h3 className="text-sm uppercase tracking-[0.2em] text-white/60">
-              Nuestra Comunidad
+              La Empresa
             </h3>
 
             <ul className="mt-3 space-y-2 text-sm text-white/80">
-              {links.slice(4).map(link=>(
+              {companyLinks.map(link=>(
                 <li key={link.href}>
-                  <Link to={link.href} className="hover:text-[#F7F3EC]">
+                  <Link to={link.href} className="hover:text-white">
                     {link.label}
                   </Link>
                 </li>
@@ -260,11 +292,11 @@ export const Footer = () => {
       <div className="border-t border-white/10 bg-black/90">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-4 text-sm text-white/60 sm:flex-row lg:px-8">
 
-          <p>© 2026 UOMO CATTIVO. Todos los derechos reservados.</p>
+          <p>© 2026 EZZETA. Todos los derechos reservados.</p>
 
           <Link
             to="/tienda"
-            className="inline-flex items-center gap-2 text-white/80 hover:text-[#F7F3EC]"
+            className="inline-flex items-center gap-2 text-white/80 hover:text-white"
           >
             Ver colección
             <ArrowRight size={16}/>

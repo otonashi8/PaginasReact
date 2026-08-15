@@ -1,4 +1,4 @@
-import type { RankingCliente } from "../Clientes/TiposClientes";
+import type { RankingCliente } from "../Clientes/Clientes/TiposClientes";
 
 type Props = {
     ranking: RankingCliente;

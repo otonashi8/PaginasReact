@@ -82,12 +82,55 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
                 onAddressBookClick = { navController.navigate(Screen.AddressBook.route) },
                 onPaymentMethodsClick = { navController.navigate(Screen.PaymentMethods.route) },
                 onLoginClick = { navController.navigate(Screen.Login.route) },
-                onMyProductsClick = { navController.navigate(Screen.MyProducts.route) }
+                onLogout = {
+                    mainViewModel.logout(context)
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                },
+                onMyProductsClick = { navController.navigate(Screen.MyProducts.route) },
+                onMySalesClick = { navController.navigate(Screen.MySales.route) }
             ) 
         }
 
         composable(Screen.MyProducts.route) {
-            MyProductsScreen(mainViewModel, onBack = { navController.popBackStack() })
+            MyProductsScreen(
+                viewModel = mainViewModel, 
+                onBack = { navController.popBackStack() },
+                onEditProduct = { productId ->
+                    navController.navigate(Screen.MyProductEdit.createRoute(productId))
+                }
+            )
+        }
+
+        composable(Screen.MyProductEdit.route) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId") ?: ""
+            MyProductEditScreen(
+                productId = productId,
+                viewModel = mainViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.MySales.route) {
+            MySalesScreen(
+                viewModel = mainViewModel,
+                onBack = { navController.popBackStack() },
+                onNavigateToDetail = { orderId, productId ->
+                    navController.navigate(Screen.MySaleDetail.createRoute(orderId, productId))
+                }
+            )
+        }
+
+        composable(Screen.MySaleDetail.route) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+            val productId = backStackEntry.arguments?.getString("productId") ?: ""
+            MySaleDetailScreen(
+                orderId = orderId,
+                productId = productId,
+                viewModel = mainViewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
         
         composable(Screen.SingleProductUpload.route) {
@@ -123,6 +166,21 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
                 },
                 onProductClick = { newProductId ->
                     navController.navigate(Screen.ProductDetail.createRoute(newProductId))
+                },
+                onSellerClick = { sellerId ->
+                    navController.navigate(Screen.SellerCatalog.createRoute(sellerId))
+                }
+            )
+        }
+
+        composable(Screen.SellerCatalog.route) { backStackEntry ->
+            val sellerId = backStackEntry.arguments?.getString("sellerId")
+            SellerCatalogScreen(
+                sellerId = sellerId,
+                viewModel = mainViewModel,
+                onBack = { navController.popBackStack() },
+                onProductClick = { productId ->
+                    navController.navigate(Screen.ProductDetail.createRoute(productId))
                 }
             )
         }
@@ -156,7 +214,9 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
                 onBack = { navController.popBackStack() },
                 onOrderComplete = {
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
+                        popUpTo(navController.graph.startDestinationId) {
+                            inclusive = true
+                        }
                     }
                 }
             )
@@ -171,7 +231,7 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
                 onLogout = {
                     mainViewModel.logout(context)
                     navController.navigate(Screen.Welcome.route) {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
                 },
                 onNavigateToProductManagement = { type: String ->
@@ -185,6 +245,24 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
                 },
                 onNavigateToClientSizes = {
                     navController.navigate(Screen.AdminClientSizes.route)
+                },
+                onNavigateToMarketplaceRequests = {
+                    navController.navigate(Screen.AdminMarketplaceRequests.route)
+                },
+                onNavigateToShippingManagement = {
+                    navController.navigate(Screen.AdminShipping.route)
+                },
+                onNavigateToPriceRules = {
+                    navController.navigate(Screen.AdminPriceRules.route)
+                },
+                onNavigateToStats = {
+                    navController.navigate(Screen.AdminStats.route)
+                },
+                onNavigateToCustomers = {
+                    navController.navigate(Screen.AdminCustomers.route)
+                },
+                onNavigateToAbandonedCarts = {
+                    navController.navigate(Screen.AdminAbandonedCarts.route)
                 }
             )
         }
@@ -194,6 +272,21 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
             AdminProductManagementScreen(
                 viewModel = mainViewModel,
                 managementType = type,
+                onBack = { navController.popBackStack() },
+                onAddProduct = {
+                    navController.navigate(Screen.AdminProductEdit.createRoute("new"))
+                },
+                onEditProduct = { productId ->
+                    navController.navigate(Screen.AdminProductEdit.createRoute(productId))
+                }
+            )
+        }
+
+        composable(Screen.AdminProductEdit.route) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId")
+            AdminStoreProductEditScreen(
+                viewModel = mainViewModel,
+                productId = if (productId == "new") null else productId,
                 onBack = { navController.popBackStack() }
             )
         }
@@ -214,6 +307,63 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
 
         composable(Screen.AdminClientSizes.route) {
             AdminClientSizesScreen(
+                viewModel = mainViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AdminShipping.route) {
+            AdminShippingManagementScreen(
+                viewModel = mainViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AdminPriceRules.route) {
+            AdminPriceRulesScreen(
+                viewModel = mainViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AdminStats.route) {
+            AdminStatsScreen(
+                viewModel = mainViewModel,
+                onBack = { navController.popBackStack() },
+                onNavigateToProduct = { productId ->
+                    navController.navigate(Screen.ProductDetail.createRoute(productId))
+                }
+            )
+        }
+
+        composable(Screen.AdminCustomers.route) {
+            AdminCustomersScreen(
+                viewModel = mainViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AdminAbandonedCarts.route) {
+            AdminAbandonedCartsScreen(
+                viewModel = mainViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AdminMarketplaceRequests.route) {
+            AdminMarketplaceRequestsScreen(
+                viewModel = mainViewModel,
+                onBack = { navController.popBackStack() },
+                onNavigateToDetail = { requestId ->
+                    navController.navigate(Screen.AdminMarketplaceRequestDetail.createRoute(requestId))
+                }
+            )
+        }
+
+        composable(Screen.AdminMarketplaceRequestDetail.route) { backStackEntry ->
+            val requestId = backStackEntry.arguments?.getString("requestId") ?: ""
+            AdminMarketplaceRequestDetailScreen(
+                requestId = requestId,
                 viewModel = mainViewModel,
                 onBack = { navController.popBackStack() }
             )

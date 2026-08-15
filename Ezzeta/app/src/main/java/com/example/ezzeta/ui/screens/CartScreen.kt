@@ -5,6 +5,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -44,8 +45,13 @@ fun CartScreen(
     val planDiscount by viewModel.planDiscount.collectAsState()
     val userPlan by viewModel.userPlan.collectAsState()
     val shippingCost by viewModel.shippingCost.collectAsState()
+    val shippingConfig by viewModel.shippingConfig.collectAsState()
+    val appliedRules by viewModel.appliedRules.collectAsState()
+    val totalRulesDiscount by viewModel.totalRulesDiscount.collectAsState()
+    val couponInput by viewModel.couponInput.collectAsState()
 
     val total by viewModel.total.collectAsState()
+    val selectedCount by viewModel.selectedCartItemCount.collectAsState()
     val context = LocalContext.current
 
     // Agrupar productos por tienda para mostrar cabeceras
@@ -72,7 +78,7 @@ fun CartScreen(
                 Surface(tonalElevation = 8.dp, shadowElevation = 12.dp) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         // Barra de progreso de envío gratis
-                        val shippingThreshold = 200.0
+                        val shippingThreshold = shippingConfig.freeShippingThreshold
                         val progress = (subtotal / shippingThreshold).coerceIn(0.0, 1.0).toFloat()
                         val remaining = shippingThreshold - subtotal
 
@@ -126,6 +132,25 @@ fun CartScreen(
                             }
                         }
 
+                        appliedRules.forEach { rule ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    rule.ruleName, 
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(0xFF2E7D32),
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "- S/ ${String.format(Locale.US, "%.2f", rule.discountAmount)}",
+                                    color = Color(0xFF2E7D32),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Subtotal", style = MaterialTheme.typography.bodyMedium)
@@ -146,7 +171,7 @@ fun CartScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text(text = "Total", style = MaterialTheme.typography.bodyMedium)
+                                Text(text = "Total ($selectedCount)", style = MaterialTheme.typography.bodyMedium)
                                 Text(
                                     text = "S/ ${String.format(Locale.US, "%.2f", total)}",
                                     style = MaterialTheme.typography.titleLarge,
@@ -154,7 +179,10 @@ fun CartScreen(
                                     color = MaterialTheme.colorScheme.secondary
                                 )
                             }
-                            Button(onClick = onNavigateToCheckout) {
+                            Button(
+                                onClick = onNavigateToCheckout,
+                                enabled = selectedCount > 0
+                            ) {
                                 Text("Pagar ahora")
                             }
                         }
@@ -176,7 +204,6 @@ fun CartScreen(
             modifier = Modifier.padding(padding).fillMaxSize(),
             state = listState
         ) {
-            // Undo Banner
             item {
                 AnimatedVisibility(
                     visible = lastDeletedItem != null,
@@ -213,6 +240,31 @@ fun CartScreen(
                 }
             }
 
+            val allSelected = cartItems.all { it.isSelected }
+            if (cartItems.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.toggleAllCartItems(context, !allSelected) }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = allSelected,
+                            onCheckedChange = { viewModel.toggleAllCartItems(context, it) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (allSelected) "Deseleccionar todos" else "Seleccionar todos",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    HorizontalDivider()
+                }
+            }
+
             if (cartItems.isEmpty()) {
                 item {
                     Column(
@@ -238,14 +290,28 @@ fun CartScreen(
                 }
             } else {
                 groupedItems.forEach { (storeId, items) ->
+                    val allGroupSelected = items.all { it.isSelected }
                     item {
-                        Text(
-                            text = storeNames[storeId] ?: "Tienda",
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.toggleSellerSelection(context, storeId, !allGroupSelected) }
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = allGroupSelected,
+                                onCheckedChange = { viewModel.toggleSellerSelection(context, storeId, it) }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = storeNames[storeId] ?: "Vendedor Marketplace",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     }
                     items(
@@ -258,7 +324,10 @@ fun CartScreen(
                             item = item,
                             onQuantityChange = { delta -> viewModel.updateCartItemQuantity(context, item.product.id, item.size, delta) },
                             onSizeChange = { newSize -> viewModel.updateCartItemSize(context, item.product.id, item.size, newSize) },
-                            onRemove = { showDeleteConfirm = true }
+                            onRemove = { showDeleteConfirm = true },
+                            onToggleSelection = { isSelected -> 
+                                viewModel.toggleCartItemSelection(context, item.product.id, item.size, isSelected)
+                            }
                         )
 
                         if (showDeleteConfirm) {
@@ -308,6 +377,32 @@ fun CartScreen(
                     onFavoriteClick = { product -> viewModel.toggleProductFavorite(context, product.id) },
                     onQuickViewClick = { product -> viewModel.onQuickViewProduct(context, product) }
                 )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Cupón en la cesta
+                Card(
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("¿Tienes un cupón?", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = couponInput,
+                            onValueChange = { viewModel.onCouponInputChanged(it) },
+                            label = { Text("Código de cupón") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            trailingIcon = {
+                                if (couponInput.isNotEmpty()) {
+                                    Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF2E7D32))
+                                }
+                            }
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
@@ -319,16 +414,19 @@ fun CartItemRow(
     item: CartItem,
     onQuantityChange: (Int) -> Unit,
     onSizeChange: (String) -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onToggleSelection: (Boolean) -> Unit
 ) {
     var showSizeMenu by remember { mutableStateOf(false) }
-    val sizes = if (item.product.categoryId == "4") listOf("28", "30", "32", "34", "36") else listOf("S", "M", "L", "XL")
+    val sizes = item.product.getAvailableSizes()
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(
+            containerColor = if (item.isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
     ) {
         Row(
             modifier = Modifier
@@ -336,10 +434,23 @@ fun CartItemRow(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Checkbox(
+                checked = item.isSelected,
+                onCheckedChange = onToggleSelection
+            )
+            
+            Spacer(modifier = Modifier.width(4.dp))
+
             AsyncImage(
                 model = item.product.imageUrl,
                 contentDescription = null,
-                modifier = Modifier.size(100.dp).clip(RoundedCornerShape(8.dp)),
+                modifier = Modifier
+                    .size(90.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .then(if (!item.isSelected) Modifier.drawWithContent { 
+                        drawContent()
+                        drawRect(color = Color.White.copy(alpha = 0.3f))
+                    } else Modifier),
                 contentScale = ContentScale.Crop
             )
             
@@ -361,12 +472,19 @@ fun CartItemRow(
                         onDismissRequest = { showSizeMenu = false }
                     ) {
                         sizes.forEach { size ->
+                            val stock = item.product.getStockForSize(size)
+                            val isAvailable = stock > 0
                             DropdownMenuItem(
-                                text = { Text(size) },
+                                text = { 
+                                    Text(if (isAvailable) size else "$size (Agotado)") 
+                                },
                                 onClick = {
-                                    onSizeChange(size)
-                                    showSizeMenu = false
-                                }
+                                    if (isAvailable) {
+                                        onSizeChange(size)
+                                        showSizeMenu = false
+                                    }
+                                },
+                                enabled = isAvailable
                             )
                         }
                     }
@@ -397,6 +515,7 @@ fun CartItemRow(
                             onQuantityChange(delta)
                         }
                     },
+                    maxQuantity = item.product.getStockForSize(item.size),
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }

@@ -50,10 +50,6 @@ fun CategoriesScreen(
     val selectedSubCategory by viewModel.selectedSubCategory.collectAsState()
     val products by viewModel.filteredProducts.collectAsState()
     val context = LocalContext.current
-
-    val novedades by viewModel.novedadesProducts.collectAsState()
-    val ofertasPatrias by viewModel.ofertasPatriasProducts.collectAsState()
-    val masVendidos by viewModel.masVendidosProducts.collectAsState()
     
     val categories by viewModel.storeCategories.collectAsState()
     val currentCategory = categories.find { it.id == selectedCategoryId }
@@ -146,36 +142,6 @@ fun CategoriesScreen(
                         val catTitlePart = if (selectedCategoryId == "1") "" else " de ${currentCategory?.name}"
                         val fullSuffix = "$subTitlePart$catTitlePart"
 
-                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
-                            ProductCarousel(
-                                title = "Novedades$fullSuffix",
-                                products = novedades,
-                                onProductClick = onProductClick,
-                                onFavoriteClick = { viewModel.toggleProductFavorite(context, it.id) },
-                                onQuickViewClick = { viewModel.onQuickViewProduct(context, it) },
-                                onProductAppear = { viewModel.prefetchProduct(it) }
-                            )
-                        }
-                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
-                            ProductCarousel(
-                                title = "Ofertas Patrias$fullSuffix",
-                                products = ofertasPatrias,
-                                onProductClick = onProductClick,
-                                onFavoriteClick = { viewModel.toggleProductFavorite(context, it.id) },
-                                onQuickViewClick = { viewModel.onQuickViewProduct(context, it) },
-                                onProductAppear = { viewModel.prefetchProduct(it) }
-                            )
-                        }
-                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
-                            ProductCarousel(
-                                title = "Más Vendidos$fullSuffix",
-                                products = masVendidos,
-                                onProductClick = onProductClick,
-                                onFavoriteClick = { viewModel.toggleProductFavorite(context, it.id) },
-                                onQuickViewClick = { viewModel.onQuickViewProduct(context, it) },
-                                onProductAppear = { viewModel.prefetchProduct(it) }
-                            )
-                        }
                         item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
                             Text(
                                 text = if (selectedSubCategory == "Todo" && selectedCategoryId == "1") "Todos los productos" 

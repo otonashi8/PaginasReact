@@ -82,7 +82,6 @@ fun AdminAbandonedCartsScreen(
                 }
             }
 
-            // Filters
             item {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(

@@ -105,7 +105,8 @@ object PersistenceManager {
                     shippingDept = order.shippingDept ?: "",
                     shippingProv = order.shippingProv ?: "",
                     shippingDist = order.shippingDist ?: "",
-                    status = order.status ?: OrderStatus.PAID
+                    status = order.status ?: OrderStatus.PAID,
+                    orderStatus = order.orderStatus ?: "PROCESANDO"
                 )
             } catch (e: Exception) { null }
         }

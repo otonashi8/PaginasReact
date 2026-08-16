@@ -25,12 +25,18 @@ import com.example.ezzeta.data.model.Product
 import com.example.ezzeta.ui.components.*
 import com.example.ezzeta.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(viewModel: MainViewModel, onBack: () -> Unit, onProductClick: (String) -> Unit) {
     val history by viewModel.browsingHistory.collectAsState()
     val context = LocalContext.current
+    
+    val groupedHistory = remember(history) {
+        history.groupBy { formatHistoryDate(it.lastViewedAt) }
+    }
     
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -68,24 +74,57 @@ fun HistoryScreen(viewModel: MainViewModel, onBack: () -> Unit, onProductClick: 
                 modifier = Modifier.padding(padding).fillMaxSize(),
                 contentPadding = PaddingValues(16.dp)
             ) {
-                items(
-                    items = history,
-                    key = { it.id }
-                ) { product ->
-                    LaunchedEffect(product.id) {
-                        viewModel.prefetchProduct(product.id)
+                groupedHistory.forEach { (dateLabel, products) ->
+                    item(key = dateLabel) {
+                        Text(
+                            text = dateLabel,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
                     }
-                    HistoryItem(
-                        product = product,
-                        onFavoriteClick = { viewModel.toggleProductFavorite(context, product.id) },
-                        onClick = { onProductClick(product.id) },
-                        onQuickViewClick = { viewModel.onQuickViewProduct(context, product) }
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    items(
+                        items = products,
+                        key = { it.id + "_" + it.lastViewedAt }
+                    ) { product ->
+                        LaunchedEffect(product.id) {
+                            viewModel.prefetchProduct(product.id)
+                        }
+                        HistoryItem(
+                            product = product,
+                            onFavoriteClick = { viewModel.toggleProductFavorite(context, product.id) },
+                            onClick = { onProductClick(product.id) },
+                            onQuickViewClick = { viewModel.onQuickViewProduct(context, product) }
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
             }
         }
     }
+}
+
+private fun formatHistoryDate(timestamp: Long): String {
+    if (timestamp == 0L) return "ANTERIORES"
+    
+    val now = Calendar.getInstance()
+    val time = Calendar.getInstance().apply { timeInMillis = timestamp }
+    
+    val isSameDay = now.get(Calendar.YEAR) == time.get(Calendar.YEAR) &&
+                    now.get(Calendar.DAY_OF_YEAR) == time.get(Calendar.DAY_OF_YEAR)
+    
+    if (isSameDay) return "HOY"
+    
+    val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+    val isYesterday = yesterday.get(Calendar.YEAR) == time.get(Calendar.YEAR) &&
+                      yesterday.get(Calendar.DAY_OF_YEAR) == time.get(Calendar.DAY_OF_YEAR)
+    
+    if (isYesterday) return "AYER"
+    
+    val sdf = SimpleDateFormat("dd 'DE' MMMM 'DE' yyyy", Locale.getDefault())
+    return sdf.format(time.time).uppercase()
 }
 
 @Composable

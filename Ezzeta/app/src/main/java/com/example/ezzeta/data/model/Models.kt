@@ -49,7 +49,9 @@ data class Product(
     val isVisible: Boolean = true,
     val customSizes: List<String>? = null,
     val variants: List<ProductVariant>? = null,
-    val sizeSystemId: String? = null
+    val sizeSystemId: String? = null,
+    val createdAt: Long = 0L,
+    val lastViewedAt: Long = 0L
 ) {
     fun getAvailableSizes(): List<String> {
         if (!variants.isNullOrEmpty()) return variants.map { it.name }
@@ -114,8 +116,11 @@ data class User(
     val uuid: String,
     val alias: String,
     val email: String? = null,
+    val phone: String? = null,
+    val dniRuc: String? = null,
     val isGuest: Boolean = true,
     val isAdmin: Boolean = false,
+    val isActive: Boolean = true,
     val profileImageUrl: String? = null,
     val entrepreneurshipId: String? = null,
     val followedStoreIds: Set<String> = emptySet(),
@@ -203,7 +208,8 @@ data class Order(
     val shippingDept: String = "",
     val shippingProv: String = "",
     val shippingDist: String = "",
-    val status: OrderStatus = OrderStatus.PAID
+    val status: OrderStatus = OrderStatus.PAID,
+    val orderStatus: String = "PROCESANDO"
 )
 
 data class ShippingRate(
@@ -240,7 +246,8 @@ data class PriceRule(
     val requiresCoupon: Boolean = false,
     val couponCode: String? = null,
     val priority: Int = 10,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val finalComboPrice: Double? = null
 )
 
 data class AppliedPriceRule(

@@ -149,10 +149,7 @@ class MainViewModel : ViewModel() {
         id?.let { productRepository.getProductById(it) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    /**
-     * Mantenido por compatibilidad con las pantallas, aunque la carga es instantánea 
-     * desde el repositorio en memoria.
-     */
+    // Mantenido por compatibilidad con las pantallas, aunque la carga es instantánea desde el repositorio en memoria.//
     fun prefetchProduct(productId: String) { }
 
     private val _browsingHistory = MutableStateFlow<List<Product>>(emptyList())
@@ -189,65 +186,85 @@ class MainViewModel : ViewModel() {
 
     // Descuentos por Reglas de Precios
     val appliedRules: StateFlow<List<AppliedPriceRule>> = combine(_cartItems, priceRules, _couponInput) { items, rules, coupon ->
-        val selectedItems = items.filter { it.isSelected }
-        if (selectedItems.isEmpty()) return@combine emptyList<AppliedPriceRule>()
+        // Solo procesar productos EZZETA seleccionados
+        val selectedStoreItems = items.filter { it.isSelected && !it.product.isClientProduct }
+        if (selectedStoreItems.isEmpty()) return@combine emptyList<AppliedPriceRule>()
         
-        val activeRules = rules.filter { it.isActive && (!it.requiresCoupon || it.couponCode == coupon) }
-            .sortedBy { it.priority }
+        // Una regla que requiere cupón solo se activa si el código coincide exactamente
+        val activeRules = rules.filter { 
+            it.isActive && (!it.requiresCoupon || (it.couponCode != null && it.couponCode.equals(coupon, ignoreCase = true))) 
+        }.sortedBy { it.priority }
         
         val applied = mutableListOf<AppliedPriceRule>()
-        var currentSubtotal = selectedItems.sumOf { it.effectivePrice * it.quantity }
+        var storeSubtotal = selectedStoreItems.sumOf { it.effectivePrice * it.quantity }
         
-        // Seguimiento de qué items ya tienen descuento de producto para evitar duplicidad
-        val discountedItemIds = mutableSetOf<String>()
+        // Seguimiento de qué items ya tienen descuento para evitar duplicidad según prioridad
+        val discountedItemKeys = mutableSetOf<String>()
 
         activeRules.forEach { rule ->
             var ruleDiscount = 0.0
             
             when (rule.type) {
                 PriceRuleType.PRODUCT -> {
-                    selectedItems.forEach { item ->
+                    selectedStoreItems.forEach { item ->
                         val itemKey = "${item.product.id}_${item.size}"
-                        if (rule.targetIds.contains(item.product.id) && !discountedItemIds.contains(itemKey)) {
+                        if (rule.targetIds.contains(item.product.id) && !discountedItemKeys.contains(itemKey)) {
                             val itemTotal = item.effectivePrice * item.quantity
                             val d = if (rule.isPercentage) itemTotal * (rule.discountValue / 100.0) else rule.discountValue * item.quantity
                             ruleDiscount += d
-                            discountedItemIds.add(itemKey)
+                            discountedItemKeys.add(itemKey)
                         }
                     }
                 }
                 PriceRuleType.CATEGORY -> {
-                    selectedItems.forEach { item ->
+                    selectedStoreItems.forEach { item ->
                         val itemKey = "${item.product.id}_${item.size}"
-                        if (rule.targetIds.contains(item.product.categoryId) && !discountedItemIds.contains(itemKey)) {
+                        if (rule.targetIds.contains(item.product.categoryId) && !discountedItemKeys.contains(itemKey)) {
                             val itemTotal = item.effectivePrice * item.quantity
                             val d = if (rule.isPercentage) itemTotal * (rule.discountValue / 100.0) else rule.discountValue * item.quantity
                             ruleDiscount += d
-                            discountedItemIds.add(itemKey)
+                            discountedItemKeys.add(itemKey)
                         }
                     }
                 }
                 PriceRuleType.ORDER_TOTAL -> {
-                    if (rule.minSubtotal == null || currentSubtotal >= rule.minSubtotal) {
-                        val d = if (rule.isPercentage) currentSubtotal * (rule.discountValue / 100.0) else rule.discountValue
+                    // El subtotal mínimo solo cuenta productos EZZETA seleccionados
+                    if (rule.minSubtotal == null || storeSubtotal >= rule.minSubtotal) {
+                        val d = if (rule.isPercentage) storeSubtotal * (rule.discountValue / 100.0) else rule.discountValue
                         ruleDiscount += d
                     }
                 }
                 PriceRuleType.COMBO -> {
-                    // Lógica simplificada de combo: verificar si todos los requisitos se cumplen
-                    var possibleCombos = Int.MAX_VALUE
-                    rule.comboRequirements.forEach { req ->
-                        val countInCart = selectedItems.filter { 
-                            (req.productId != null && it.product.id == req.productId) || 
-                            (req.categoryId != null && it.product.categoryId == req.categoryId)
-                        }.sumOf { it.quantity }
+                    if (rule.finalComboPrice != null && rule.comboRequirements.isNotEmpty()) {
+                        // Calcular cuántos combos completos se pueden formar
+                        var possibleCombos = Int.MAX_VALUE
+                        rule.comboRequirements.forEach { req ->
+                            val countInCart = selectedStoreItems.filter { 
+                                (req.productId != null && it.product.id == req.productId) || 
+                                (req.categoryId != null && it.product.categoryId == req.categoryId)
+                            }.sumOf { it.quantity }
+                            
+                            possibleCombos = minOf(possibleCombos, countInCart / req.quantity)
+                        }
                         
-                        possibleCombos = minOf(possibleCombos, countInCart / req.quantity)
-                    }
-                    
-                    if (possibleCombos > 0 && possibleCombos != Int.MAX_VALUE) {
-                        // El descuento del combo se aplica 'possibleCombos' veces
-                        ruleDiscount = rule.discountValue * possibleCombos
+                        if (possibleCombos > 0 && possibleCombos != Int.MAX_VALUE) {
+                            // Calcular el precio actual del conjunto para el descuento
+                            var currentComboSetPrice = 0.0
+                            rule.comboRequirements.forEach { req ->
+                                var remainingQty = req.quantity * possibleCombos
+                                selectedStoreItems.filter { 
+                                    (req.productId != null && it.product.id == req.productId) || 
+                                    (req.categoryId != null && it.product.categoryId == req.categoryId)
+                                }.forEach { item ->
+                                    val take = minOf(item.quantity, remainingQty)
+                                    currentComboSetPrice += item.effectivePrice * take
+                                    remainingQty -= take
+                                }
+                            }
+                            
+                            val targetPrice = rule.finalComboPrice * possibleCombos
+                            ruleDiscount = (currentComboSetPrice - targetPrice).coerceAtLeast(0.0)
+                        }
                     }
                 }
             }
@@ -256,7 +273,7 @@ class MainViewModel : ViewModel() {
                 applied.add(AppliedPriceRule(rule.id, rule.name, ruleDiscount))
                 // Si es un descuento global, reduce el subtotal para la siguiente regla
                 if (rule.type == PriceRuleType.ORDER_TOTAL) {
-                    currentSubtotal -= ruleDiscount
+                    storeSubtotal -= ruleDiscount
                 }
             }
         }
@@ -309,9 +326,30 @@ class MainViewModel : ViewModel() {
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     }
 
-    val novedadesProducts = createCampaignFlow("Novedades")
-    val ofertasPatriasProducts = createCampaignFlow("Ofertas Patrias")
-    val masVendidosProducts = createCampaignFlow("Más Vendidos")
+    val recentProducts: StateFlow<List<Product>> = allProducts.map { products ->
+        products.filter { it.isVisible }
+            .sortedByDescending { it.createdAt }
+            .take(10)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val popularProducts: StateFlow<List<Product>> = combine(allProducts, _orders) { products, orders ->
+        val salesMap = orders.flatMap { it.items }
+            .groupBy { it.product.id }
+            .mapValues { entry -> entry.value.sumOf { it.quantity } }
+
+        val visibleProducts = products.filter { it.isVisible }
+        
+        visibleProducts.sortedWith(
+            compareByDescending<Product> { salesMap[it.id] ?: 0 }
+                .thenByDescending { it.createdAt }
+        ).take(10)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val popularRankingMap: StateFlow<Map<String, String>> = popularProducts.map { popularList ->
+        popularList.mapIndexed { index, product ->
+            product.id to "#${index + 1} en ventas"
+        }.toMap()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     // Estadísticas para Admin
     val ezzetaProductsCount: StateFlow<Int> = allProducts.map { products ->
@@ -351,6 +389,62 @@ class MainViewModel : ViewModel() {
     )
 
     val marketplaceRequests: StateFlow<List<MarketplaceRequest>> = productRepository.getRequests()
+
+    // Gestión de Clientes (Fase 19)
+    val registeredUsers: StateFlow<List<User>> = UserRepository.allUsers
+    
+    val allCustomers: StateFlow<List<User>> = combine(registeredUsers, _orders) { registered, orders ->
+        val registeredIds = registered.map { it.uuid }.toSet()
+        val registeredEmails = registered.mapNotNull { it.email?.lowercase() }.toSet()
+        
+        // Detectar invitados con actividad real
+        val guests = orders.filter { order ->
+            val isRegistered = order.buyerId in registeredIds || 
+                             (order.buyerEmail.isNotBlank() && order.buyerEmail.lowercase() in registeredEmails)
+            !isRegistered
+        }.groupBy { it.buyerEmail.ifBlank { it.buyerId } }
+        .map { (id, guestOrders) ->
+            val first = guestOrders.first()
+            User(
+                uuid = first.buyerId.ifBlank { id },
+                alias = first.buyerName.ifBlank { "Invitado" },
+                email = first.buyerEmail,
+                phone = first.buyerPhone,
+                isGuest = true
+            )
+        }
+        
+        registered + guests
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun adminCreateUser(context: Context, name: String, email: String, phone: String?, isAdmin: Boolean = false) {
+        val newUser = User(
+            uuid = java.util.UUID.randomUUID().toString(),
+            alias = name,
+            email = email,
+            phone = phone,
+            isGuest = false,
+            isAdmin = isAdmin
+        )
+        UserRepository.adminAddUser(context.applicationContext, newUser)
+    }
+
+    fun adminUpdateUser(context: Context, user: User) {
+        UserRepository.updateUser(context.applicationContext, user)
+    }
+
+    fun adminToggleUserStatus(context: Context, userId: String) {
+        val user = registeredUsers.value.find { it.uuid == userId }
+        if (user != null) {
+            UserRepository.updateUser(context.applicationContext, user.copy(isActive = !user.isActive))
+        }
+    }
+
+    fun getCustomerOrders(userIdOrEmail: String): List<Order> {
+        return _orders.value.filter { 
+            it.buyerId == userIdOrEmail || (it.buyerEmail.isNotBlank() && it.buyerEmail == userIdOrEmail)
+        }
+    }
 
     // Reactive Stats Engine
     val filteredOrderItems: StateFlow<List<Pair<Order, CartItem>>> = combine(
@@ -673,12 +767,20 @@ class MainViewModel : ViewModel() {
 
     fun toggleFollowStore(context: android.content.Context, storeId: String) {
         val current = UserRepository.currentUser.value
-        if (current != null) {
-            val followed = current.followedStoreIds.toMutableSet()
-            if (followed.contains(storeId)) followed.remove(storeId)
-            else followed.add(storeId)
-            UserRepository.updateUser(context, current.copy(followedStoreIds = followed))
+        if (current == null || current.isGuest) {
+            Toast.makeText(context, "Inicia sesión para seguir tiendas", Toast.LENGTH_SHORT).show()
+            return
         }
+        
+        // Usar FollowRepository para el seguimiento real y contadores
+        val isNowFollowing = followRepository.toggleFollow(context.applicationContext, current.uuid, storeId, "STORE")
+        
+        // Sincronizar con el modelo User por compatibilidad
+        val followed = current.followedStoreIds.toMutableSet()
+        if (isNowFollowing) followed.add(storeId)
+        else followed.remove(storeId)
+        
+        UserRepository.updateUser(context, current.copy(followedStoreIds = followed))
     }
 
     fun toggleFollowUser(context: Context, sellerId: String) {
@@ -692,14 +794,21 @@ class MainViewModel : ViewModel() {
             return
         }
         
-        followRepository.toggleFollow(context.applicationContext, current.uuid, sellerId)
+        followRepository.toggleFollow(context.applicationContext, current.uuid, sellerId, "SELLER")
     }
 
-    fun getFollowerCount(sellerId: String): Int = followRepository.getFollowerCount(sellerId)
+    fun getFollowerCount(sellerId: String): Int = followRepository.getFollowerCount(sellerId, "SELLER")
     
     fun isFollowingUser(sellerId: String): Boolean {
         val current = currentUser.value ?: return false
-        return followRepository.isFollowing(current.uuid, sellerId)
+        return followRepository.isFollowing(current.uuid, sellerId, "SELLER")
+    }
+
+    fun getStoreFollowerCount(storeId: String): Int = followRepository.getFollowerCount(storeId, "STORE")
+    
+    fun isFollowingStore(storeId: String): Boolean {
+        val current = currentUser.value ?: return false
+        return followRepository.isFollowing(current.uuid, storeId, "STORE")
     }
 
     fun getProductsBySeller(sellerId: String): List<Product> {
@@ -709,7 +818,11 @@ class MainViewModel : ViewModel() {
     fun addToHistory(context: Context, product: Product) {
         val current = _browsingHistory.value.toMutableList()
         current.removeAll { it.id == product.id }
-        current.add(0, product)
+        
+        // Crear copia con el timestamp de visualización (metadato de historial)
+        val historyEntry = product.copy(lastViewedAt = System.currentTimeMillis())
+        current.add(0, historyEntry)
+        
         val history = current.take(20)
         _browsingHistory.value = history
         PersistenceManager.saveHistory(context, history)
@@ -877,6 +990,31 @@ class MainViewModel : ViewModel() {
 
     fun dismissOrderSuccessAlert() {
         _showOrderSuccessAlert.value = false
+    }
+
+    fun simulateNextOrderStatus(context: Context, orderId: String) {
+        val user = currentUser.value ?: return
+        val currentOrders = _orders.value.toMutableList()
+        val index = currentOrders.indexOfFirst { it.id == orderId }
+        
+        if (index != -1) {
+            val order = currentOrders[index]
+            
+            // Validar propiedad
+            if (order.buyerId != user.uuid) return
+            
+            val nextStatus = when (order.orderStatus) {
+                "PROCESANDO" -> "ENVIANDO"
+                "ENVIANDO" -> "RECIBIDO"
+                else -> order.orderStatus
+            }
+            
+            if (nextStatus != order.orderStatus) {
+                currentOrders[index] = order.copy(orderStatus = nextStatus)
+                _orders.value = currentOrders
+                PersistenceManager.saveOrders(context, currentOrders)
+            }
+        }
     }
 
     fun clearLastDeletedItem() {
@@ -1116,7 +1254,8 @@ class MainViewModel : ViewModel() {
             variants = variants,
             sizeSystemId = sizeSystemId,
             usePriceBySize = usePriceBySize,
-            useStockBySize = useStockBySize
+            useStockBySize = useStockBySize,
+            createdAt = System.currentTimeMillis()
         )
         productRepository.addProduct(context, newProduct)
     }
@@ -1394,8 +1533,35 @@ class MainViewModel : ViewModel() {
     }
 
 
+    private val _couponValidationMessage = MutableStateFlow<String?>(null)
+    val couponValidationMessage = _couponValidationMessage.asStateFlow()
+
     fun onCouponInputChanged(input: String) {
         _couponInput.value = input.uppercase()
+        _couponValidationMessage.value = null
+    }
+
+    fun applyCoupon(code: String) {
+        if (code.isBlank()) {
+            _couponInput.value = ""
+            _couponValidationMessage.value = null
+            return
+        }
+        val rule = priceRules.value.find { 
+            it.isActive && it.requiresCoupon && it.couponCode.equals(code, ignoreCase = true) 
+        }
+        
+        if (rule != null) {
+            _couponInput.value = code.uppercase()
+            _couponValidationMessage.value = "Cupón aplicado: ${rule.name}"
+        } else {
+            _couponValidationMessage.value = "Cupón inválido o inactivo"
+        }
+    }
+
+    fun removeCoupon() {
+        _couponInput.value = ""
+        _couponValidationMessage.value = null
     }
 
     fun addPriceRule(context: Context, rule: PriceRule) {

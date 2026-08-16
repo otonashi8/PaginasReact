@@ -4,7 +4,7 @@ import com.example.ezzeta.data.model.*
 
 object MockData {
     val categories = listOf(
-        Category("1", "Todo", "", listOf("Recientes", "Populares"), "BOTH"),
+        Category("1", "Todo", "", emptyList(), "BOTH"),
         Category("2", "Mujer", "", listOf("Polos", "Casacas", "Poleras", "Jeans", "Shorts", "Jogger", "BVD"), "STORE"),
         Category("3", "Hombre", "", listOf("Polos", "Casacas", "Poleras", "Jeans", "Shorts", "Jogger", "BVD"), "STORE"),
         Category("4", "Fitness", "", listOf("Tops", "Jogger", "Shorts", "Polos", "Poleras"), "STORE"),
@@ -45,12 +45,6 @@ object MockData {
         val images = imageUrl.shuffled().take((3..5).random())
         val mainImage = images.first()
         val subCategories = if (category.subCategories.isNotEmpty()) listOf(category.subCategories.random()) else emptyList()
-        val campaignTag = when {
-            i % 5 == 0 -> "Más Vendidos"
-            i % 7 == 0 -> "Ofertas Patrias"
-            i % 3 == 0 -> "Novedades"
-            else -> null
-        }
         val price = (33..110).random().toDouble()
         val hasDiscount = i % 4 == 0 // 25% de los productos con descuento
         val oldPrice = if (hasDiscount) price + (20..50).random() else null
@@ -60,12 +54,11 @@ object MockData {
             name = "Producto $i",
             price = price,
             oldPrice = oldPrice,
-            description = "Descripción detallada del producto $i para el marketplace EZZETA. ${campaignTag ?: ""}",
+            description = "Descripción detallada del producto $i para el marketplace EZZETA.}",
             imageUrl = mainImage,
             imageUrls = images,
             categoryId = category.id,
             subCategories = subCategories,
-            campaign = campaignTag,
             storeId = store.id,
             reviewsCount = (5..200).random()
         )

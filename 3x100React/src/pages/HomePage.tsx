@@ -1,10 +1,10 @@
-import { motion, useReducedMotion } from 'framer-motion';
-import { MessageCircle, RotateCcw, Ruler, ShieldCheck, type LucideIcon } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { ArrowRight, MessageCircle, RotateCcw, Ruler, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ProductHoverImage } from '../components/ProductHoverImage';
 import { PriceDisplay } from '../components/PriceDisplay';
-import { getHomeProducts } from '../services/homeContentService';
+import { getHomeBannerRotationSeconds, getHomeProducts, getHomeSlides } from '../services/homeContentService';
 
 type BenefitItem = {
   title: string;
@@ -80,13 +80,41 @@ const webLinks = [
 const luminousTitle = '¡PRENDAS A MEJORES PRECIOS!';
 
 export const HomePage = () => {
+  const slides = getHomeSlides();
   const featuredProducts = useMemo(() => {
     const products = getHomeProducts();
     return products.slice(0, 8);
   }, []);
+  const bannerRotationMs = getHomeBannerRotationSeconds() * 1000;
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false,
+  );
 
   const shouldReduceMotion = useReducedMotion();
   const [activeWebIndex, setActiveWebIndex] = useState(0);
+
+  useEffect(() => {
+    const updateViewport = () => {
+      setIsMobileViewport(window.innerWidth <= 768);
+    };
+
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    return () => window.removeEventListener('resize', updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!slides.length) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % slides.length);
+    }, bannerRotationMs);
+
+    return () => window.clearInterval(timer);
+  }, [bannerRotationMs, slides.length]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -100,8 +128,57 @@ export const HomePage = () => {
     return () => window.clearInterval(interval);
   }, []);
 
+  const currentSlide = slides[activeSlide] ?? slides[0];
+  const currentSlideImage = isMobileViewport ? currentSlide?.imgMobile || currentSlide?.imgDesktop : currentSlide?.imgDesktop || currentSlide?.imgMobile;
+
   return (
     <section className="space-y-8 pb-8 pt-0">
+      {slides.length > 0 ? (
+        <div className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-white -mt-24">
+          <div className="relative h-[64vh] min-h-[380px] overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentSlide?.title ?? 'slide'}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+                className="relative h-full w-full"
+              >
+                <picture>
+                  <source media="(max-width: 768px)" srcSet={currentSlide?.imgMobile || currentSlide?.imgDesktop || ''} />
+                  <img src={currentSlideImage ?? ''} alt={currentSlide?.title ?? 'Banner'} className="absolute inset-0 h-full w-full object-cover object-center" />
+                </picture>
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+              </motion.div>
+            </AnimatePresence>
+            <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-4">
+              <Link
+                to="/tienda"
+                className="inline-flex items-center justify-center gap-2 border border-white bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
+              >Ver tienda
+                <ArrowRight size={16} />
+              </Link>
+              <div className="flex items-center justify-center gap-2">
+                {slides.map((slide, index) => (
+                  <button
+                    key={slide.title}
+                    type="button"
+                    onClick={() => setActiveSlide(index)}
+                    className={`h-2 w-10 transition ${
+                      activeSlide === index
+                        ? 'bg-white'
+                        : 'bg-white/40'
+                    }`}
+                    aria-label={`Ir al slide ${index + 1}`}
+                />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.04)] sm:p-8 lg:p-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">

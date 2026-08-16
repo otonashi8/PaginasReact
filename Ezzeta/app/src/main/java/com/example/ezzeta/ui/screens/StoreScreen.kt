@@ -57,7 +57,7 @@ fun StoreDetailScreen(
         }
     ) { padding ->
         val context = LocalContext.current
-        val currentUser by viewModel.currentUser.collectAsState()
+        val allFollows by viewModel.userFollows.collectAsState()
         
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -67,7 +67,8 @@ fun StoreDetailScreen(
             // Header
             store?.let {
                 item(span = { GridItemSpan(2) }) {
-                    val isFollowed = currentUser?.followedStoreIds?.contains(it.id) == true
+                    val isFollowed = remember(allFollows) { viewModel.isFollowingStore(it.id) }
+                    val count = remember(allFollows) { viewModel.getStoreFollowerCount(it.id) }
                     Row(
                         modifier = Modifier.padding(16.dp).fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -80,7 +81,7 @@ fun StoreDetailScreen(
                         )
                         Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
                             Text(text = it.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                            Text(text = "${it.followersCount} seguidores", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "$count seguidores", style = MaterialTheme.typography.bodySmall)
                         }
                         Button(
                             onClick = { viewModel.toggleFollowStore(context, it.id) },

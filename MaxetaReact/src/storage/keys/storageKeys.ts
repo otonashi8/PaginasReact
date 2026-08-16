@@ -26,6 +26,8 @@ export const StorageKeys = {
 	GUEST: 'ezzeta.wholesale.guest',
 	SYNC: 'ezzeta.wholesale.sync',
 	SOLICITUDES_ASISTENCIA: 'ezzeta.wholesale.solicitudesAsistencia',
+	MARKETING_BANNERS: 'ezzeta.marketing.banners',
+	MARKETING_BANNERS_ROTATION: 'ezzeta.marketing.banners.rotation',
 	CONFIGURACION: 'maxeta.configuracion',
 } as const;
 

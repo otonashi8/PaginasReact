@@ -147,6 +147,7 @@ fun WishlistScreen(viewModel: MainViewModel, onBack: () -> Unit, onProductClick:
                         WishlistItemRow(
                             product = product,
                             onFavoriteClick = { viewModel.toggleProductFavorite(context, product.id) },
+                            onQuickViewClick = { viewModel.onQuickViewProduct(context, product) },
                             onClick = { onProductClick(product.id) }
                         )
                     }
@@ -160,8 +161,15 @@ fun WishlistScreen(viewModel: MainViewModel, onBack: () -> Unit, onProductClick:
 fun WishlistItemRow(
     product: Product,
     onFavoriteClick: () -> Unit,
+    onQuickViewClick: () -> Unit,
     onClick: () -> Unit
 ) {
+    val isEffectivelyAvailable = product.isVisible && if (product.useStockBySize) {
+        !product.variants.isNullOrEmpty() && product.variants.any { it.stock > 0 }
+    } else {
+        product.stock > 0
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
@@ -179,9 +187,9 @@ fun WishlistItemRow(
                         .size(80.dp)
                         .clip(RoundedCornerShape(8.dp)),
                     contentScale = ContentScale.Crop,
-                    alpha = if (product.isVisible) 1f else 0.5f
+                    alpha = if (isEffectivelyAvailable) 1f else 0.5f
                 )
-                if (!product.isVisible) {
+                if (!isEffectivelyAvailable) {
                     Surface(
                         modifier = Modifier.align(Alignment.Center),
                         color = Color.Black.copy(alpha = 0.6f),
@@ -234,6 +242,17 @@ fun WishlistItemRow(
                         color = Color.Red
                     )
                 }
+            }
+
+            IconButton(
+                onClick = onQuickViewClick,
+                enabled = isEffectivelyAvailable
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AddShoppingCart,
+                    contentDescription = "Compra rápida",
+                    tint = if (isEffectivelyAvailable) MaterialTheme.colorScheme.secondary else Color.Gray
+                )
             }
 
             IconButton(onClick = onFavoriteClick) {

@@ -164,6 +164,41 @@ fun CartScreen(
                                 fontWeight = if (shippingCost == 0.0) FontWeight.Bold else FontWeight.Normal
                             )
                         }
+
+                        // Sección de Cupón (Fase 20)
+                        val couponValidationMessage by viewModel.couponValidationMessage.collectAsState()
+                        var couponText by remember { mutableStateOf(couponInput) }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = couponText,
+                                    onValueChange = { couponText = it.uppercase() },
+                                    label = { Text("¿Tienes un cupón?") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    enabled = couponInput.isEmpty()
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                if (couponInput.isEmpty()) {
+                                    Button(onClick = { viewModel.applyCoupon(couponText) }, enabled = couponText.isNotBlank()) {
+                                        Text("Aplicar")
+                                    }
+                                } else {
+                                    TextButton(onClick = { 
+                                        viewModel.removeCoupon()
+                                        couponText = ""
+                                    }) {
+                                        Text("Quitar", color = Color.Red)
+                                    }
+                                }
+                            }
+                            couponValidationMessage?.let {
+                                Text(text = it, style = MaterialTheme.typography.labelSmall, color = if (it.contains("aplicado")) Color(0xFF2E7D32) else Color.Red, modifier = Modifier.padding(top = 4.dp))
+                            }
+                        }
+
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -378,31 +413,6 @@ fun CartScreen(
                     onQuickViewClick = { product -> viewModel.onQuickViewProduct(context, product) }
                 )
                 
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Cupón en la cesta
-                Card(
-                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("¿Tienes un cupón?", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = couponInput,
-                            onValueChange = { viewModel.onCouponInputChanged(it) },
-                            label = { Text("Código de cupón") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            trailingIcon = {
-                                if (couponInput.isNotEmpty()) {
-                                    Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF2E7D32))
-                                }
-                            }
-                        )
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }

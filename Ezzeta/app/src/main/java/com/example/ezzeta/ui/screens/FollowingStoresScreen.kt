@@ -27,9 +27,11 @@ import com.example.ezzeta.ui.viewmodel.MainViewModel
 @Composable
 fun FollowingStoresScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
-    val user by viewModel.currentUser.collectAsState()
+    val allFollows by viewModel.userFollows.collectAsState()
     val allStores = remember { viewModel.getStores() }
-    val followedStores = allStores.filter { user?.followedStoreIds?.contains(it.id) == true }
+    val followedStores = remember(allFollows) {
+        allStores.filter { viewModel.isFollowingStore(it.id) }
+    }
 
     Scaffold(
         topBar = {
@@ -70,7 +72,8 @@ fun FollowingStoresScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                             )
                             Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
                                 Text(text = store.name, fontWeight = FontWeight.Bold)
-                                Text(text = "${store.followersCount} seguidores", style = MaterialTheme.typography.labelSmall)
+                                val count = remember(allFollows) { viewModel.getStoreFollowerCount(store.id) }
+                                Text(text = "$count seguidores", style = MaterialTheme.typography.labelSmall)
                             }
                             Button(
                                 onClick = { viewModel.toggleFollowStore(context, store.id) },

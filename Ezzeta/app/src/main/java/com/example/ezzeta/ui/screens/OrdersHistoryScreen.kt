@@ -9,11 +9,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,6 +27,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrdersHistoryScreen(viewModel: MainViewModel, onBack: () -> Unit) {
+    val context = LocalContext.current
     val orders by viewModel.orders.collectAsState()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -97,6 +100,28 @@ fun OrdersHistoryScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                             
                             if (expanded) {
                                 Spacer(modifier = Modifier.height(12.dp))
+                                
+                                // Indicador de Estado (Fase 16)
+                                OrderStatusIndicator(status = order.orderStatus)
+                                
+                                // Botón de Simulación Temporal
+                                if (order.orderStatus != "RECIBIDO") {
+                                    Button(
+                                        onClick = { viewModel.simulateNextOrderStatus(context, order.id) },
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                                        ),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Simular avance de estado (Pruebas)", fontSize = 12.sp)
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "DETALLE DE PRODUCTOS",
                                     style = MaterialTheme.typography.labelSmall,

@@ -44,6 +44,9 @@ fun HomeScreen(
     val isDarkTheme by viewModel.isDarkTheme.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val products by viewModel.filteredProducts.collectAsState()
+    val recentProducts by viewModel.recentProducts.collectAsState()
+    val popularProducts by viewModel.popularProducts.collectAsState()
+    val popularRankingMap by viewModel.popularRankingMap.collectAsState()
     val context = LocalContext.current
     
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -95,7 +98,7 @@ fun HomeScreen(
                                 }
                             }
                         )
-                        
+
                         SearchBar(
                             query = searchQuery,
                             onQueryChange = { viewModel.onSearchQueryChange(it) },
@@ -185,10 +188,35 @@ fun HomeScreen(
                             StoreMiniCard(
                                 store = store,
                                 products = allProductsLocal.filter { it.storeId == store.id }.take(3),
+                                viewModel = viewModel,
                                 onProductClick = onProductClick,
                                 onStoreClick = onStoreClick
                             )
                         }
+                    }
+                }
+
+                // Sección Recientes y Populares (Fase 14)
+                if (searchQuery.isEmpty()) {
+                    item(span = { GridItemSpan(2) }, key = "recientes_section") {
+                        ProductCarousel(
+                            title = "Recientes",
+                            products = recentProducts,
+                            onProductClick = onProductClick,
+                            onFavoriteClick = { viewModel.toggleProductFavorite(context, it.id) },
+                            onQuickViewClick = { viewModel.onQuickViewProduct(context, it) }
+                        )
+                    }
+
+                    item(span = { GridItemSpan(2) }, key = "populares_section") {
+                        ProductCarousel(
+                            title = "Populares",
+                            products = popularProducts,
+                            onProductClick = onProductClick,
+                            onFavoriteClick = { viewModel.toggleProductFavorite(context, it.id) },
+                            onQuickViewClick = { viewModel.onQuickViewProduct(context, it) },
+                            rankingMap = popularRankingMap
+                        )
                     }
                 }
 
@@ -231,10 +259,15 @@ fun HomeScreen(
 fun StoreMiniCard(
     store: com.example.ezzeta.data.model.Store,
     products: List<com.example.ezzeta.data.model.Product>,
+    viewModel: MainViewModel,
     onProductClick: (String) -> Unit,
     onStoreClick: (String) -> Unit
 ) {
     val context = LocalContext.current
+    val followers by viewModel.userFollows.collectAsState()
+    val isFollowed = remember(followers) { viewModel.isFollowingStore(store.id) }
+    val count = remember(followers) { viewModel.getStoreFollowerCount(store.id) }
+
     Card(
         modifier = Modifier.width(280.dp),
         shape = RoundedCornerShape(12.dp)
@@ -248,7 +281,21 @@ fun StoreMiniCard(
                     contentScale = ContentScale.Crop
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = store.name, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = store.name, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(text = "$count seguidores", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                }
+
+                IconButton(
+                    onClick = { viewModel.toggleFollowStore(context, store.id) },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isFollowed) Icons.Default.CheckCircle else Icons.Default.AddCircleOutline,
+                        contentDescription = "Seguir",
+                        tint = if (isFollowed) MaterialTheme.colorScheme.primary else Color.Gray
+                    )
+                }
                 
                 // Botón Web
                 if (!store.websiteUrl.isNullOrEmpty()) {

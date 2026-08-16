@@ -32,4 +32,14 @@ object LocalJsonStorage {
             null
         }
     }
+
+    fun loadRaw(context: Context, fileName: String): String? {
+        val file = File(context.filesDir, fileName)
+        if (!file.exists()) return null
+        return try {
+            file.readText()
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

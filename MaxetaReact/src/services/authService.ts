@@ -186,6 +186,8 @@ const getRolePermissionMetadata = (modulo: string) => {
     usuarios: { label: 'Usuarios', path: '/D-Admin/usuarios', codePrefix: 'user' },
     roles: { label: 'Roles', path: '/D-Admin/roles', codePrefix: 'roles' },
     configuracion: { label: 'Configuración', path: '/D-Admin/configuracion', codePrefix: 'configuracion' },
+    marketing: { label: 'Banners', path: '/D-Admin/marketing/banners', codePrefix: 'marketing' },
+    banners: { label: 'Banners', path: '/D-Admin/marketing/banners', codePrefix: 'marketing' },
     envio: { label: 'Envío', path: '/D-Admin/envio', codePrefix: 'envio' },
     logs: { label: 'Logs', path: '/D-Admin/logs', codePrefix: 'logs' },
     auditoria: { label: 'Logs', path: '/D-Admin/logs', codePrefix: 'logs' },
@@ -226,6 +228,8 @@ const buildPermissionsFromRole = (rol: Rol | undefined): Permission[] => {
     affiliate: 'Sistema',
     payment_methods: 'Negocio',
     reglas: 'Sistema',
+    marketing: 'Marketing',
+    banners: 'Marketing',
     productos: 'Inventario',
     almacenes: 'Inventario',
     pedidos: 'Ventas',
@@ -393,6 +397,12 @@ const buildFullDashboardPermissions = (): Permission[] => [
       {label: 'Logs',path: '/D-Admin/logs',permission_code: 'logs.manage'},
       {label: 'Planes', path: '/D-Admin/planes', permission_code: 'plans.manage'},
     ]
+  },
+  {
+    label: 'Marketing',
+    accesses: [
+      { label: 'Banners', path: '/D-Admin/marketing/banners', permission_code: 'marketing.manage' },
+    ],
   },
 ];
 

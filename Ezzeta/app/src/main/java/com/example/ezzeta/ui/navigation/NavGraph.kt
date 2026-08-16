@@ -84,8 +84,8 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
                 onLoginClick = { navController.navigate(Screen.Login.route) },
                 onLogout = {
                     mainViewModel.logout(context)
-                    navController.navigate(Screen.Welcome.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 onMyProductsClick = { navController.navigate(Screen.MyProducts.route) },
@@ -230,8 +230,8 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
                 viewModel = mainViewModel,
                 onLogout = {
                     mainViewModel.logout(context)
-                    navController.navigate(Screen.Welcome.route) {
-                        popUpTo(navController.graph.id) { inclusive = true }
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 onNavigateToProductManagement = { type: String ->

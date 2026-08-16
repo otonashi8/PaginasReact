@@ -51,7 +51,8 @@ fun ProductCard(
     onClick: () -> Unit,
     onQuickViewClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onAppear: (() -> Unit)? = null
+    onAppear: (() -> Unit)? = null,
+    rankingText: String? = null
 ) {
     LaunchedEffect(product.id) {
         onAppear?.invoke()
@@ -62,6 +63,7 @@ fun ProductCard(
         "s2" -> "CREPANTE"
         "s3" -> "MAXETA"
         "s4" -> "UOMO CATTIVO"
+        "s5" -> "3x100"
         else -> "Tienda"
     }
 
@@ -143,6 +145,16 @@ fun ProductCard(
                     }
                 }
                 
+                if (rankingText != null) {
+                    Text(
+                        text = rankingText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 2.dp)
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Row(
@@ -228,7 +240,8 @@ fun ProductCarousel(
     onProductClick: (String) -> Unit,
     onFavoriteClick: (Product) -> Unit,
     onQuickViewClick: (Product) -> Unit,
-    onProductAppear: ((String) -> Unit)? = null
+    onProductAppear: ((String) -> Unit)? = null,
+    rankingMap: Map<String, String>? = null
 ) {
     if (products.isEmpty()) return
 
@@ -254,7 +267,8 @@ fun ProductCarousel(
                     onClick = { onProductClick(product.id) },
                     onQuickViewClick = { onQuickViewClick(product) },
                     modifier = Modifier.width(160.dp),
-                    onAppear = { onProductAppear?.invoke(product.id) }
+                    onAppear = { onProductAppear?.invoke(product.id) },
+                    rankingText = rankingMap?.get(product.id)
                 )
             }
         }
@@ -469,9 +483,8 @@ fun ProductQuickViewContent(
     }
 }
 
-/**
- * Un botón que repite su acción mientras se mantiene presionado.
- */
+// Un botón que repite su acción mientras se mantiene presionado.
+
 @Composable
 fun AutoRepeatIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -521,9 +534,8 @@ fun AutoRepeatIconButton(
     }
 }
 
-/**
- * Selector de cantidad mejorado con entrada manual y botones de auto-repetición.
- */
+// Selector de cantidad mejorado con entrada manual y botones de auto-repetición.
+
 @Composable
 fun QuantitySelector(
     quantity: Int,

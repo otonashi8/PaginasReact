@@ -8,7 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 
 data class UserFollow(
     val followerId: String,
-    val sellerId: String
+    val sellerId: String, // Usado como targetId para compatibilidad con JSON existente
+    val targetType: String = "SELLER" // "SELLER" o "STORE"
 )
 
 class FollowRepository {
@@ -25,17 +26,19 @@ class FollowRepository {
         }
     }
 
-    fun toggleFollow(context: Context, followerId: String, sellerId: String): Boolean {
-        if (followerId == sellerId || followerId == "guest") return false
+    fun toggleFollow(context: Context, followerId: String, targetId: String, targetType: String): Boolean {
+        if (followerId == targetId || followerId == "guest") return false
 
         val currentList = _follows.value.toMutableList()
-        val existing = currentList.find { it.followerId == followerId && it.sellerId == sellerId }
+        val existing = currentList.find { 
+            it.followerId == followerId && it.sellerId == targetId && it.targetType == targetType 
+        }
         
         val result = if (existing != null) {
             currentList.remove(existing)
             false
         } else {
-            currentList.add(UserFollow(followerId, sellerId))
+            currentList.add(UserFollow(followerId, targetId, targetType))
             true
         }
         
@@ -44,12 +47,12 @@ class FollowRepository {
         return result
     }
 
-    fun getFollowerCount(sellerId: String): Int {
-        return _follows.value.count { it.sellerId == sellerId }
+    fun getFollowerCount(targetId: String, targetType: String): Int {
+        return _follows.value.count { it.sellerId == targetId && it.targetType == targetType }
     }
     
-    fun isFollowing(followerId: String, sellerId: String): Boolean {
+    fun isFollowing(followerId: String, targetId: String, targetType: String): Boolean {
         if (followerId == "guest") return false
-        return _follows.value.any { it.followerId == followerId && it.sellerId == sellerId }
+        return _follows.value.any { it.followerId == followerId && it.sellerId == targetId && it.targetType == targetType }
     }
 }

@@ -194,7 +194,7 @@ export const Header = () => {
           </button>
 
           <Link to="/" className={`text-base font-semibold uppercase tracking-[0.3em] sm:text-xl lg:mr-auto ${headerTextClass}`}>
-            EZZETA
+            MAXETA
           </Link>
 
           <nav className="hidden flex-1 items-center justify-center gap-6 text-sm font-medium uppercase tracking-[0.24em] lg:flex">

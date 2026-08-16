@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ClientesCrudPanel } from './Clientes/ClientesCrudPanel';
 import { InventarioCrudPanel } from './Inventario/InventarioCrudPanel';
+import { MarketingCrudPanel } from './Marketing/MarketingCrudPanel';
 import { SistemaCrudPanel } from './Sistema/SistemaCrudPanel';
 import { PedidosCrudPanel } from './Ventas/pedidos/PedidosCrudPanel';
 import { CarritosPerdidosCrudPanel } from './Ventas/carritos-perdidos';
@@ -58,6 +59,10 @@ const getModulePanel = (module: PermissionModule | null, access: PermissionAcces
 
   if (normalized === 'clientes') {
     return <ClientesCrudPanel />;
+  }
+
+  if (normalized === 'marketing' || accessLabel === 'banners') {
+    return <MarketingCrudPanel access={access} />;
   }
 
   return <GenericCrudPanel access={access} />;

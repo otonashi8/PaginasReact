@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, Heart, ShoppingBag } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useHoldNumber } from '../hooks/useHoldNumber';
 import { Link, useNavigate } from 'react-router-dom';
 import { ImagePlaceholder } from '../components/ImagePlaceholder';
@@ -8,7 +8,7 @@ import { ProductHoverImage } from '../components/ProductHoverImage';
 import { PermissionGate } from '../components/PermissionGate';
 import { useWishlist } from '../context/WishlistContext';
 import { PriceDisplay } from '../components/PriceDisplay';
-import { getBestSellers, getHomeCategories, getHomeSlides, getTopFeaturedProducts } from '../services/homeContentService';
+import { getHomeBannerRotationSeconds, getHomeProducts, getBestSellers, getHomeCategories, getHomeSlides, getTopFeaturedProducts } from '../services/homeContentService';
 import { resolveProductPrice } from '../services/pricingService';
 import { PERMISSIONS } from '../utils/permissionCodes';
 
@@ -19,12 +19,28 @@ export const HomePage = () => {
   const { favorites, toggleFavorite, addToCart } = useWishlist();
   const slides = getHomeSlides();
   const categories = getHomeCategories().filter((category) => allowedCategoryNames.includes(category.name)).slice(0, 4);
-  const featuredProducts = getTopFeaturedProducts().slice(0, 4);
+  const featuredProducts = getTopFeaturedProducts();
   const bestSellers = getBestSellers().slice(0, 16);
+  const allProducts = (featuredProducts.length ? featuredProducts : getHomeProducts()).slice(0, 12);
+  const bannerRotationMs = getHomeBannerRotationSeconds() * 1000;
   const [activeSlide, setActiveSlide] = useState(0);
-  const [selectedProduct, setSelectedProduct] = useState<(typeof featuredProducts)[number] | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false,
+  );
+  const [selectedProduct, setSelectedProduct] = useState<(typeof allProducts)[number] | null>(null);
   const [selectedSize, setSelectedSize] = useState('M');
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const { value: quantity, setValue: setQuantity, start: startQuantity } = useHoldNumber(1, { min: 1, step: 1, interval: 120 });
+
+  useEffect(() => {
+    const updateViewport = () => {
+      setIsMobileViewport(window.innerWidth <= 768);
+    };
+
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    return () => window.removeEventListener('resize', updateViewport);
+  }, []);
 
   useEffect(() => {
     if (!slides.length) {
@@ -33,12 +49,32 @@ export const HomePage = () => {
 
     const timer = window.setInterval(() => {
       setActiveSlide((current) => (current + 1) % slides.length);
+    }, bannerRotationMs);
+
+    return () => window.clearInterval(timer);
+  }, [bannerRotationMs, slides.length]);
+
+  useEffect(() => {
+    if (!allProducts.length) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      setCarouselIndex((current) => (current + 1) % Math.max(1, Math.ceil(allProducts.length / 4)));
     }, 5000);
 
     return () => window.clearInterval(timer);
-  }, [slides.length]);
+  }, [allProducts.length]);
 
   const currentSlide = slides[activeSlide] ?? slides[0];
+  const currentSlideImage = isMobileViewport ? currentSlide?.imgMobile || currentSlide?.imgDesktop : currentSlide?.imgDesktop || currentSlide?.imgMobile;
+  const visibleCarouselProducts = useMemo(() => {
+    const groups = Array.from({ length: Math.max(1, Math.ceil(allProducts.length / 4)) }, (_, index) =>
+      allProducts.slice(index * 4, index * 4 + 4)
+    );
+
+    return groups[carouselIndex % groups.length] ?? [];
+  }, [allProducts, carouselIndex]);
 
   return (
     <section className="space-y-8 pb-8 pt-0">
@@ -53,34 +89,33 @@ export const HomePage = () => {
               transition={{ duration: 0.35 }}
               className="relative h-full w-full"
             >
-              <img src={currentSlide?.img ?? ''} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
+              <picture>
+                <source media="(max-width: 768px)" srcSet={currentSlide?.imgMobile || currentSlide?.imgDesktop || ''} />
+                <img src={currentSlideImage ?? ''} alt={currentSlide?.title ?? 'Banner'} className="absolute inset-0 h-full w-full object-cover object-center" />
+              </picture>
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-              <div className="absolute inset-0 flex items-center">
-                <div className="max-w-3xl px-6 py-6 sm:px-8 lg:px-12">
-                  <p className="text-sm uppercase tracking-[0.35em] text-white/80">{currentSlide?.tag}</p>
-                  <h1 className="mt-4 text-4xl font-semibold uppercase tracking-[0.2em] text-white sm:text-5xl lg:text-6xl">
-                    {currentSlide?.title}
-                  </h1>
-                  <p className="mt-4 max-w-2xl text-lg text-white/85">{currentSlide?.subtitle}</p>
-                  <div className="mt-8 flex flex-wrap gap-3">
-                    <Link to="/tienda" className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-[#F7F3EC]">
-                      Ver tienda <ArrowRight size={16} />
-                    </Link>
-                  </div>
-                </div>
-              </div>
             </motion.div>
           </AnimatePresence>
-
-          <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-3">
-            <div className="flex gap-2">
+          <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-4">
+            <Link
+              to="/tienda"
+              className="inline-flex items-center justify-center gap-2 border border-white bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-black hover:text-white"
+            >Ver tienda
+              <ArrowRight size={16} />
+            </Link>
+            <div className="flex items-center justify-center gap-2">
               {slides.map((slide, index) => (
                 <button
                   key={slide.title}
                   type="button"
                   onClick={() => setActiveSlide(index)}
-                  className={`h-2 w-10 rounded-full transition ${activeSlide === index ? 'bg-white' : 'bg-white/40'}`}
-                />
+                  className={`h-2 w-10 transition ${
+                    activeSlide === index
+                      ? 'bg-white'
+                      : 'bg-white/40'
+                  }`}
+                  aria-label={`Ir al slide ${index + 1}`}
+              />
               ))}
             </div>
           </div>
@@ -94,7 +129,7 @@ export const HomePage = () => {
           </Link>
         </div>
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 w-full max-w-none">
-          {featuredProducts.map((product) => {
+          {visibleCarouselProducts.map((product) => {
             const isFavorite = favorites.includes(product.id);
             const resultadoPrecio = resolveProductPrice(product);
             const precioOriginal = resultadoPrecio.precioOriginal;

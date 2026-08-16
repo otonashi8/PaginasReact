@@ -37,6 +37,8 @@ export default function migrateStorage(): void {
     StorageKeys.GUEST,
     StorageKeys.SYNC,
     StorageKeys.SOLICITUDES_ASISTENCIA,
+    StorageKeys.MARKETING_BANNERS,
+    StorageKeys.MARKETING_BANNERS_ROTATION,
   ]);
 
   const legacyToPrimary: KeyMap = {

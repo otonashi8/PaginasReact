@@ -639,7 +639,8 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                             variants = if (finalVariants.isEmpty()) null else finalVariants,
                             sizeSystemId = if (selectedSystemId != "user_custom") selectedSystemId else null,
                             usePriceBySize = usePriceBySize,
-                            useStockBySize = useStockBySize
+                            useStockBySize = useStockBySize,
+                            createdAt = System.currentTimeMillis()
                         )
 
                         viewModel.sendMarketplaceRequest(context, productToRequest) { success ->

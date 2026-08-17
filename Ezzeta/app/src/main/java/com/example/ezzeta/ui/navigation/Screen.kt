@@ -32,6 +32,7 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     object Wishlist : Screen("wishlist")
     object Orders : Screen("orders")
     object Following : Screen("following")
+    object MySizes : Screen("my_sizes")
     object CustomerService : Screen("customer_service")
     object SingleProductUpload : Screen("single_product_upload")
     object Checkout : Screen("checkout")
@@ -66,6 +67,8 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     object AdminStats : Screen("admin_stats")
     object AdminCustomers : Screen("admin_customers")
     object AdminAbandonedCarts : Screen("admin_abandoned_carts")
+    object AdminUsers : Screen("admin_users")
+    object AdminRoles : Screen("admin_roles")
 }
 
 val bottomNavItems = listOf(

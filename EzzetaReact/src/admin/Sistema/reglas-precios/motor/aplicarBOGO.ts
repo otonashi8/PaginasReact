@@ -59,7 +59,7 @@ export const aplicarBOGO = (
     return undefined;
   }
 
-  for (const regla of reglas.filter((reglaActual) => reglaActual.tipo === 'bogo_gratis')) {
+  for (const regla of reglas.filter((reglaActual) => (reglaActual.tipo as string) === 'bogo_gratis')) {
     if (!esReglaVigente(regla)) {
       continue;
     }

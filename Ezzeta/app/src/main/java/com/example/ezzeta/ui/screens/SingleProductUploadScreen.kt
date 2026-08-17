@@ -340,6 +340,30 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "¿Necesitas una talla especial?", style = MaterialTheme.typography.labelMedium)
             
+            val addSpecialSize = {
+                if (newVariantName.isNotBlank()) {
+                    viewModel.addUserCustomSize(context, newVariantName)
+                    
+                    val customPrice = if (usePriceBySize) (newVariantPrice.toDoubleOrNull() ?: price.toDoubleOrNull() ?: 0.0) else (price.toDoubleOrNull() ?: 0.0)
+                    val customStock = if (useStockBySize) (stock.toIntOrNull() ?: 1) else (stock.toIntOrNull() ?: 1)
+                    
+                    if (variants.none { it.name.equals(newVariantName, ignoreCase = true) }) {
+                        variants.add(com.example.ezzeta.data.model.ProductVariant(newVariantName, customPrice, customStock))
+                    }
+                    
+                    // También la marcamos como seleccionada
+                    if (!selectedPredefinedSizes.contains(newVariantName)) {
+                        selectedPredefinedSizes.add(newVariantName)
+                    }
+                    
+                    // Cambiar automáticamente a la pestaña de Mis Tallas para ver el chip
+                    selectedSystemId = "user_custom"
+                    
+                    newVariantName = ""
+                    newVariantPrice = ""
+                }
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -360,26 +384,7 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                     singleLine = true,
                     placeholder = { Text(price) }
                 )
-                IconButton(
-                    onClick = {
-                        if (newVariantName.isNotBlank()) {
-                            viewModel.addUserCustomSize(context, newVariantName)
-                            
-                            val customPrice = if (usePriceBySize) (newVariantPrice.toDoubleOrNull() ?: price.toDoubleOrNull() ?: 0.0) else (price.toDoubleOrNull() ?: 0.0)
-                            val customStock = if (useStockBySize) (stock.toIntOrNull() ?: 1) else (stock.toIntOrNull() ?: 1)
-                            
-                            variants.add(com.example.ezzeta.data.model.ProductVariant(newVariantName, customPrice, customStock))
-                            
-                            // También la marcamos como seleccionada si estamos en modo user_custom
-                            if (selectedSystemId == "user_custom") {
-                                selectedPredefinedSizes.add(newVariantName)
-                            }
-                            
-                            newVariantName = ""
-                            newVariantPrice = ""
-                        }
-                    }
-                ) {
+                IconButton(onClick = addSpecialSize) {
                     Icon(Icons.Default.Add, contentDescription = null)
                 }
             }
@@ -610,6 +615,11 @@ fun SingleProductUploadScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             ) {
                 Button(
                     onClick = {
+                        // Procesar cualquier talla especial pendiente de añadir antes de enviar
+                        if (newVariantName.isNotBlank()) {
+                            addSpecialSize()
+                        }
+
                         val basePrice = price.toDoubleOrNull() ?: 0.0
                         val baseStock = stock.toIntOrNull() ?: 1
                         

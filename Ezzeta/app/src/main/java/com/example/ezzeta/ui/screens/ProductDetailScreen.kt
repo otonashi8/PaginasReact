@@ -88,11 +88,12 @@ fun ProductDetailScreen(
     // Tallas dinámicas desde el modelo
     val sizes = remember(product) { product?.getAvailableSizes() ?: emptyList() }
     
-    // Precio actual basado en la variante seleccionada
-    val currentPrice = remember(product, selectedSize) {
-        val variant = product?.variants?.find { it.name == selectedSize }
-        variant?.price ?: product?.price ?: 0.0
+    val priceRules by viewModel.priceRules.collectAsState()
+    val couponInput by viewModel.couponInput.collectAsState()
+    val priceInfo = remember(product, selectedSize, priceRules, couponInput) {
+        product?.let { viewModel.getProductPriceInfo(it, selectedSize) }
     }
+    val currentPrice = priceInfo?.finalPrice ?: product?.getPriceForSize(selectedSize) ?: 0.0
 
     LaunchedEffect(product) {
         // Añadir al historial al entrar
@@ -167,7 +168,7 @@ fun ProductDetailScreen(
                         }
                         Button(
                             onClick = { 
-                                if (selectedSize.isNotEmpty()) {
+                                if (selectedSize.isNotEmpty() || sizes.isEmpty()) {
                                     val availableStock = product.getStockForSize(selectedSize)
                                     if (quantity <= availableStock) {
                                         viewModel.addToCart(context, product, selectedSize, quantity, currentPrice)
@@ -181,14 +182,14 @@ fun ProductDetailScreen(
                                     }
                                 }
                             },
-                            enabled = selectedSize.isNotEmpty() && product.getStockForSize(selectedSize) > 0,
+                            enabled = (selectedSize.isNotEmpty() || sizes.isEmpty()) && product.getStockForSize(selectedSize) > 0,
                             modifier = Modifier.weight(1.5f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            val stockForSelected = if (selectedSize.isNotEmpty()) product.getStockForSize(selectedSize) else 1
+                            val stockForSelected = product.getStockForSize(selectedSize)
                             Text(
                                 text = when {
-                                    selectedSize.isEmpty() -> "Elige Talla"
+                                    sizes.isNotEmpty() && selectedSize.isEmpty() -> "Elige Talla"
                                     stockForSelected <= 0 -> "Agotado"
                                     else -> "Añadir a la Cesta"
                                 },
@@ -648,12 +649,16 @@ fun ProductDetailScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 chunk.forEach { relatedProduct ->
+                                    val relatedPriceInfo = remember(relatedProduct, priceRules, couponInput) {
+                                        viewModel.getProductPriceInfo(relatedProduct)
+                                    }
                                     ProductCard(
                                         product = relatedProduct,
                                         onFavoriteClick = { viewModel.toggleProductFavorite(context, relatedProduct.id) },
                                         onClick = { onProductClick(relatedProduct.id) },
                                         onQuickViewClick = { viewModel.onQuickViewProduct(context, relatedProduct) },
-                                        modifier = Modifier.weight(1f)
+                                        modifier = Modifier.weight(1f),
+                                        priceInfo = relatedPriceInfo
                                     )
                                 }
                                 if (chunk.size < 2) {

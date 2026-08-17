@@ -38,7 +38,7 @@ fun AdminCustomerEditDialog(
                 onClick = {
                     if (name.isNotBlank() && email.isNotBlank()) {
                         if (user == null) {
-                            viewModel.adminCreateUser(context, name, email, phone, isAdmin)
+                            viewModel.adminCreateUser(context, name, email, phone, roleId = null, isAdminUser = isAdmin)
                         } else {
                             viewModel.adminUpdateUser(context, user.copy(
                                 alias = name,
@@ -46,6 +46,7 @@ fun AdminCustomerEditDialog(
                                 phone = phone,
                                 dniRuc = dniRuc,
                                 isAdmin = isAdmin,
+                                isAdminUser = isAdmin,
                                 isActive = isActive
                             ))
                         }

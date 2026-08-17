@@ -52,7 +52,9 @@ fun ProductCard(
     onQuickViewClick: () -> Unit,
     modifier: Modifier = Modifier,
     onAppear: (() -> Unit)? = null,
-    rankingText: String? = null
+    rankingText: String? = null,
+    wishlistCount: Int = 0,
+    priceInfo: MainViewModel.ProductPriceInfo? = null
 ) {
     LaunchedEffect(product.id) {
         onAppear?.invoke()
@@ -66,6 +68,13 @@ fun ProductCard(
         "s5" -> "3x100"
         else -> "Tienda"
     }
+
+    val displayPrice = priceInfo?.finalPrice ?: product.price
+    val oldPrice = priceInfo?.let { if (it.discountPercent > 0) it.originalPrice else null } ?: product.oldPrice
+    val discountPercent = priceInfo?.let { if (it.discountPercent > 0) it.discountPercent else null }
+        ?: if (product.oldPrice != null && product.oldPrice > product.price) {
+            ((1 - (product.price / product.oldPrice)) * 100).toInt()
+        } else null
 
     Card(
         modifier = modifier.padding(8.dp),
@@ -83,8 +92,7 @@ fun ProductCard(
                     contentDescription = product.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
-                    // Optimización de carga con Coil
-                    alpha = 0.99f // Ayuda en algunos casos de renderizado
+                    alpha = 0.99f
                 )
                 
                 Surface(
@@ -102,11 +110,10 @@ fun ProductCard(
                 }
 
                 // Badge de Descuento (%)
-                if (product.oldPrice != null && (product.oldPrice > product.price)) {
-                    val discountPercent = ((1 - (product.price / product.oldPrice)) * 100).toInt()
+                if (discountPercent != null && discountPercent > 0) {
                     Surface(
                         modifier = Modifier.padding(8.dp).align(Alignment.TopEnd),
-                        color = Color(0xFFE53935), // Rojo vibrante para resaltar
+                        color = Color(0xFFE53935),
                         shape = RectangleShape
                     ) {
                         Text(
@@ -115,6 +122,23 @@ fun ProductCard(
                             fontSize = 10.sp,
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                             fontWeight = FontWeight.Black
+                        )
+                    }
+                }
+
+                // Indicador de Combo
+                if (priceInfo?.hasCombo == true) {
+                    Surface(
+                        modifier = Modifier.padding(top = 40.dp, end = 8.dp).align(Alignment.TopEnd),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        shape = RectangleShape
+                    ) {
+                        Text(
+                            text = "PROMO COMBO",
+                            color = MaterialTheme.colorScheme.onTertiary,
+                            fontSize = 8.sp,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -145,14 +169,25 @@ fun ProductCard(
                     }
                 }
                 
-                if (rankingText != null) {
-                    Text(
-                        text = rankingText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    )
+                Column {
+                    if (rankingText != null) {
+                        Text(
+                            text = rankingText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 2.dp)
+                        )
+                    }
+
+                    if (wishlistCount > 0) {
+                        Text(
+                            text = "♡ $wishlistCount ${if (wishlistCount == 1) "lo tiene" else "lo tienen"} en su lista de deseos",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -168,9 +203,9 @@ fun ProductCard(
                             .heightIn(min = 48.dp),
                         verticalArrangement = Arrangement.Center
                     ) {
-                        product.oldPrice?.let { oldPrice ->
+                        oldPrice?.let { op ->
                             Text(
-                                text = "S/ ${String.format(Locale.US, "%.2f", oldPrice)}",
+                                text = "S/ ${String.format(Locale.US, "%.2f", op)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.Gray,
                                 textDecoration = TextDecoration.LineThrough,
@@ -179,10 +214,10 @@ fun ProductCard(
                             )
                         }
                         Text(
-                            text = "S/ ${String.format(Locale.US, "%.2f", product.price)}",
+                            text = "S/ ${String.format(Locale.US, "%.2f", displayPrice)}",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = if ((priceInfo?.discountPercent ?: 0) > 0) Color(0xFFE53935) else MaterialTheme.colorScheme.primary,
                             maxLines = 1,
                             softWrap = false
                         )
@@ -237,11 +272,13 @@ fun CategoryItem(category: Category, isSelected: Boolean, onClick: () -> Unit) {
 fun ProductCarousel(
     title: String,
     products: List<Product>,
+    viewModel: MainViewModel,
     onProductClick: (String) -> Unit,
     onFavoriteClick: (Product) -> Unit,
     onQuickViewClick: (Product) -> Unit,
     onProductAppear: ((String) -> Unit)? = null,
-    rankingMap: Map<String, String>? = null
+    rankingMap: Map<String, String>? = null,
+    activityMap: Map<String, MainViewModel.ProductActivity>? = null
 ) {
     if (products.isEmpty()) return
 
@@ -261,6 +298,16 @@ fun ProductCarousel(
                 key = { index -> products[index].id }
             ) { index ->
                 val product = products[index]
+                val priceRules by viewModel.priceRules.collectAsState()
+                val couponInput by viewModel.couponInput.collectAsState()
+                val priceInfo = remember(product, priceRules, couponInput) {
+                    viewModel.getProductPriceInfo(product)
+                }
+                
+                val activity = activityMap?.get(product.id)
+                val rankingText = activity?.rankingText ?: rankingMap?.get(product.id)
+                val wishlistCount = activity?.wishlistCount ?: 0
+
                 ProductCard(
                     product = product,
                     onFavoriteClick = { onFavoriteClick(product) },
@@ -268,7 +315,9 @@ fun ProductCarousel(
                     onQuickViewClick = { onQuickViewClick(product) },
                     modifier = Modifier.width(160.dp),
                     onAppear = { onProductAppear?.invoke(product.id) },
-                    rankingText = rankingMap?.get(product.id)
+                    rankingText = rankingText,
+                    wishlistCount = wishlistCount,
+                    priceInfo = priceInfo
                 )
             }
         }
@@ -278,13 +327,20 @@ fun ProductCarousel(
 @Composable
 fun ProductQuickViewContent(
     product: Product,
-    onAddToCart: (String, Int) -> Unit,
+    viewModel: MainViewModel,
+    onAddToCart: (String, Int, Double) -> Unit,
     onToggleFavorite: () -> Unit,
     onClose: () -> Unit
 ) {
     val sizes = product.getAvailableSizes()
     var selectedSize by remember(product.id) { mutableStateOf(sizes.firstOrNull { product.getStockForSize(it) > 0 } ?: "") }
     
+    val priceRules by viewModel.priceRules.collectAsState()
+    val couponInput by viewModel.couponInput.collectAsState()
+    val priceInfo = remember(product, selectedSize, priceRules, couponInput) {
+        viewModel.getProductPriceInfo(product, selectedSize)
+    }
+
     var quantity by remember(product.id, selectedSize) { mutableIntStateOf(1) }
     val productImages = remember(product) { product.imageUrls.ifEmpty { listOf(product.imageUrl) } }
     val pagerState = rememberPagerState(pageCount = { productImages.size })
@@ -351,11 +407,28 @@ fun ProductQuickViewContent(
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
+
+        // Indicador de Combo
+        if (priceInfo.hasCombo) {
+            Surface(
+                modifier = Modifier.padding(vertical = 4.dp),
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Text(
+                    text = "PROMOCIÓN COMBO DISPONIBLE",
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
         
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (product.oldPrice != null) {
+            if (priceInfo.discountPercent > 0) {
                 Text(
-                    text = "S/ ${String.format(Locale.US, "%.2f", product.oldPrice)}",
+                    text = "S/ ${String.format(Locale.US, "%.2f", priceInfo.originalPrice)}",
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.Gray,
                     textDecoration = TextDecoration.LineThrough,
@@ -365,13 +438,22 @@ fun ProductQuickViewContent(
                 )
             }
             Text(
-                text = "S/ ${String.format(Locale.US, "%.2f", product.price)}",
+                text = "S/ ${String.format(Locale.US, "%.2f", priceInfo.finalPrice)}",
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = if (priceInfo.discountPercent > 0) Color(0xFFE53935) else MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Black,
                 maxLines = 1,
                 softWrap = false
             )
+            if (priceInfo.discountPercent > 0) {
+                Text(
+                    text = "-${priceInfo.discountPercent}%",
+                    color = Color(0xFFE53935),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
         }
         
         Spacer(modifier = Modifier.height(8.dp))
@@ -437,7 +519,7 @@ fun ProductQuickViewContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        val maxStock = if (selectedSize.isNotEmpty()) product.getStockForSize(selectedSize) else 0
+        val maxStock = product.getStockForSize(selectedSize)
         
         Text(text = "Cantidad", fontWeight = FontWeight.Bold)
         QuantitySelector(
@@ -466,16 +548,22 @@ fun ProductQuickViewContent(
             
             Button(
                 onClick = { 
-                    onAddToCart(selectedSize, quantity)
+                    onAddToCart(selectedSize, quantity, priceInfo.finalPrice)
                     onClose()
                 },
-                enabled = selectedSize.isNotEmpty() && maxStock > 0,
+                enabled = (selectedSize.isNotEmpty() || sizes.isEmpty()) && maxStock > 0,
                 modifier = Modifier.weight(1f).height(56.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Icon(Icons.Default.ShoppingCart, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(if (maxStock > 0) "Añadir a la cesta" else "Sin Stock")
+                Text(
+                    text = when {
+                        sizes.isNotEmpty() && selectedSize.isEmpty() -> "Elige Talla"
+                        maxStock > 0 -> "Añadir a la cesta"
+                        else -> "Sin Stock"
+                    }
+                )
             }
         }
         

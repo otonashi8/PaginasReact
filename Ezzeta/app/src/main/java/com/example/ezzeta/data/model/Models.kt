@@ -56,6 +56,7 @@ data class Product(
     fun getAvailableSizes(): List<String> {
         if (!variants.isNullOrEmpty()) return variants.map { it.name }
         if (customSizes != null) return customSizes
+        if (isClientProduct) return emptyList()
         return when (categoryId) {
             "4" -> listOf("28", "30", "32", "34", "36") 
             else -> listOf("S", "M", "L", "XL")
@@ -112,6 +113,20 @@ data class SavedCard(
     val expiryDate: String
 )
 
+data class AdminPermission(
+    val view: Boolean = false,
+    val create: Boolean = false,
+    val edit: Boolean = false,
+    val delete: Boolean = false
+)
+
+data class AdminRole(
+    val id: String,
+    val name: String,
+    val permissions: Map<String, AdminPermission> = emptyMap(),
+    val isProtected: Boolean = false
+)
+
 data class User(
     val uuid: String,
     val alias: String,
@@ -119,7 +134,10 @@ data class User(
     val phone: String? = null,
     val dniRuc: String? = null,
     val isGuest: Boolean = true,
-    val isAdmin: Boolean = false,
+    val isAdmin: Boolean = false, // Deprecated: usar isAdminUser para panel administrativo
+    val isAdminUser: Boolean = false, // Indica si tiene acceso al Panel Administrador
+    val roleId: String? = null,
+    val lastAccess: Long? = null,
     val isActive: Boolean = true,
     val profileImageUrl: String? = null,
     val entrepreneurshipId: String? = null,
@@ -253,7 +271,8 @@ data class PriceRule(
 data class AppliedPriceRule(
     val ruleId: String,
     val ruleName: String,
-    val discountAmount: Double
+    val discountAmount: Double,
+    val isCoupon: Boolean = false
 )
 
 enum class AbandonedCartStatus {

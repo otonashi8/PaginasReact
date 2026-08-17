@@ -40,13 +40,36 @@ object UserRepository {
                 }
             }
             
-            // Asegurar campos no nulos tras deserialización
+            // Asegurar campos no nulos tras deserialización y migración Admin
             val fixedUsers = users.map { u ->
-                u.copy(
+                var updated = u.copy(
                     addresses = u.addresses ?: emptyList(),
                     savedCards = u.savedCards ?: emptyList(),
                     followedStoreIds = u.followedStoreIds ?: emptySet()
                 )
+                // Migración Super Admin
+                if (u.email == "admin" || u.alias == "Admin") {
+                    updated = updated.copy(
+                        isAdmin = true,
+                        isAdminUser = true,
+                        roleId = "super_admin"
+                    )
+                }
+                updated
+            }.toMutableList()
+            
+            // Asegurar que admin existe
+            if (fixedUsers.none { it.email == "admin" || it.alias == "Admin" }) {
+                fixedUsers.add(User(
+                    uuid = "admin_id",
+                    alias = "Admin",
+                    email = "admin",
+                    isGuest = false,
+                    isAdmin = true,
+                    isAdminUser = true,
+                    roleId = "super_admin",
+                    isActive = true
+                ))
             }
             
             _allUsers.value = fixedUsers
@@ -157,6 +180,20 @@ object UserRepository {
         if (currentList.none { it.uuid == user.uuid || (it.email != null && it.email == user.email) }) {
             currentList.add(user)
             _allUsers.value = currentList
+            saveAllToLocal(context)
+        }
+    }
+
+    fun updateLastAccess(context: Context, userId: String) {
+        val currentList = _allUsers.value.toMutableList()
+        val index = currentList.indexOfFirst { it.uuid == userId }
+        if (index != -1) {
+            val updated = currentList[index].copy(lastAccess = System.currentTimeMillis())
+            currentList[index] = updated
+            _allUsers.value = currentList
+            if (_currentUser.value?.uuid == userId) {
+                _currentUser.value = updated
+            }
             saveAllToLocal(context)
         }
     }

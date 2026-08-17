@@ -4,6 +4,8 @@ import { obtenerReglas } from '../admin/Sistema/reglas-precios/DatosReglas';
 import { StorageKeys } from '../storage';
 import { aplicarReglas } from '../admin/Sistema/reglas-precios/motor/aplicarReglas';
 import { aplicarCarrito } from '../admin/Sistema/reglas-precios/motor/aplicarCarrito';
+import { detectarCombo } from '../admin/Sistema/reglas-precios/motor/aplicarCombo';
+import type { ReglaPrecio } from '../admin/Sistema/reglas-precios/TiposReglas';
 
 export const PRICING_RULES_EVENT = 'maxeta:pricing-rules-changed';
 let pricingRulesVersion = 0;
@@ -72,6 +74,20 @@ type CartCouponResolution = {
   freeShipping: boolean;
 };
 
+export type ComboApplied = {
+  regla: ReglaPrecio;
+  instancias: number;
+  descuentoTotal: number;
+  elementosFaltantes: Array<{ tipo: string; valor: string; cantidad: number }>;
+  mensajeOportunidad: string;
+};
+
+export type CartComboInfo = {
+  combosAplicados: ComboApplied[];
+  descuentoTotalCombos: number;
+  combosIncompletos: ComboApplied[];
+};
+
 export const resolveCartCoupon = (
   subtotal: number,
   codigoCupon: string,
@@ -132,5 +148,94 @@ export const resolveProductPrice = (product: Product, contexto: Record<string, u
     descuentoAplicado: resultado.descuentoAplicado,
     etiquetaDescuento,
     reglaAplicada: resultado.reglaAplicada,
+  };
+};
+
+export type CartItem = {
+  productId: number;
+  quantity: number;
+  size: string;
+};
+
+/**
+ * Detects combos in a cart and calculates discounts
+ */
+export const detectarCombosEnCarrito = (
+  cartItems: CartItem[],
+  products: Product[],
+  reglas: ReglaPrecio[] = obtenerReglas()
+): CartComboInfo => {
+  // Create a map of products for quick lookup
+  const productMap = new Map(products.map(p => [p.id, p]));
+
+  // Get all combo rules
+  const comboRules = reglas.filter(r => r.tipo === 'combo' && r.estado);
+
+  const combosAplicados: ComboApplied[] = [];
+  const combosIncompletos: ComboApplied[] = [];
+  let descuentoTotalCombos = 0;
+
+  for (const regla of comboRules) {
+    const deteccion = detectarCombo(cartItems, regla);
+
+    if (!deteccion) continue;
+
+    const elementosFaltantes = deteccion.elementosFaltantes.map(el => ({
+      tipo: el.tipo,
+      valor: el.valor,
+      cantidad: el.cantidad
+    }));
+
+    const comboInfo: ComboApplied = {
+      regla,
+      instancias: deteccion.instancias,
+      descuentoTotal: 0,
+      elementosFaltantes,
+      mensajeOportunidad: deteccion.mensajeOportunidad
+    };
+
+    if (deteccion.instancias > 0) {
+      // Calcular el descuento
+      const precioCombo = Number(regla.configuracion?.precioCombo ?? 0);
+      const elementos = regla.configuracion?.elementos ?? [];
+
+      let precioNormalTotal = 0;
+      for (const elemento of elementos) {
+        for (const item of cartItems) {
+          const producto = productMap.get(item.productId);
+          if (!producto) continue;
+
+          // Simple check if producto matches elemento
+          if (elemento.tipo === 'producto' && String(producto.id) === elemento.valor) {
+            const cantidadAUsar = Math.min(item.quantity, elemento.cantidad);
+            precioNormalTotal += producto.price * cantidadAUsar;
+            break;
+          } else if (elemento.tipo === 'categoria' && producto.category === elemento.valor) {
+            const cantidadAUsar = Math.min(item.quantity, elemento.cantidad);
+            precioNormalTotal += producto.price * cantidadAUsar;
+            break;
+          } else if (elemento.tipo === 'subcategoria' && producto.subcategory === elemento.valor) {
+            const cantidadAUsar = Math.min(item.quantity, elemento.cantidad);
+            precioNormalTotal += producto.price * cantidadAUsar;
+            break;
+          }
+        }
+      }
+
+      const descuentoPorInstancia = Math.max(0, precioNormalTotal - precioCombo);
+      comboInfo.descuentoTotal = descuentoPorInstancia * deteccion.instancias;
+      descuentoTotalCombos += comboInfo.descuentoTotal;
+
+      combosAplicados.push(comboInfo);
+    } else if (deteccion.elementosFaltantes.length > 0) {
+      // Combo incomplete
+      combosIncompletos.push(comboInfo);
+    }
+  }
+
+  return {
+    combosAplicados,
+    descuentoTotalCombos,
+    combosIncompletos
   };
 };

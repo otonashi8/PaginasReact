@@ -1,10 +1,7 @@
 export type TipoReglaPrecio =
     | "producto"
-    | "bogo_gratis"
-    | "bogo_descuento"
-    | "volumen"
-    | "perfil"
-    | "carrito";
+    | "carrito"
+    | "combo";
 
 export type TipoDescuento =
     | "porcentaje"
@@ -25,6 +22,15 @@ export type TipoPerfil =
 export type TipoBOGO =
     | "gratis"
     | "descuento";
+
+export type TipoComboElemento = "producto" | "categoria" | "subcategoria";
+
+export interface ElementoCombo {
+    id: string;
+    tipo: TipoComboElemento;
+    valor: string;
+    cantidad: number;
+}
 
 export type EstadoRegla =
     | "activa"
@@ -55,6 +61,9 @@ export interface ConfiguracionRegla {
     maximoUsos?: number;
     maximoPorCliente?: number;
     acumulable?: boolean;
+    // Combo specific fields
+    elementos?: ElementoCombo[];
+    precioCombo?: number;
 }
 
 export interface ReglaPrecio {
@@ -78,16 +87,10 @@ export const tiposRegla: {
 }[] = [
     {valor: "producto",
         etiqueta: "Descuento de producto"},
-    {valor: "bogo_gratis",
-        etiqueta: "BOGO (Gratis)"},
-    {valor: "bogo_descuento",
-        etiqueta: "BOGO (Descuento)"},
-    {valor: "volumen",
-        etiqueta: "Descuento por volumen"},
-    {valor: "perfil",
-        etiqueta: "Descuento por perfil/rol"},
     {valor: "carrito",
-        etiqueta: "Descuento en carrito"}
+        etiqueta: "Descuento en carrito"},
+    {valor: "combo",
+        etiqueta: "Combo"}
 ];
 
 export const tiposDescuento: {

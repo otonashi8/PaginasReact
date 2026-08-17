@@ -96,7 +96,8 @@ fun MySaleDetailScreen(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(text = product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(text = "Talla: ${item.size}", style = MaterialTheme.typography.bodyMedium)
+                    val sizeLabel = if (item.size.isEmpty()) "Única" else item.size
+                Text(text = "Talla: $sizeLabel", style = MaterialTheme.typography.bodyMedium)
                     Text(text = "Cantidad: ${item.quantity}", style = MaterialTheme.typography.bodyMedium)
                     Text(
                         text = "Precio Unitario: S/ ${String.format(Locale.US, "%.2f", item.effectivePrice)}",

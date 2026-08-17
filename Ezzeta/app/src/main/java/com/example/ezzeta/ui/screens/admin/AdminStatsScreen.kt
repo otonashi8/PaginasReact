@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,6 +37,7 @@ fun AdminStatsScreen(
     val dimension by viewModel.statsDimension.collectAsState()
     val kpis by viewModel.statsKpis.collectAsState()
     val results by viewModel.statsResults.collectAsState()
+    val searchQuery by viewModel.statsSearchQuery.collectAsState()
 
     Scaffold(
         topBar = {
@@ -81,9 +83,35 @@ fun AdminStatsScreen(
                         FilterDropdown(
                             label = "Dimensión",
                             currentValue = dimension,
-                            options = mapOf("PRODUCT" to "Producto", "SIZE" to "Talla", "CATEGORY" to "Categoría", "STORE" to "Tienda", "SELLER" to "Vendedor"),
+                            options = mapOf(
+                                "PRODUCT" to "Producto",
+                                "PRODUCT_UNIQUE" to "Producto único",
+                                "SIZE" to "Talla",
+                                "CATEGORY" to "Categoría",
+                                "STORE" to "Tienda",
+                                "SELLER" to "Vendedor"
+                            ),
                             onSelect = { viewModel.setStatsDimension(it) },
                             modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                if (dimension == "PRODUCT_UNIQUE") {
+                    item {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { viewModel.setStatsSearchQuery(it) },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Buscar producto...") },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { viewModel.setStatsSearchQuery("") }) {
+                                        Icon(Icons.Default.Close, contentDescription = "Limpiar")
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(8.dp)
                         )
                     }
                 }
@@ -108,7 +136,12 @@ fun AdminStatsScreen(
 
                 // Results List
                 items(results) { result ->
-                    StatResultItem(result, dimension, onClick = { if (dimension == "PRODUCT") onNavigateToProduct(result.id) })
+                    StatResultItem(result, dimension, onClick = { 
+                        if (dimension == "PRODUCT" || dimension == "PRODUCT_UNIQUE") {
+                            val productId = if (dimension == "PRODUCT_UNIQUE") result.id.substringBeforeLast("_") else result.id
+                            onNavigateToProduct(productId) 
+                        }
+                    })
                 }
             }
         }
@@ -168,7 +201,7 @@ fun StatResultItem(result: StatResult, dimension: String, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (dimension == "PRODUCT" && result.imageUrl != null) {
+            if ((dimension == "PRODUCT" || dimension == "PRODUCT_UNIQUE") && result.imageUrl != null) {
                 AsyncImage(
                     model = result.imageUrl,
                     contentDescription = null,
@@ -185,7 +218,7 @@ fun StatResultItem(result: StatResult, dimension: String, onClick: () -> Unit) {
             
             Text(text = "S/ ${String.format(Locale.US, "%.2f", result.revenue)}", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
             
-            if (dimension == "PRODUCT") {
+            if (dimension == "PRODUCT" || dimension == "PRODUCT_UNIQUE") {
                 Icon(Icons.Default.ChevronRight, null, tint = Color.LightGray)
             }
         }

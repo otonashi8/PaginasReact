@@ -227,7 +227,8 @@ fun AbandonedCartDetailDialog(cart: AbandonedCart, onDismiss: () -> Unit) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(item.productName, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, maxLines = 1)
-                            Text("Talla: ${item.size} | Cant: ${item.quantity}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            val sizeLabel = if (item.size.isEmpty()) "Única" else item.size
+                            Text("Talla: $sizeLabel | Cant: ${item.quantity}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                         }
                         Text("S/ ${String.format(Locale.US, "%.2f", item.finalPrice * item.quantity)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                     }
@@ -241,7 +242,8 @@ fun AbandonedCartDetailDialog(cart: AbandonedCart, onDismiss: () -> Unit) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(item.productName, style = MaterialTheme.typography.bodySmall, maxLines = 1)
-                                Text("Talla: ${item.size} | Cant: ${item.quantity}", style = MaterialTheme.typography.labelSmall)
+                                val sizeLabel = if (item.size.isEmpty()) "Única" else item.size
+                                Text("Talla: $sizeLabel | Cant: ${item.quantity}", style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }

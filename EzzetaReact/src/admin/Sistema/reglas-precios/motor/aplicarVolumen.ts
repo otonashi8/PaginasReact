@@ -19,7 +19,7 @@ export const aplicarVolumen = (
     return undefined;
   }
 
-  for (const regla of obtenerReglasVigentes(reglas).filter((reglaActual) => reglaActual.tipo === 'volumen')) {
+  for (const regla of obtenerReglasVigentes(reglas).filter((reglaActual) => (reglaActual.tipo as string) === 'volumen')) {
     const configuracion = regla.configuracion ?? {};
     const cantidadMinima = Number(configuracion.cantidadMinima ?? 0);
 

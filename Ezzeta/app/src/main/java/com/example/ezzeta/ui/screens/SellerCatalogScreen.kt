@@ -27,6 +27,7 @@ fun SellerCatalogScreen(
 ) {
     val context = LocalContext.current
     val allProducts by viewModel.allProducts.collectAsState()
+    val activityMap by viewModel.productActivityMap.collectAsState()
     val products = remember(sellerId, allProducts) {
         if (sellerId != null) viewModel.getProductsBySeller(sellerId) else emptyList()
     }
@@ -56,11 +57,20 @@ fun SellerCatalogScreen(
                 contentPadding = PaddingValues(8.dp)
             ) {
                 items(products, key = { it.id }) { product ->
+                    val priceRules by viewModel.priceRules.collectAsState()
+                    val couponInput by viewModel.couponInput.collectAsState()
+                    val priceInfo = remember(product, priceRules, couponInput) {
+                        viewModel.getProductPriceInfo(product)
+                    }
+                    val activity = activityMap[product.id]
                     ProductCard(
                         product = product,
                         onFavoriteClick = { viewModel.toggleProductFavorite(context, product.id) },
                         onClick = { onProductClick(product.id) },
-                        onQuickViewClick = { viewModel.onQuickViewProduct(context, product) }
+                        onQuickViewClick = { viewModel.onQuickViewProduct(context, product) },
+                        rankingText = activity?.rankingText,
+                        wishlistCount = activity?.wishlistCount ?: 0,
+                        priceInfo = priceInfo
                     )
                 }
             }

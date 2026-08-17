@@ -61,8 +61,6 @@ fun CheckoutScreen(
     val userPlan by viewModel.userPlan.collectAsState()
     val shippingCost by viewModel.shippingCost.collectAsState()
     val appliedRules by viewModel.appliedRules.collectAsState()
-    val totalRulesDiscount by viewModel.totalRulesDiscount.collectAsState()
-    val couponInput by viewModel.couponInput.collectAsState()
     val total by viewModel.total.collectAsState()
     
     var paymentMethod by remember { mutableStateOf("card") } // "tarjeta" o"yape"
@@ -505,22 +503,6 @@ fun CheckoutScreen(
                 Text("Procesado por Mercado Pago", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = couponInput,
-                    onValueChange = { viewModel.onCouponInputChanged(it) },
-                    label = { Text("Código de cupón") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    trailingIcon = {
-                        if (couponInput.isNotEmpty() && totalRulesDiscount > 0) {
-                            Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF2E7D32))
-                        }
-                    }
-                )
-            }
-            
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 "Sus datos personales se utilizarán para procesar su pedido, respaldar su experiencia en este sitio web y para otros fines descritos en nuestra política de privacidad.",
@@ -550,23 +532,51 @@ fun CheckoutScreen(
                         Text("Subtotal")
                         Text("S/ ${String.format(java.util.Locale.US, "%.2f", subtotal)}")
                     }
-                    if (planDiscount > 0.0) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Descuento Plan ${userPlan?.name ?: ""}", color = Color(0xFF1976D2))
-                            Text("- S/ ${String.format(java.util.Locale.US, "%.2f", planDiscount)}", color = Color(0xFF1976D2))
-                        }
-                    }
-                    
-                    appliedRules.forEach { rule ->
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(rule.ruleName, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                            Text("- S/ ${String.format(java.util.Locale.US, "%.2f", rule.discountAmount)}", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                        }
-                    }
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Envío")
-                        Text(if (shippingCost == 0.0) "GRATIS" else "S/ ${String.format(java.util.Locale.US, "%.2f", shippingCost)}")
+                        Text(
+                            text = if (shippingCost == 0.0) "GRATIS" else "S/ ${String.format(java.util.Locale.US, "%.2f", shippingCost)}",
+                            color = if (shippingCost == 0.0) Color(0xFF2E7D32) else Color.Unspecified,
+                            fontWeight = if (shippingCost == 0.0) FontWeight.Bold else FontWeight.Normal
+                        )
                     }
+
+                    // Sección de Cupón en Checkout (Solo visualización - Fase 22 corregido)
+                    val coupons = appliedRules.filter { it.isCoupon }
+                    val autoDiscounts = appliedRules.filter { !it.isCoupon }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (coupons.isEmpty()) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Promociones", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text("No código", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                    } else {
+                        coupons.forEach { rule ->
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Cupón: ${rule.ruleName} Aplicado", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                Text("- S/ ${String.format(java.util.Locale.US, "%.2f", rule.discountAmount)}", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    if (autoDiscounts.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        autoDiscounts.forEach { rule ->
+                            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(rule.ruleName, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                Text("- S/ ${String.format(java.util.Locale.US, "%.2f", rule.discountAmount)}", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    if (planDiscount > 0.0) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Descuento Plan ${userPlan?.name ?: ""}", color = Color(0xFF1976D2), fontWeight = FontWeight.Bold)
+                            Text("- S/ ${String.format(java.util.Locale.US, "%.2f", planDiscount)}", color = Color(0xFF1976D2), fontWeight = FontWeight.Bold)
+                        }
+                    }
+
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Total", fontWeight = FontWeight.Bold)

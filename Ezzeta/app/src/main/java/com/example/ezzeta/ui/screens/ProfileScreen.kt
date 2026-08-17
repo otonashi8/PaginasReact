@@ -53,6 +53,7 @@ fun ProfileScreen(
     onHistoryClick: () -> Unit,
     onOrdersClick: () -> Unit,
     onFollowingClick: () -> Unit,
+    onMySizesClick: () -> Unit,
     onWishlistClick: () -> Unit,
     onCustomerServiceClick: () -> Unit,
     onSingleProductClick: () -> Unit,
@@ -366,6 +367,7 @@ fun ProfileScreen(
             }
             
             item { ProfileMenuItem(icon = Icons.Default.ShoppingBag, title = "Mis pedidos", onClick = onOrdersClick) }
+            item { ProfileMenuItem(icon = Icons.Default.Straighten, title = "Mis tallas", onClick = onMySizesClick) }
             if (myProducts.isNotEmpty()) {
                 item { ProfileMenuItem(icon = Icons.Default.Inventory, title = "Mis productos", onClick = onMyProductsClick) }
                 item { ProfileMenuItem(icon = Icons.Default.Storefront, title = "Mis ventas", onClick = onMySalesClick) }

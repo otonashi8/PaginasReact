@@ -137,13 +137,11 @@ fun OrdersHistoryScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                                             fontWeight = FontWeight.Medium,
                                             style = MaterialTheme.typography.bodyMedium
                                         )
-                                        if (item.size.isNotEmpty()) {
-                                            Text(
-                                                text = "Talla: ${item.size}",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = Color.Gray
-                                            )
-                                        }
+                                        Text(
+                                            text = "Talla: ${if (item.size.isEmpty()) "Única" else item.size}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.Gray
+                                        )
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween

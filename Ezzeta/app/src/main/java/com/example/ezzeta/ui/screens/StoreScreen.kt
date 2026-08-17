@@ -58,6 +58,7 @@ fun StoreDetailScreen(
     ) { padding ->
         val context = LocalContext.current
         val allFollows by viewModel.userFollows.collectAsState()
+        val activityMap by viewModel.productActivityMap.collectAsState()
         
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -127,11 +128,20 @@ fun StoreDetailScreen(
                 items = filteredProducts,
                 key = { it.id }
             ) { product ->
+                val priceRules by viewModel.priceRules.collectAsState()
+                val couponInput by viewModel.couponInput.collectAsState()
+                val priceInfo = remember(product, priceRules, couponInput) {
+                    viewModel.getProductPriceInfo(product)
+                }
+                val activity = activityMap[product.id]
                 ProductCard(
                     product = product,
                     onFavoriteClick = { viewModel.toggleProductFavorite(context, product.id) },
                     onClick = { onProductClick(product.id) },
-                    onQuickViewClick = { onQuickViewClick(product) }
+                    onQuickViewClick = { onQuickViewClick(product) },
+                    rankingText = activity?.rankingText,
+                    wishlistCount = activity?.wishlistCount ?: 0,
+                    priceInfo = priceInfo
                 )
             }
         }

@@ -60,8 +60,11 @@ class MainViewModel : ViewModel() {
     private val _statsDateFilter = MutableStateFlow("MONTH") // "TODAY", "WEEK", "MONTH", "CUSTOM"
     val statsDateFilter = _statsDateFilter.asStateFlow()
 
-    private val _statsDimension = MutableStateFlow("PRODUCT") // "PRODUCT", "SIZE", "CATEGORY", "STORE", "SELLER"
+    private val _statsDimension = MutableStateFlow("PRODUCT") // "PRODUCT", "PRODUCT_UNIQUE", "SIZE", "CATEGORY", "STORE", "SELLER"
     val statsDimension = _statsDimension.asStateFlow()
+
+    private val _statsSearchQuery = MutableStateFlow("")
+    val statsSearchQuery = _statsSearchQuery.asStateFlow()
 
     private val _ubigeoData = MutableStateFlow<Map<String, Map<String, Map<String, UbigeoDistrict>>>>(emptyMap())
     val ubigeoData: StateFlow<Map<String, Map<String, Map<String, UbigeoDistrict>>>> = _ubigeoData.asStateFlow()
@@ -268,9 +271,8 @@ class MainViewModel : ViewModel() {
                     }
                 }
             }
-            
-            if (ruleDiscount > 0) {
-                applied.add(AppliedPriceRule(rule.id, rule.name, ruleDiscount))
+                    if (ruleDiscount > 0) {
+                applied.add(AppliedPriceRule(rule.id, rule.name, ruleDiscount, isCoupon = rule.requiresCoupon))
                 // Si es un descuento global, reduce el subtotal para la siguiente regla
                 if (rule.type == PriceRuleType.ORDER_TOTAL) {
                     storeSubtotal -= ruleDiscount
@@ -284,8 +286,10 @@ class MainViewModel : ViewModel() {
         rules.sumOf { it.discountAmount }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
-    val planDiscount: StateFlow<Double> = combine(subtotal, userPlan, totalRulesDiscount) { sub, plan, rulesDisc ->
-        val subAfterRules = (sub - rulesDisc).coerceAtLeast(0.0)
+    val planDiscount: StateFlow<Double> = combine(_cartItems, userPlan, totalRulesDiscount) { items, plan, rulesDisc ->
+        val selectedStoreItems = items.filter { it.isSelected && !it.product.isClientProduct }
+        val storeSubtotal = selectedStoreItems.sumOf { it.effectivePrice * it.quantity }
+        val subAfterRules = (storeSubtotal - rulesDisc).coerceAtLeast(0.0)
         if (plan != null) (subAfterRules * plan.discountPercent / 100.0) else 0.0
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
@@ -327,7 +331,7 @@ class MainViewModel : ViewModel() {
     }
 
     val recentProducts: StateFlow<List<Product>> = allProducts.map { products ->
-        products.filter { it.isVisible }
+        products.filter { it.isVisible && !it.isClientProduct }
             .sortedByDescending { it.createdAt }
             .take(10)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -337,7 +341,7 @@ class MainViewModel : ViewModel() {
             .groupBy { it.product.id }
             .mapValues { entry -> entry.value.sumOf { it.quantity } }
 
-        val visibleProducts = products.filter { it.isVisible }
+        val visibleProducts = products.filter { it.isVisible && !it.isClientProduct }
         
         visibleProducts.sortedWith(
             compareByDescending<Product> { salesMap[it.id] ?: 0 }
@@ -350,6 +354,121 @@ class MainViewModel : ViewModel() {
             product.id to "#${index + 1} en ventas"
         }.toMap()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    // FASE 28: Popularidad y Actividad
+    data class ProductActivity(
+        val rankingText: String? = null,
+        val wishlistCount: Int = 0
+    )
+
+    private val _wishlistCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    
+    val productActivityMap: StateFlow<Map<String, ProductActivity>> = combine(
+        allProducts,
+        _orders,
+        categories,
+        _wishlistCounts
+    ) { products, orders, cats, wishCounts ->
+        val activityMap = mutableMapOf<String, ProductActivity>()
+        
+        // 1. Calcular Ventas por Categoría (Solo EZZETA)
+        val salesMap = orders.flatMap { it.items }
+            .groupBy { it.product.id }
+            .mapValues { entry -> entry.value.sumOf { it.quantity } }
+
+        val ezzetaProducts = products.filter { !it.isClientProduct }
+        
+        cats.forEach { cat ->
+            val catProducts = ezzetaProducts.filter { it.categoryId == cat.id }
+            val ranked = catProducts.map { p ->
+                val sales = salesMap[p.id] ?: 0
+                Triple(p.id, sales, p.name)
+            }.filter { it.second > 0 } // Solo rankeamos si tiene ventas
+            .sortedWith(compareByDescending<Triple<String, Int, String>> { it.second }.thenBy { it.third }.thenBy { it.first })
+            
+            ranked.forEachIndexed { index, (id, _, _) ->
+                val current = activityMap[id] ?: ProductActivity()
+                activityMap[id] = current.copy(rankingText = "#${index + 1} en ${cat.name}")
+            }
+        }
+        
+        // 2. Integrar Wishlist (Global)
+        wishCounts.forEach { (id, count) ->
+            val current = activityMap[id] ?: ProductActivity()
+            activityMap[id] = current.copy(wishlistCount = count)
+        }
+        
+        activityMap
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    fun refreshWishlistCounts(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val counts = PersistenceManager.getAllWishlistCounts(context)
+            _wishlistCounts.value = counts
+        }
+    }
+
+    // FASE 27: Información de Precios Dinámica
+    data class ProductPriceInfo(
+        val originalPrice: Double,
+        val finalPrice: Double,
+        val hasCombo: Boolean = false,
+        val discountPercent: Int = 0
+    )
+
+    fun getProductPriceInfo(product: Product, size: String = ""): ProductPriceInfo {
+        val originalPrice = product.getPriceForSize(size)
+        if (product.isClientProduct) return ProductPriceInfo(originalPrice, originalPrice)
+
+        val rules = priceRules.value
+        val coupon = _couponInput.value
+
+        val activeRules = rules.filter {
+            it.isActive && (!it.requiresCoupon || (it.couponCode != null && it.couponCode.equals(coupon, ignoreCase = true)))
+        }.sortedBy { it.priority }
+
+        var finalPrice = originalPrice
+        var hasCombo = false
+        var discountApplied = false
+
+        activeRules.forEach { rule ->
+            when (rule.type) {
+                PriceRuleType.PRODUCT -> {
+                    if (!discountApplied && rule.targetIds.contains(product.id)) {
+                        val discount = if (rule.isPercentage) originalPrice * (rule.discountValue / 100.0) else rule.discountValue
+                        finalPrice = (originalPrice - discount).coerceAtLeast(0.0)
+                        discountApplied = true
+                    }
+                }
+                PriceRuleType.CATEGORY -> {
+                    if (!discountApplied && rule.targetIds.contains(product.categoryId)) {
+                        val discount = if (rule.isPercentage) originalPrice * (rule.discountValue / 100.0) else rule.discountValue
+                        finalPrice = (originalPrice - discount).coerceAtLeast(0.0)
+                        discountApplied = true
+                    }
+                }
+                PriceRuleType.COMBO -> {
+                    val isPart = rule.comboRequirements.any {
+                        (it.productId != null && it.productId == product.id) ||
+                        (it.categoryId != null && it.categoryId == product.categoryId)
+                    }
+                    if (isPart) hasCombo = true
+                }
+                else -> {}
+            }
+        }
+
+        val discountPercent = if (originalPrice > 0) {
+            (((originalPrice - finalPrice) / originalPrice) * 100).toInt()
+        } else 0
+
+        return ProductPriceInfo(
+            originalPrice = originalPrice,
+            finalPrice = finalPrice,
+            hasCombo = hasCombo,
+            discountPercent = discountPercent
+        )
+    }
 
     // Estadísticas para Admin
     val ezzetaProductsCount: StateFlow<Int> = allProducts.map { products ->
@@ -372,9 +491,37 @@ class MainViewModel : ViewModel() {
     
     val allClientCustomSizes: StateFlow<List<SizeOption>> = sizeRepository.allUserCustomSizes
     
+    // Gestión de Clientes (Fase 19)
+    val registeredUsers: StateFlow<List<User>> = UserRepository.allUsers
+
     val userCustomSizes: StateFlow<List<SizeOption>> = combine(allClientCustomSizes, currentUser) { all, user ->
         all.filter { it.createdByUserId == user?.uuid }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _clientSizesSearchQuery = MutableStateFlow("")
+    val clientSizesSearchQuery = _clientSizesSearchQuery.asStateFlow()
+
+    val adminFilteredClientSizes: StateFlow<List<Pair<SizeOption, User?>>> = combine(
+        allClientCustomSizes, 
+        registeredUsers, 
+        clientSizesSearchQuery
+    ) { sizes, users, query ->
+        sizes.map { size ->
+            val owner = users.find { it.uuid == size.createdByUserId }
+            size to owner
+        }.filter { (size, owner) ->
+            if (query.isBlank()) true
+            else {
+                size.name.contains(query, ignoreCase = true) ||
+                (owner?.alias?.contains(query, ignoreCase = true) ?: false) ||
+                (owner?.email?.contains(query, ignoreCase = true) ?: false)
+            }
+        }.sortedByDescending { it.first.createdAt }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setClientSizeSearchQuery(query: String) {
+        _clientSizesSearchQuery.value = query
+    }
 
     val categorySearchResults: StateFlow<List<Product>> = combine(
         productRepository.getProducts(),
@@ -390,8 +537,28 @@ class MainViewModel : ViewModel() {
 
     val marketplaceRequests: StateFlow<List<MarketplaceRequest>> = productRepository.getRequests()
 
-    // Gestión de Clientes (Fase 19)
-    val registeredUsers: StateFlow<List<User>> = UserRepository.allUsers
+
+    val adminUsers: StateFlow<List<User>> = registeredUsers.map { users ->
+        users.filter { it.isAdminUser }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val adminRoles: StateFlow<List<AdminRole>> = AdminRoleRepository.roles
+
+    fun hasPermission(module: String, action: String): Boolean {
+        val user = currentUser.value ?: return false
+        if (!user.isAdminUser) return false
+        
+        val role = adminRoles.value.find { it.id == user.roleId } ?: return false
+        val permission = role.permissions[module] ?: return false
+        
+        return when (action.uppercase()) {
+            "VIEW" -> permission.view
+            "CREATE" -> permission.create
+            "EDIT" -> permission.edit
+            "DELETE" -> permission.delete
+            else -> false
+        }
+    }
     
     val allCustomers: StateFlow<List<User>> = combine(registeredUsers, _orders) { registered, orders ->
         val registeredIds = registered.map { it.uuid }.toSet()
@@ -417,27 +584,65 @@ class MainViewModel : ViewModel() {
         registered + guests
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun adminCreateUser(context: Context, name: String, email: String, phone: String?, isAdmin: Boolean = false) {
+    fun adminCreateUser(context: Context, name: String, email: String, phone: String?, roleId: String? = null, isAdminUser: Boolean = false) {
+        if (!hasPermission("Sistema", "CREATE")) {
+            Toast.makeText(context, "No tienes permiso para crear usuarios", Toast.LENGTH_SHORT).show()
+            return
+        }
         val newUser = User(
             uuid = java.util.UUID.randomUUID().toString(),
             alias = name,
             email = email,
             phone = phone,
             isGuest = false,
-            isAdmin = isAdmin
+            isAdmin = isAdminUser,
+            isAdminUser = isAdminUser,
+            roleId = roleId,
+            isActive = true
         )
         UserRepository.adminAddUser(context.applicationContext, newUser)
     }
 
     fun adminUpdateUser(context: Context, user: User) {
+        if (!hasPermission("Sistema", "EDIT")) {
+            Toast.makeText(context, "No tienes permiso para editar usuarios", Toast.LENGTH_SHORT).show()
+            return
+        }
+        // No permitir quitar isAdminUser al Super Admin principal
+        if (user.email == "admin" && !user.isAdminUser) return
+
         UserRepository.updateUser(context.applicationContext, user)
     }
 
     fun adminToggleUserStatus(context: Context, userId: String) {
+        if (!hasPermission("Sistema", "EDIT")) {
+            Toast.makeText(context, "No tienes permiso para modificar usuarios", Toast.LENGTH_SHORT).show()
+            return
+        }
         val user = registeredUsers.value.find { it.uuid == userId }
         if (user != null) {
+            // No permitir desactivar al super admin principal
+            if (user.email == "admin") return
+            
             UserRepository.updateUser(context.applicationContext, user.copy(isActive = !user.isActive))
         }
+    }
+
+    // Gestión de Roles
+    fun saveAdminRole(context: Context, role: AdminRole) {
+        if (!hasPermission("Sistema", "EDIT")) {
+            Toast.makeText(context, "No tienes permiso para gestionar roles", Toast.LENGTH_SHORT).show()
+            return
+        }
+        AdminRoleRepository.saveRole(context.applicationContext, role)
+    }
+
+    fun deleteAdminRole(context: Context, roleId: String) {
+        if (!hasPermission("Sistema", "DELETE")) {
+            Toast.makeText(context, "No tienes permiso para eliminar roles", Toast.LENGTH_SHORT).show()
+            return
+        }
+        AdminRoleRepository.deleteRole(context.applicationContext, roleId)
     }
 
     fun getCustomerOrders(userIdOrEmail: String): List<Order> {
@@ -534,9 +739,12 @@ class MainViewModel : ViewModel() {
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    val statsResults: StateFlow<List<StatResult>> = combine(filteredOrderItems, statsDimension) { items, dimension ->
+    val statsResults: StateFlow<List<StatResult>> = combine(
+        filteredOrderItems, statsDimension, statsSearchQuery
+    ) { items, dimension, query ->
         val grouped = when (dimension) {
             "PRODUCT" -> items.groupBy { it.second.product.id }
+            "PRODUCT_UNIQUE" -> items.groupBy { "${it.second.product.id}_${it.second.size}" }
             "SIZE" -> items.groupBy { it.second.size }
             "CATEGORY" -> items.groupBy { it.second.product.categoryId }
             "STORE" -> items.groupBy { it.second.product.storeId }
@@ -548,7 +756,11 @@ class MainViewModel : ViewModel() {
             val firstItem = group.first().second
             val name = when (dimension) {
                 "PRODUCT" -> firstItem.product.name
-                "SIZE" -> key
+                "PRODUCT_UNIQUE" -> {
+                    val sizeLabel = if (firstItem.size.isBlank()) "Única" else firstItem.size
+                    "${firstItem.product.name} ($sizeLabel)"
+                }
+                "SIZE" -> if (key.isBlank()) "Única" else key
                 "CATEGORY" -> categories.value.find { it.id == key }?.name ?: key
                 "STORE" -> getStoreById(key)?.name ?: key
                 "SELLER" -> group.first().second.product.sellerName ?: key
@@ -561,9 +773,18 @@ class MainViewModel : ViewModel() {
                 units = group.sumOf { it.second.quantity },
                 revenue = group.sumOf { it.second.effectivePrice * it.second.quantity },
                 ordersCount = group.map { it.first.id }.distinct().size,
-                imageUrl = if (dimension == "PRODUCT") firstItem.product.imageUrl else null
+                imageUrl = if (dimension == "PRODUCT" || dimension == "PRODUCT_UNIQUE") firstItem.product.imageUrl else null
             )
-        }.sortedByDescending { it.revenue }
+        }
+        .filter { result ->
+            if (dimension == "PRODUCT_UNIQUE" && query.isNotBlank()) {
+                // El buscador busca por nombre real del producto, no por el nombre compuesto
+                val productId = result.id.substringBeforeLast("_")
+                val productName = items.find { it.second.product.id == productId }?.second?.product?.name ?: ""
+                productName.contains(query, ignoreCase = true)
+            } else true
+        }
+        .sortedWith(compareByDescending<StatResult> { it.units }.thenByDescending { it.revenue }.thenBy { it.name })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Rankings
@@ -642,12 +863,14 @@ class MainViewModel : ViewModel() {
             try {
                 withContext(Dispatchers.IO) {
                     UserRepository.init(appContext)
+                    AdminRoleRepository.init(appContext)
                     sizeRepository.init(appContext)
                     followRepository.init(appContext)
                     shippingRepository.init(appContext)
                     priceRuleRepository.init(appContext)
                     abandonedCartRepository.init(appContext)
                     loadUserData(appContext)
+                    refreshWishlistCounts(appContext)
                 }
                 fetchUbigeoData()
             } catch (e: Exception) {
@@ -715,15 +938,38 @@ class MainViewModel : ViewModel() {
 
     fun loginUser(context: Context, email: String, isAdmin: Boolean = false) {
         val appContext = context.applicationContext
-        // Simulación: usamos la parte del email antes del @ como nombre
+        
+        // Buscar si el usuario ya existe para no perder sus datos (especialmente roles)
+        val existingUser = registeredUsers.value.find { it.email == email }
+        
         val name = if (isAdmin) "Admin" else email.substringBefore("@").replaceFirstChar { it.uppercase() }
-        UserRepository.setUser(appContext, alias = name, email = email, isGuest = false, isAdmin = isAdmin)
+        
+        UserRepository.setUser(
+            appContext, 
+            alias = name, 
+            email = email, 
+            isGuest = false, 
+            isAdmin = isAdmin || (existingUser?.isAdminUser == true)
+        )
+        
+        // Si el usuario es administrativo, actualizar lastAccess y asegurar flag
+        val finalUser = UserRepository.allUsers.value.find { it.email == email }
+        if (finalUser != null && (isAdmin || finalUser.isAdminUser)) {
+            if (!finalUser.isAdminUser) {
+                // Si entró como admin pero no tenía el flag (ej: primer login de admin/admin123)
+                UserRepository.updateUser(appContext, finalUser.copy(isAdminUser = true, roleId = finalUser.roleId ?: "super_admin"))
+            }
+            UserRepository.updateLastAccess(appContext, finalUser.uuid)
+        }
+        
+        refreshWishlistCounts(appContext)
         viewModelScope.launch { loadUserData(appContext) }
     }
 
     fun logout(context: Context) {
         val appContext = context.applicationContext
         UserRepository.logout(appContext)
+        refreshWishlistCounts(appContext)
         viewModelScope.launch { loadUserData(appContext) }
     }
 
@@ -763,6 +1009,7 @@ class MainViewModel : ViewModel() {
 
     fun toggleProductFavorite(context: Context, productId: String) {
         productRepository.toggleFavorite(context, productId)
+        refreshWishlistCounts(context)
     }
 
     fun toggleFollowStore(context: android.content.Context, storeId: String) {
@@ -1279,18 +1526,34 @@ class MainViewModel : ViewModel() {
     fun toggleProductVisibility(context: Context, productId: String) {
         val product = productRepository.getProductById(productId)
         if (product != null) {
+            val module = if (product.isClientProduct) "Productos Clientes" else "Productos Tienda"
+            if (!hasPermission(module, "EDIT")) {
+                Toast.makeText(context, "No tienes permiso para editar este producto", Toast.LENGTH_SHORT).show()
+                return
+            }
             val updated = product.copy(isVisible = !product.isVisible)
             productRepository.updateProduct(context.applicationContext, updated)
         }
     }
 
     fun addProduct(context: Context, product: Product) {
+        val module = if (product.isClientProduct) "Productos Clientes" else "Productos Tienda"
+        if (!hasPermission(module, "CREATE")) {
+            Toast.makeText(context, "No tienes permiso para crear productos", Toast.LENGTH_SHORT).show()
+            return
+        }
         productRepository.addProduct(context.applicationContext, product)
     }
 
     fun updateProduct(context: Context, product: Product) {
         val user = currentUser.value
-        if (product.isClientProduct && product.sellerId != user?.uuid) {
+        val module = if (product.isClientProduct) "Productos Clientes" else "Productos Tienda"
+        
+        // El dueño siempre puede editar sus productos de cliente
+        val isOwner = product.isClientProduct && product.sellerId == user?.uuid
+        val hasAdminEdit = hasPermission(module, "EDIT")
+        
+        if (!isOwner && !hasAdminEdit) {
             Toast.makeText(context, "No tienes permiso para editar este producto", Toast.LENGTH_SHORT).show()
             return
         }
@@ -1406,8 +1669,25 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun deleteMarketplaceRequest(context: Context, requestId: String) {
+        if (!hasPermission("Marketplace", "DELETE")) {
+            Toast.makeText(context, "No tienes permiso para eliminar solicitudes", Toast.LENGTH_SHORT).show()
+            return
+        }
+        productRepository.deleteRequest(context.applicationContext, requestId)
+        Toast.makeText(context, "Solicitud eliminada", Toast.LENGTH_SHORT).show()
+    }
+
     fun deleteProduct(context: Context, productId: String) {
-        productRepository.deleteProduct(context.applicationContext, productId)
+        val product = productRepository.getProductById(productId)
+        if (product != null) {
+            val module = if (product.isClientProduct) "Productos Clientes" else "Productos Tienda"
+            if (!hasPermission(module, "DELETE")) {
+                Toast.makeText(context, "No tienes permiso para eliminar productos", Toast.LENGTH_SHORT).show()
+                return
+            }
+            productRepository.deleteProduct(context.applicationContext, productId)
+        }
     }
 
     fun addCategory(context: Context, name: String, subCategories: List<String>, visibility: String = "STORE") {
@@ -1480,7 +1760,12 @@ class MainViewModel : ViewModel() {
 
     fun addUserCustomSize(context: Context, name: String) {
         val user = UserRepository.currentUser.value
-        sizeRepository.addUserCustomSize(context, name, user?.uuid, user?.alias)
+        val existing = allClientCustomSizes.value.find { 
+            it.name.equals(name, ignoreCase = true) && it.createdByUserId == user?.uuid 
+        }
+        if (existing == null) {
+            sizeRepository.addUserCustomSize(context, name, user?.uuid, user?.alias)
+        }
     }
 
     fun deleteUserCustomSize(context: Context, sizeId: String) {
@@ -1526,7 +1811,11 @@ class MainViewModel : ViewModel() {
 
     fun setStatsMode(mode: String) { _statsMode.value = mode }
     fun setStatsDateFilter(filter: String) { _statsDateFilter.value = filter }
-    fun setStatsDimension(dim: String) { _statsDimension.value = dim }
+    fun setStatsDimension(dim: String) { 
+        _statsDimension.value = dim 
+        if (dim != "PRODUCT_UNIQUE") _statsSearchQuery.value = ""
+    }
+    fun setStatsSearchQuery(query: String) { _statsSearchQuery.value = query }
 
     private fun syncAbandonedCart(context: Context) {
         abandonedCartRepository.syncCartSnapshot(context, _cartItems.value, currentUser.value)
@@ -1535,11 +1824,6 @@ class MainViewModel : ViewModel() {
 
     private val _couponValidationMessage = MutableStateFlow<String?>(null)
     val couponValidationMessage = _couponValidationMessage.asStateFlow()
-
-    fun onCouponInputChanged(input: String) {
-        _couponInput.value = input.uppercase()
-        _couponValidationMessage.value = null
-    }
 
     fun applyCoupon(code: String) {
         if (code.isBlank()) {
@@ -1555,6 +1839,7 @@ class MainViewModel : ViewModel() {
             _couponInput.value = code.uppercase()
             _couponValidationMessage.value = "Cupón aplicado: ${rule.name}"
         } else {
+            _couponInput.value = ""
             _couponValidationMessage.value = "Cupón inválido o inactivo"
         }
     }

@@ -1,10 +1,7 @@
 import type { ReglaPrecio } from "../TiposReglas";
 import { ReglaProducto } from "./tipos/ReglaProducto";
-import { ReglaBOGOGratis } from "./tipos/ReglaBOGOGratis";
-import { ReglaBOGODescuento } from "./tipos/ReglaBOGODescuento";
-import { ReglaVolumen } from "./tipos/ReglaVolumen";
-import { ReglaPerfil } from "./tipos/ReglaPerfil";
 import { ReglaCarrito } from "./tipos/ReglaCarrito";
+import { ReglasCombo } from "./tipos/ReglasCombo";
 
 type Props = {
     regla: ReglaPrecio;
@@ -29,46 +26,19 @@ export const RenderizadorTipoRegla = ({
                 />
             );
 
-        case "bogo_gratis":
-
-            return (
-                <ReglaBOGOGratis
-                    regla={regla}
-                    establecerRegla={establecerRegla}
-                />
-            );
-
-        case "bogo_descuento":
-
-            return (
-                <ReglaBOGODescuento
-                    regla={regla}
-                    establecerRegla={establecerRegla}
-                />
-            );
-
-        case "volumen":
-
-            return (
-                <ReglaVolumen
-                    regla={regla}
-                    establecerRegla={establecerRegla}
-                />
-            );
-
-        case "perfil":
-
-            return (
-                <ReglaPerfil
-                    regla={regla}
-                    establecerRegla={establecerRegla}
-                />
-            );
-
         case "carrito":
 
             return (
                 <ReglaCarrito
+                    regla={regla}
+                    establecerRegla={establecerRegla}
+                />
+            );
+
+        case "combo":
+
+            return (
+                <ReglasCombo
                     regla={regla}
                     establecerRegla={establecerRegla}
                 />

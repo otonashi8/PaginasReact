@@ -9,6 +9,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -31,6 +32,34 @@ import com.example.ezzeta.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
 @Composable
+fun CircularSelector(
+    isSelected: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .size(24.dp)
+            .clickable { onCheckedChange(!isSelected) },
+        shape = CircleShape,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 2.dp,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f)
+        ),
+        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+    ) {
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
+    }
+}
+
+@Composable
 fun CartScreen(
     viewModel: MainViewModel, 
     onNavigateToCategories: () -> Unit,
@@ -50,6 +79,7 @@ fun CartScreen(
     val totalRulesDiscount by viewModel.totalRulesDiscount.collectAsState()
     val couponInput by viewModel.couponInput.collectAsState()
 
+    val activityMap by viewModel.productActivityMap.collectAsState()
     val total by viewModel.total.collectAsState()
     val selectedCount by viewModel.selectedCartItemCount.collectAsState()
     val context = LocalContext.current
@@ -113,44 +143,6 @@ fun CartScreen(
                             )
                         }
 
-                        if (planDiscount > 0.0) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    "Descuento Plan ${userPlan?.name ?: ""}", 
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(0xFF1976D2),
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    "- S/ ${String.format(Locale.US, "%.2f", planDiscount)}",
-                                    color = Color(0xFF1976D2),
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        appliedRules.forEach { rule ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    rule.ruleName, 
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(0xFF2E7D32),
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    "- S/ ${String.format(Locale.US, "%.2f", rule.discountAmount)}",
-                                    color = Color(0xFF2E7D32),
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Subtotal", style = MaterialTheme.typography.bodyMedium)
@@ -165,37 +157,124 @@ fun CartScreen(
                             )
                         }
 
-                        // Sección de Cupón (Fase 20)
+                        // Sección de Cupón (Fase 22 - Corregido flujo de entrada)
                         val couponValidationMessage by viewModel.couponValidationMessage.collectAsState()
-                        var couponText by remember { mutableStateOf(couponInput) }
-                        
+                        var couponText by remember { mutableStateOf("") }
+
+                        // Si cambia el mensaje de error (inválido), limpiamos el campo
+                        LaunchedEffect(couponValidationMessage) {
+                            if (couponValidationMessage?.contains("inválido") == true) {
+                                couponText = ""
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(12.dp))
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 OutlinedTextField(
-                                    value = couponText,
-                                    onValueChange = { couponText = it.uppercase() },
-                                    label = { Text("¿Tienes un cupón?") },
+                                    value = if (couponInput.isEmpty()) couponText else couponInput,
+                                    onValueChange = {
+                                        if (couponInput.isEmpty()) {
+                                            couponText = it.uppercase()
+                                        }
+                                    },
+                                    label = { Text("Código de cupón") },
                                     modifier = Modifier.weight(1f),
                                     singleLine = true,
-                                    enabled = couponInput.isEmpty()
+                                    enabled = couponInput.isEmpty(),
+                                    shape = RoundedCornerShape(8.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 if (couponInput.isEmpty()) {
-                                    Button(onClick = { viewModel.applyCoupon(couponText) }, enabled = couponText.isNotBlank()) {
+                                    Button(
+                                        onClick = { viewModel.applyCoupon(couponText) },
+                                        enabled = couponText.isNotBlank(),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
                                         Text("Aplicar")
                                     }
                                 } else {
-                                    TextButton(onClick = { 
+                                    TextButton(onClick = {
                                         viewModel.removeCoupon()
                                         couponText = ""
                                     }) {
-                                        Text("Quitar", color = Color.Red)
+                                        Text("Quitar", color = Color.Red, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
                             couponValidationMessage?.let {
-                                Text(text = it, style = MaterialTheme.typography.labelSmall, color = if (it.contains("aplicado")) Color(0xFF2E7D32) else Color.Red, modifier = Modifier.padding(top = 4.dp))
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (it.contains("aplicado")) Color(0xFF2E7D32) else Color.Red,
+                                    modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                                )
+                            }
+                        }
+
+                        val coupons = appliedRules.filter { it.isCoupon }
+                        val autoDiscounts = appliedRules.filter { !it.isCoupon }
+
+                        if (coupons.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            coupons.forEach { rule ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Cupón: ${rule.ruleName}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFF2E7D32),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        "- S/ ${String.format(Locale.US, "%.2f", rule.discountAmount)}",
+                                        color = Color(0xFF2E7D32),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
+                        if (autoDiscounts.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            autoDiscounts.forEach { rule ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        rule.ruleName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFF2E7D32),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        "- S/ ${String.format(Locale.US, "%.2f", rule.discountAmount)}",
+                                        color = Color(0xFF2E7D32),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
+                        if (planDiscount > 0.0) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "Descuento Plan ${userPlan?.name ?: ""}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(0xFF1976D2),
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "- S/ ${String.format(Locale.US, "%.2f", planDiscount)}",
+                                    color = Color(0xFF1976D2),
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
 
@@ -285,8 +364,8 @@ fun CartScreen(
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Checkbox(
-                            checked = allSelected,
+                        CircularSelector(
+                            isSelected = allSelected,
                             onCheckedChange = { viewModel.toggleAllCartItems(context, it) }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -334,10 +413,10 @@ fun CartScreen(
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Checkbox(
-                                checked = allGroupSelected,
-                                onCheckedChange = { viewModel.toggleSellerSelection(context, storeId, it) }
-                            )
+                        CircularSelector(
+                            isSelected = allGroupSelected,
+                            onCheckedChange = { viewModel.toggleSellerSelection(context, storeId, it) }
+                        )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = storeNames[storeId] ?: "Vendedor Marketplace",
@@ -408,9 +487,11 @@ fun CartScreen(
                 ProductCarousel(
                     title = "** Llena tu cesta con **",
                     products = suggestedProducts,
+                    viewModel = viewModel,
                     onProductClick = onProductClick,
                     onFavoriteClick = { product -> viewModel.toggleProductFavorite(context, product.id) },
-                    onQuickViewClick = { product -> viewModel.onQuickViewProduct(context, product) }
+                    onQuickViewClick = { product -> viewModel.onQuickViewProduct(context, product) },
+                    activityMap = activityMap
                 )
                 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -444,12 +525,12 @@ fun CartItemRow(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(
-                checked = item.isSelected,
+            CircularSelector(
+                isSelected = item.isSelected,
                 onCheckedChange = onToggleSelection
             )
             
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
             AsyncImage(
                 model = item.product.imageUrl,
@@ -468,8 +549,9 @@ fun CartItemRow(
                 Text(text = item.product.name, fontWeight = FontWeight.Bold, maxLines = 1)
                 
                 Box {
+                    val sizeLabel = if (item.size.isEmpty()) "Única" else item.size
                     Text(
-                        text = "Talla: ${item.size} ▼", 
+                        text = "Talla: $sizeLabel ▼", 
                         style = MaterialTheme.typography.bodySmall, 
                         color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.Bold,

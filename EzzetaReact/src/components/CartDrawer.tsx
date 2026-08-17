@@ -11,12 +11,13 @@ import useCheckoutDraft, { CHECKOUT_DRAFT_CHANGED } from '../hooks/useCheckoutDr
 import type { Product } from '../types';
 import { getPlanById, type SubscriptionPlan } from '../plans';
 import { getProducts } from '../services/contentService';
-import { resolveProductPrice, resolveCartCoupon, usePricingRules } from '../services/pricingService';
+import { resolveProductPrice, resolveCartCoupon, usePricingRules, detectarCombosEnCarrito, type CartItem } from '../services/pricingService';
 import PriceDisplay from '../components/PriceDisplay';
 import { obtenerPromoCodes } from '../data/promoCodes';
 import { storageManager, StorageKeys } from '../storage';
 import CartCheckout from './CartCheckout';
 import CartItemsList from './CartItemsList';
+import CartCombos from './CartCombos';
 import CartSummary from './CartSummary';
 import { MembershipModal } from './MembershipModal';
 import { ProductHoverImage } from '../components/ProductHoverImage';
@@ -148,6 +149,17 @@ export const CartDrawer = () => {
     (selectedProductsSubtotal * discountRate).toFixed(2)
   );
 
+  // Detect combos in the cart
+  const cartItemsForComboDetection: CartItem[] = cart.map(item => ({
+    productId: item.productId,
+    quantity: item.quantity,
+    size: item.size
+  }));
+  const comboInfo = useMemo(
+    () => detectarCombosEnCarrito(cartItemsForComboDetection, products, pricingRules),
+    [cart, products, pricingRules]
+  );
+
   const promoDiscountAmount = useMemo(() => {
     if (!appliedCoupon) return 0;
 
@@ -179,7 +191,7 @@ export const CartDrawer = () => {
   const canProceedToCheckout = checkoutDepartamento.trim().length > 0 && shippingResult.shippingCalculable;
 
   const shipping = shippingResult.shippingAmount ?? 0;
-  const discountedSubtotal = Number(Math.max(0, selectedProductsSubtotal - discountAmount - promoDiscountAmount).toFixed(2));
+  const discountedSubtotal = Number(Math.max(0, selectedProductsSubtotal - discountAmount - promoDiscountAmount - comboInfo.descuentoTotalCombos).toFixed(2));
   const discountedTotal = Number(Math.max(0, discountedSubtotal + shipping).toFixed(2));
 
   useEffect(() => {
@@ -340,6 +352,15 @@ export const CartDrawer = () => {
                   />
                 )
               ) : null}
+
+              {checkoutStep === 'cart' && selectedProducts.length > 0 && (
+                <div className="mt-5">
+                  <CartCombos
+                    combosAplicados={comboInfo.combosAplicados}
+                    combosIncompletos={comboInfo.combosIncompletos}
+                  />
+                </div>
+              )}
 
               {checkoutStep === 'cart' && (
                 <CartSummary

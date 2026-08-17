@@ -61,9 +61,14 @@ class FilterManager(
             else product.name.contains(query, ignoreCase = true) || product.name.contains(catQuery, ignoreCase = true)
             
             val matchesCategory = catId == "1" || product.categoryId == catId
-            val matchesSub = subCat == "Todo" || 
-                             product.subCategories.any { it.equals(subCat, ignoreCase = true) } || 
-                             product.name.contains(subCat, ignoreCase = true)
+            
+            val matchesSub = when (subCat) {
+                "Todo" -> true
+                "Recientes" -> true // Permitir todos los de la categoría para luego ordenar
+                else -> product.subCategories.any { it.equals(subCat, ignoreCase = true) } || 
+                        product.name.contains(subCat, ignoreCase = true)
+            }
+            
             val matchesCampaign = campaign == null || product.campaign == campaign
             val matchesPrice = product.price.toFloat() in priceR
             val matchesStore = storeId == null || product.storeId == storeId
@@ -76,7 +81,7 @@ class FilterManager(
             val matchesOrigin = isClientProductFilter == null || product.isClientProduct == isClientProductFilter
             
             matchesQuery && matchesCategory && matchesSub && matchesCampaign && matchesPrice && matchesSize && matchesStore && product.isVisible && matchesOrigin
-        }
+        }.sortedByDescending { it.createdAt }
     }.stateIn(scope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onSearchQueryChange(newQuery: String) {

@@ -59,8 +59,9 @@ class MainActivity : ComponentActivity() {
                     ) {
                         ProductQuickViewContent(
                             product = product,
-                            onAddToCart = { size, quantity -> 
-                                mainViewModel.addToCart(this@MainActivity, product, size, quantity) 
+                            viewModel = mainViewModel,
+                            onAddToCart = { size, quantity, price -> 
+                                mainViewModel.addToCart(this@MainActivity, product, size, quantity, price) 
                             },
                             onToggleFavorite = { mainViewModel.toggleProductFavorite(this@MainActivity, product.id) },
                             onClose = { mainViewModel.onQuickViewProduct(this@MainActivity, null) }

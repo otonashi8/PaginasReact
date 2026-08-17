@@ -47,6 +47,7 @@ fun HomeScreen(
     val recentProducts by viewModel.recentProducts.collectAsState()
     val popularProducts by viewModel.popularProducts.collectAsState()
     val popularRankingMap by viewModel.popularRankingMap.collectAsState()
+    val activityMap by viewModel.productActivityMap.collectAsState()
     val context = LocalContext.current
     
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -202,9 +203,11 @@ fun HomeScreen(
                         ProductCarousel(
                             title = "Recientes",
                             products = recentProducts,
+                            viewModel = viewModel,
                             onProductClick = onProductClick,
                             onFavoriteClick = { viewModel.toggleProductFavorite(context, it.id) },
-                            onQuickViewClick = { viewModel.onQuickViewProduct(context, it) }
+                            onQuickViewClick = { viewModel.onQuickViewProduct(context, it) },
+                            activityMap = activityMap
                         )
                     }
 
@@ -212,10 +215,11 @@ fun HomeScreen(
                         ProductCarousel(
                             title = "Populares",
                             products = popularProducts,
+                            viewModel = viewModel,
                             onProductClick = onProductClick,
                             onFavoriteClick = { viewModel.toggleProductFavorite(context, it.id) },
                             onQuickViewClick = { viewModel.onQuickViewProduct(context, it) },
-                            rankingMap = popularRankingMap
+                            activityMap = activityMap
                         )
                     }
                 }
@@ -241,12 +245,19 @@ fun HomeScreen(
                         key = { index -> products[index].id }
                     ) { index ->
                         val product = products[index]
+                        val priceInfo = remember(product, viewModel.priceRules.collectAsState().value, viewModel.couponInput.collectAsState().value) {
+                            viewModel.getProductPriceInfo(product)
+                        }
+                        val activity = activityMap[product.id]
                         ProductCard(
                             product = product,
                             onFavoriteClick = { viewModel.toggleProductFavorite(context, product.id) },
                             onClick = { onProductClick(product.id) },
                             onQuickViewClick = { viewModel.onQuickViewProduct(context, product) },
-                            onAppear = { viewModel.prefetchProduct(product.id) }
+                            onAppear = { viewModel.prefetchProduct(product.id) },
+                            rankingText = activity?.rankingText,
+                            wishlistCount = activity?.wishlistCount ?: 0,
+                            priceInfo = priceInfo
                         )
                     }
                 }

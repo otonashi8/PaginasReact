@@ -32,6 +32,7 @@ import java.util.Locale
 fun WishlistScreen(viewModel: MainViewModel, onBack: () -> Unit, onProductClick: (String) -> Unit) {
     val allProducts by viewModel.allProducts.collectAsState()
     val isDarkTheme by viewModel.isDarkTheme.collectAsState()
+    val activityMap by viewModel.productActivityMap.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     
     val wishlist = allProducts.filter { it.isFavorite && it.name.contains(searchQuery, ignoreCase = true) }
@@ -144,8 +145,17 @@ fun WishlistScreen(viewModel: MainViewModel, onBack: () -> Unit, onProductClick:
                     }
 
                     items(items, key = { it.id }) { product ->
+                        val priceRules by viewModel.priceRules.collectAsState()
+                        val couponInput by viewModel.couponInput.collectAsState()
+                        val priceInfo = remember(product, priceRules, couponInput) {
+                            viewModel.getProductPriceInfo(product)
+                        }
+                        val activity = activityMap[product.id]
                         WishlistItemRow(
                             product = product,
+                            priceInfo = priceInfo,
+                            rankingText = activity?.rankingText,
+                            wishlistCount = activity?.wishlistCount ?: 0,
                             onFavoriteClick = { viewModel.toggleProductFavorite(context, product.id) },
                             onQuickViewClick = { viewModel.onQuickViewProduct(context, product) },
                             onClick = { onProductClick(product.id) }
@@ -160,6 +170,9 @@ fun WishlistScreen(viewModel: MainViewModel, onBack: () -> Unit, onProductClick:
 @Composable
 fun WishlistItemRow(
     product: Product,
+    priceInfo: MainViewModel.ProductPriceInfo,
+    rankingText: String? = null,
+    wishlistCount: Int = 0,
     onFavoriteClick: () -> Unit,
     onQuickViewClick: () -> Unit,
     onClick: () -> Unit
@@ -169,6 +182,9 @@ fun WishlistItemRow(
     } else {
         product.stock > 0
     }
+
+    val displayPrice = priceInfo.finalPrice
+    val oldPrice = if (priceInfo.discountPercent > 0) priceInfo.originalPrice else product.oldPrice
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
@@ -203,6 +219,22 @@ fun WishlistItemRow(
                         )
                     }
                 }
+
+                if (priceInfo.discountPercent > 0) {
+                    Surface(
+                        modifier = Modifier.align(Alignment.TopStart),
+                        color = Color(0xFFE53935),
+                        shape = RoundedCornerShape(bottomEnd = 8.dp)
+                    ) {
+                        Text(
+                            text = "-${priceInfo.discountPercent}%",
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
 
             Column(
@@ -217,10 +249,17 @@ fun WishlistItemRow(
                     maxLines = 1
                 )
                 
+                if (rankingText != null) {
+                    Text(text = rankingText, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
+                if (wishlistCount > 0) {
+                    Text(text = "♡ $wishlistCount lo tienen en su lista", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                }
+                
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (product.oldPrice != null && product.oldPrice > product.price) {
+                    if (oldPrice != null && (oldPrice > displayPrice)) {
                         Text(
-                            text = "S/ ${String.format(Locale.US, "%.2f", product.oldPrice)}",
+                            text = "S/ ${String.format(Locale.US, "%.2f", oldPrice)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.Gray,
                             textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough,
@@ -228,10 +267,19 @@ fun WishlistItemRow(
                         )
                     }
                     Text(
-                        text = "S/ ${String.format(Locale.US, "%.2f", product.price)}",
+                        text = "S/ ${String.format(Locale.US, "%.2f", displayPrice)}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = if (priceInfo.discountPercent > 0) Color(0xFFE53935) else MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
+                    )
+                }
+
+                if (priceInfo.hasCombo) {
+                    Text(
+                        text = "Promo combo disponible",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        fontWeight = FontWeight.Medium
                     )
                 }
                 

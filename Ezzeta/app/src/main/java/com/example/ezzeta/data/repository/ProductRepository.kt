@@ -36,23 +36,39 @@ class ProductRepository {
             
             val finalCategories = if (loadedCats != null) {
                 // Reparar campos nulos por migración (visibility) y realizar MERGE con nuevos MockData
-                val fixedCats = loadedCats.map { loaded ->
+                loadedCats.map { loaded ->
                     val mock = MockData.categories.find { it.id == loaded.id }
+                    val visibility = loaded.visibility ?: mock?.visibility ?: "STORE"
+                    val rawSub = if (loaded.subCategories.isNullOrEmpty()) mock?.subCategories ?: emptyList() else loaded.subCategories
+                    
+                    // Inyectar "Recientes" como subcategoría virtual para tienda
+                    val finalSub = if (visibility == "STORE" || visibility == "BOTH") {
+                        if (rawSub.contains("Recientes")) rawSub else listOf("Recientes") + rawSub
+                    } else rawSub
+                    
                     loaded.copy(
-                        visibility = loaded.visibility ?: mock?.visibility ?: "STORE",
-                        subCategories = if (loaded.subCategories.isNullOrEmpty()) mock?.subCategories ?: emptyList() else loaded.subCategories
+                        visibility = visibility,
+                        subCategories = finalSub
                     )
-                }.toMutableList()
-                
-                // Añadir categorías de MockData que NO existen en el archivo local (ej. las nuevas de Marketplace)
-                MockData.categories.forEach { mock ->
-                    if (fixedCats.none { it.id == mock.id }) {
-                        fixedCats.add(mock)
+                }.toMutableList().apply {
+                    // Añadir categorías de MockData que NO existen en el archivo local
+                    MockData.categories.forEach { mock ->
+                        if (none { it.id == mock.id }) {
+                            val visibility = mock.visibility
+                            val rawSub = mock.subCategories
+                            val finalSub = if (visibility == "STORE" || visibility == "BOTH") {
+                                if (rawSub.contains("Recientes")) rawSub else listOf("Recientes") + rawSub
+                            } else rawSub
+                            add(mock.copy(subCategories = finalSub))
+                        }
                     }
                 }
-                fixedCats
             } else {
-                MockData.categories
+                MockData.categories.map { mock ->
+                    if (mock.visibility == "STORE" || mock.visibility == "BOTH") {
+                        mock.copy(subCategories = listOf("Recientes") + mock.subCategories)
+                    } else mock
+                }
             }
             
             _categories.value = finalCategories
@@ -76,15 +92,17 @@ class ProductRepository {
             val loadedProducts: List<Product>? = LocalJsonStorage.loadFromFile(context, PRODUCTS_FILE, prodType)
             
             if (loadedProducts != null) {
-                // Asegurar campos no nulos tras migración de datos
+                // Asegurar campos no nulos tras migración de datos y ordenar por fecha
                 val fixedProducts = loadedProducts.map { p ->
                     p.copy(
-                        imageUrls = p.imageUrls ?: emptyList()
+                        imageUrls = p.imageUrls ?: emptyList(),
+                        createdAt = if (p.createdAt == 0L) 0L else p.createdAt
                     )
-                }
+                }.sortedByDescending { it.createdAt }
                 _products.value = fixedProducts
             } else {
-                _products.value = MockData.products
+                // Mock products default to 0L, which is fine
+                _products.value = MockData.products.sortedByDescending { it.createdAt }
                 LocalJsonStorage.saveToFile(context, PRODUCTS_FILE, _products.value)
             }
 
@@ -173,7 +191,8 @@ class ProductRepository {
 
     fun addProduct(context: Context, product: Product) {
         val currentList = _products.value.toMutableList()
-        currentList.add(0, product)
+        val productWithDate = if (product.createdAt == 0L) product.copy(createdAt = System.currentTimeMillis()) else product
+        currentList.add(0, productWithDate)
         _products.value = currentList
         LocalJsonStorage.saveToFile(context, PRODUCTS_FILE, _products.value)
     }
@@ -211,6 +230,14 @@ class ProductRepository {
         val index = currentList.indexOfFirst { it.id == request.id }
         if (index != -1) {
             currentList[index] = request
+            _requests.value = currentList
+            LocalJsonStorage.saveToFile(context, REQUESTS_FILE, _requests.value)
+        }
+    }
+
+    fun deleteRequest(context: Context, requestId: String) {
+        val currentList = _requests.value.toMutableList()
+        if (currentList.removeIf { it.id == requestId }) {
             _requests.value = currentList
             LocalJsonStorage.saveToFile(context, REQUESTS_FILE, _requests.value)
         }

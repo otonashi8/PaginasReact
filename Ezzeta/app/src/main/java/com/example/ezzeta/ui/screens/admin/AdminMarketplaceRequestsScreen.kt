@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -86,7 +87,11 @@ fun AdminMarketplaceRequestsScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredRequests, key = { it.id }) { request ->
-                        RequestListItem(request, onClick = { onNavigateToDetail(request.id) })
+                        RequestListItem(
+                            request = request,
+                            viewModel = viewModel,
+                            onClick = { onNavigateToDetail(request.id) }
+                        )
                     }
                 }
             }
@@ -95,9 +100,39 @@ fun AdminMarketplaceRequestsScreen(
 }
 
 @Composable
-fun RequestListItem(request: MarketplaceRequest, onClick: () -> Unit) {
+fun RequestListItem(
+    request: MarketplaceRequest,
+    viewModel: MainViewModel,
+    onClick: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()) }
     val dateString = dateFormat.format(Date(request.createdAt))
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Eliminar Solicitud") },
+            text = { Text("¿Estás seguro de que deseas eliminar esta solicitud de '${request.product.name}'? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteMarketplaceRequest(context, request.id)
+                        showDeleteConfirm = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
@@ -126,6 +161,16 @@ fun RequestListItem(request: MarketplaceRequest, onClick: () -> Unit) {
             }
             
             StatusBadge(request.status)
+
+            if (viewModel.hasPermission("Marketplace", "DELETE")) {
+                IconButton(onClick = { showDeleteConfirm = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Eliminar solicitud",
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                    )
+                }
+            }
             
             Icon(
                 imageVector = Icons.Default.ChevronRight,

@@ -1,8 +1,6 @@
 import type { Producto } from '../../../Inventario/productos/TiposProductos';
 import type { ReglaPrecio } from '../TiposReglas';
-import { aplicarBOGO } from './aplicarBOGO';
 import { aplicarProducto } from './aplicarProducto';
-import { aplicarVolumen } from './aplicarVolumen';
 import type { TipoMotorResultado } from './TiposMotor';
 import { obtenerReglasVigentes } from './UtilidadesMotor';
 
@@ -59,51 +57,12 @@ const evaluadoresPorTipo: Record<string, EvaluadorTipoRegla> = {
       mensajes: [],
     };
   },
-  volumen: (producto, contexto, regla) => {
-    const resultadoVolumen = aplicarVolumen(producto, Number(contexto.cantidad ?? 0), {
-      ...contexto,
-      reglas: [regla],
-    });
-
-    if (!resultadoVolumen?.reglaAplicada) {
-      return undefined;
-    }
-
-    return {
-      aplicado: true,
-      totalDescuento: resultadoVolumen.descuentoAplicado,
-      detalle: ['Regla de volumen aplicada'],
-      precioOriginal: resultadoVolumen.precioOriginal,
-      precioFinal: resultadoVolumen.precioFinal,
-      descuentoAplicado: resultadoVolumen.descuentoAplicado,
-      reglaAplicada: resultadoVolumen.reglaAplicada,
-      mensajes: [],
-    };
-  },
-  bogo_gratis: (producto, contexto, regla) => {
-    const resultadoBOGO = aplicarBOGO(producto, Number(contexto.cantidad ?? 0), {
-      ...contexto,
-      reglas: [regla],
-    });
-
-    if (!resultadoBOGO?.reglaAplicada) {
-      return undefined;
-    }
-
-    return {
-      aplicado: true,
-      totalDescuento: 0,
-      detalle: resultadoBOGO.detalle,
-      precioOriginal: Number(producto.precio ?? 0),
-      precioFinal: Number(producto.precio ?? 0),
-      descuentoAplicado: 0,
-      reglaAplicada: resultadoBOGO.reglaAplicada,
-      mensajes: resultadoBOGO.mensajes,
-    };
-  },
+  volumen: () => undefined,
+  bogo_gratis: () => undefined,
   bogo_descuento: () => undefined,
   perfil: () => undefined,
   carrito: () => undefined,
+  combo: () => undefined,
 };
 
 export const aplicarReglas = (

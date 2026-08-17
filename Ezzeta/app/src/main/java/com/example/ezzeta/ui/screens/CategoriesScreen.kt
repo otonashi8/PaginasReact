@@ -34,6 +34,7 @@ import coil.compose.AsyncImage
 import com.example.ezzeta.data.repository.ProductRepository
 import com.example.ezzeta.ui.components.*
 import com.example.ezzeta.ui.viewmodel.MainViewModel
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -49,6 +50,7 @@ fun CategoriesScreen(
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
     val selectedSubCategory by viewModel.selectedSubCategory.collectAsState()
     val products by viewModel.filteredProducts.collectAsState()
+    val activityMap by viewModel.productActivityMap.collectAsState()
     val context = LocalContext.current
     
     val categories by viewModel.storeCategories.collectAsState()
@@ -127,7 +129,19 @@ fun CategoriesScreen(
                             items = searchResults,
                             key = { it.id }
                         ) { product ->
-                            SearchResultItem(product = product, onClick = { onProductClick(product.id) })
+                            val priceRules by viewModel.priceRules.collectAsState()
+                            val couponInput by viewModel.couponInput.collectAsState()
+                            val priceInfo = remember(product, priceRules, couponInput) {
+                                viewModel.getProductPriceInfo(product)
+                            }
+                            val activity = activityMap[product.id]
+                            SearchResultItem(
+                                product = product,
+                                priceInfo = priceInfo,
+                                rankingText = activity?.rankingText,
+                                wishlistCount = activity?.wishlistCount ?: 0,
+                                onClick = { onProductClick(product.id) }
+                            )
                             Spacer(modifier = Modifier.height(12.dp))
                         }
                     }
@@ -156,12 +170,21 @@ fun CategoriesScreen(
                             items = products,
                             key = { it.id }
                         ) { product ->
+                            val priceRules by viewModel.priceRules.collectAsState()
+                            val couponInput by viewModel.couponInput.collectAsState()
+                            val priceInfo = remember(product, priceRules, couponInput) {
+                                viewModel.getProductPriceInfo(product)
+                            }
+                            val activity = activityMap[product.id]
                             ProductCard(
                                 product = product,
                                 onFavoriteClick = { viewModel.toggleProductFavorite(context, product.id) },
                                 onClick = { onProductClick(product.id) },
                                 onQuickViewClick = { viewModel.onQuickViewProduct(context, product) },
-                                onAppear = { viewModel.prefetchProduct(product.id) }
+                                onAppear = { viewModel.prefetchProduct(product.id) },
+                                rankingText = activity?.rankingText,
+                                wishlistCount = activity?.wishlistCount ?: 0,
+                                priceInfo = priceInfo
                             )
                         }
                     }
@@ -172,7 +195,13 @@ fun CategoriesScreen(
 }
 
 @Composable
-fun SearchResultItem(product: com.example.ezzeta.data.model.Product, onClick: () -> Unit) {
+fun SearchResultItem(
+    product: com.example.ezzeta.data.model.Product,
+    priceInfo: MainViewModel.ProductPriceInfo,
+    rankingText: String? = null,
+    wishlistCount: Int = 0,
+    onClick: () -> Unit
+) {
     val storeName = when (product.storeId) {
         "s1" -> "EZZETA"
         "s2" -> "CREPANTE"
@@ -190,14 +219,31 @@ fun SearchResultItem(product: com.example.ezzeta.data.model.Product, onClick: ()
             modifier = Modifier.padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AsyncImage(
-                model = product.imageUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
+            Box {
+                AsyncImage(
+                    model = product.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                if (priceInfo.discountPercent > 0) {
+                    Surface(
+                        modifier = Modifier.align(Alignment.TopStart),
+                        color = Color(0xFFE53935),
+                        shape = RoundedCornerShape(bottomEnd = 8.dp)
+                    ) {
+                        Text(
+                            text = "-${priceInfo.discountPercent}%",
+                            color = Color.White,
+                            fontSize = 8.sp,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
             
             Column(
                 modifier = Modifier
@@ -206,7 +252,35 @@ fun SearchResultItem(product: com.example.ezzeta.data.model.Product, onClick: ()
             ) {
                 Text(text = storeName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 Text(text = product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(text = "S/ ${product.price}", style = MaterialTheme.typography.bodyMedium)
+                
+                if (rankingText != null) {
+                    Text(text = rankingText, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
+                if (wishlistCount > 0) {
+                    Text(text = "♡ $wishlistCount lo tienen en su lista", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (priceInfo.discountPercent > 0) {
+                        Text(
+                            text = "S/ ${String.format(Locale.US, "%.2f", priceInfo.originalPrice)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
+                    Text(
+                        text = "S/ ${String.format(Locale.US, "%.2f", priceInfo.finalPrice)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (priceInfo.discountPercent > 0) Color(0xFFE53935) else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                if (priceInfo.hasCombo) {
+                    Text("Combo disponible", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                }
             }
             
             IconButton(onClick = onClick) {

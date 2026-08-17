@@ -31,7 +31,9 @@ fun AdminDashboardScreen(
     onNavigateToPriceRules: () -> Unit,
     onNavigateToStats: () -> Unit,
     onNavigateToCustomers: () -> Unit,
-    onNavigateToAbandonedCarts: () -> Unit
+    onNavigateToAbandonedCarts: () -> Unit,
+    onNavigateToAdminUsers: () -> Unit,
+    onNavigateToAdminRoles: () -> Unit
 ) {
     val ezzetaCount by viewModel.ezzetaProductsCount.collectAsState()
     val clientCount by viewModel.clientProductsCount.collectAsState()
@@ -49,28 +51,48 @@ fun AdminDashboardScreen(
             "S/ 0.00"
         }
         
-        listOf(
-            StatItem("Productos Tienda", ezzetaCount.toString(), Icons.Default.Inventory),
-            StatItem("Productos Clientes", clientCount.toString(), Icons.Default.Storefront),
-            StatItem("Pedidos Totales", (orders?.size ?: 0).toString(), Icons.Default.Receipt),
-            StatItem("Ventas Totales", totalSalesText, Icons.Default.AttachMoney)
-        )
+        mutableListOf<StatItem>().apply {
+            if (viewModel.hasPermission("Productos Tienda", "VIEW"))
+                add(StatItem("Productos Tienda", ezzetaCount.toString(), Icons.Default.Inventory))
+            if (viewModel.hasPermission("Productos Clientes", "VIEW"))
+                add(StatItem("Productos Clientes", clientCount.toString(), Icons.Default.Storefront))
+            if (viewModel.hasPermission("Pedidos", "VIEW"))
+                add(StatItem("Pedidos Totales", (orders?.size ?: 0).toString(), Icons.Default.Receipt))
+            if (viewModel.hasPermission("Estadísticas", "VIEW"))
+                add(StatItem("Ventas Totales", totalSalesText, Icons.Default.AttachMoney))
+        }
     }
 
-    val adminActions = listOf(
-        AdminAction("Productos Tienda", Icons.Default.Inventory2, { onNavigateToProductManagement("store") }),
-        AdminAction("Productos Clientes", Icons.Default.Storefront, { onNavigateToProductManagement("client") }),
-        AdminAction("Solicitudes Marketplace", Icons.Default.PendingActions, onNavigateToMarketplaceRequests),
-        AdminAction("Estadísticas de Ventas", Icons.Default.BarChart, onNavigateToStats),
-        AdminAction("Información de Clientes", Icons.Default.Groups, onNavigateToCustomers),
-        AdminAction("Carritos abandonados", Icons.Default.ShoppingCartCheckout, onNavigateToAbandonedCarts),
-        AdminAction("Gestión Categorías", Icons.Default.Category, onNavigateToCategoryManagement),
-        AdminAction("Gestión Tallas", Icons.Default.Straighten, onNavigateToSizeManagement),
-        AdminAction("Tallas Clientes", Icons.Default.PeopleOutline, onNavigateToClientSizes),
-        AdminAction("Gestión de Envíos", Icons.Default.LocalShipping, onNavigateToShippingManagement),
-        AdminAction("Reglas de precios", Icons.Default.Discount, onNavigateToPriceRules),
-        AdminAction("Configuración", Icons.Default.Settings, {})
-    )
+    val adminActions = remember {
+        mutableListOf<AdminAction>().apply {
+            if (viewModel.hasPermission("Productos Tienda", "VIEW"))
+                add(AdminAction("Productos Tienda", Icons.Default.Inventory2, { onNavigateToProductManagement("store") }))
+            if (viewModel.hasPermission("Productos Clientes", "VIEW"))
+                add(AdminAction("Productos Clientes", Icons.Default.Storefront, { onNavigateToProductManagement("client") }))
+            if (viewModel.hasPermission("Marketplace", "VIEW"))
+                add(AdminAction("Solicitudes Marketplace", Icons.Default.PendingActions, onNavigateToMarketplaceRequests))
+            if (viewModel.hasPermission("Estadísticas", "VIEW"))
+                add(AdminAction("Estadísticas de Ventas", Icons.Default.BarChart, onNavigateToStats))
+            if (viewModel.hasPermission("Clientes", "VIEW"))
+                add(AdminAction("Información de Clientes", Icons.Default.Groups, onNavigateToCustomers))
+            if (viewModel.hasPermission("Carritos Abandonados", "VIEW"))
+                add(AdminAction("Carritos abandonados", Icons.Default.ShoppingCartCheckout, onNavigateToAbandonedCarts))
+            if (viewModel.hasPermission("Categorías", "VIEW"))
+                add(AdminAction("Gestión Categorías", Icons.Default.Category, onNavigateToCategoryManagement))
+            if (viewModel.hasPermission("Tallas", "VIEW"))
+                add(AdminAction("Gestión Tallas", Icons.Default.Straighten, onNavigateToSizeManagement))
+            if (viewModel.hasPermission("Tallas Clientes", "VIEW"))
+                add(AdminAction("Tallas Clientes", Icons.Default.PeopleOutline, onNavigateToClientSizes))
+            if (viewModel.hasPermission("Envíos", "VIEW"))
+                add(AdminAction("Gestión de Envíos", Icons.Default.LocalShipping, onNavigateToShippingManagement))
+            if (viewModel.hasPermission("Reglas de Precios", "VIEW"))
+                add(AdminAction("Reglas de precios", Icons.Default.Discount, onNavigateToPriceRules))
+            if (viewModel.hasPermission("Sistema", "VIEW")) {
+                add(AdminAction("Gestión de Usuarios", Icons.Default.Person, onNavigateToAdminUsers))
+                add(AdminAction("Gestión de Roles", Icons.Default.Security, onNavigateToAdminRoles))
+            }
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,

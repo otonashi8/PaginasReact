@@ -33,7 +33,8 @@ import kotlinx.coroutines.launch
 fun MarketplaceScreen(
     viewModel: MainViewModel,
     onProductClick: (String) -> Unit,
-    onStoreClick: (String) -> Unit
+    onStoreClick: (String) -> Unit,
+    onWishlistClick: () -> Unit
 ) {
     val context = LocalContext.current
     val isDarkTheme by viewModel.isDarkTheme.collectAsState()
@@ -41,6 +42,7 @@ fun MarketplaceScreen(
     val products by viewModel.marketplaceFilterManager.filteredProducts.collectAsState()
     val searchQuery by viewModel.marketplaceFilterManager.searchQuery.collectAsState()
     val selectedCategoryId by viewModel.marketplaceFilterManager.selectedCategoryId.collectAsState()
+    val activityMap by viewModel.productActivityMap.collectAsState()
 
     // Auto-seleccionar una categoría válida de Marketplace si la actual no lo es
     LaunchedEffect(categories, selectedCategoryId) {
@@ -74,6 +76,12 @@ fun MarketplaceScreen(
                                 Icon(
                                     imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.Nightlight,
                                     contentDescription = "Cambiar tema"
+                                )
+                            }
+                            IconButton(onClick = onWishlistClick) {
+                                Icon(
+                                    imageVector = Icons.Default.Favorite,
+                                    contentDescription = "Lista de Deseos"
                                 )
                             }
                         }
@@ -124,11 +132,20 @@ fun MarketplaceScreen(
                 }
             } else {
                 items(products, key = { it.id }) { product ->
+                    val priceRules by viewModel.priceRules.collectAsState()
+                    val couponInput by viewModel.couponInput.collectAsState()
+                    val priceInfo = remember(product, priceRules, couponInput) {
+                        viewModel.getProductPriceInfo(product)
+                    }
+                    val activity = activityMap[product.id]
                     ProductCard(
                         product = product,
                         onFavoriteClick = { viewModel.toggleProductFavorite(context, product.id) },
                         onClick = { onProductClick(product.id) },
-                        onQuickViewClick = { viewModel.onQuickViewProduct(context, product) }
+                        onQuickViewClick = { viewModel.onQuickViewProduct(context, product) },
+                        rankingText = activity?.rankingText,
+                        wishlistCount = activity?.wishlistCount ?: 0,
+                        priceInfo = priceInfo
                     )
                 }
             }

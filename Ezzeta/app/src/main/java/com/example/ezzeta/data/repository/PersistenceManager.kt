@@ -42,6 +42,20 @@ object PersistenceManager {
         return getPrefs(context).getStringSet(KEY_FAVORITES_PREFIX + getUserId(), emptySet()) ?: emptySet()
     }
 
+    fun getAllWishlistCounts(context: Context): Map<String, Int> {
+        val allEntries = getPrefs(context).all
+        val counts = mutableMapOf<String, Int>()
+        
+        allEntries.filterKeys { it.startsWith(KEY_FAVORITES_PREFIX) }.forEach { (_, value) ->
+            if (value is Set<*>) {
+                value.filterIsInstance<String>().forEach { productId ->
+                    counts[productId] = (counts[productId] ?: 0) + 1
+                }
+            }
+        }
+        return counts
+    }
+
     fun saveHistory(context: Context, products: List<Product>) {
         LocalJsonStorage.saveToFile(context, "${HISTORY_FILE_PREFIX}${getUserId()}.json", products)
     }

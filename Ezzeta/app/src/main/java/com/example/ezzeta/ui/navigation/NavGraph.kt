@@ -1,6 +1,8 @@
 package com.example.ezzeta.ui.navigation
 
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -8,6 +10,27 @@ import androidx.navigation.compose.composable
 import com.example.ezzeta.ui.screens.*
 import com.example.ezzeta.ui.screens.admin.*
 import com.example.ezzeta.ui.viewmodel.MainViewModel
+
+@Composable
+fun AdminRouteGuard(
+    viewModel: MainViewModel,
+    module: String,
+    action: String = "VIEW",
+    onUnauthorized: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val context = LocalContext.current
+    val hasPermission = viewModel.hasPermission(module, action)
+    
+    if (hasPermission) {
+        content()
+    } else {
+        LaunchedEffect(Unit) {
+            Toast.makeText(context, "No tienes permiso para acceder a este módulo", Toast.LENGTH_SHORT).show()
+            onUnauthorized()
+        }
+    }
+}
 
 @Composable
 fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewModel) {
@@ -49,7 +72,8 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
                 },
                 onStoreClick = { storeId ->
                     navController.navigate(Screen.StoreDetail.createRoute(storeId))
-                }
+                },
+                onWishlistClick = { navController.navigate(Screen.Wishlist.route) }
             ) 
         }
         composable(Screen.Cart.route) { 
@@ -76,6 +100,7 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
                 onHistoryClick = { navController.navigate(Screen.History.route) },
                 onOrdersClick = { navController.navigate(Screen.Orders.route) },
                 onFollowingClick = { navController.navigate(Screen.Following.route) },
+                onMySizesClick = { navController.navigate(Screen.MySizes.route) },
                 onWishlistClick = { navController.navigate(Screen.Wishlist.route) },
                 onCustomerServiceClick = { navController.navigate(Screen.CustomerService.route) },
                 onSingleProductClick = { navController.navigate(Screen.SingleProductUpload.route) },
@@ -208,6 +233,9 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
         composable(Screen.Following.route) {
             FollowingStoresScreen(mainViewModel, onBack = { navController.popBackStack() })
         }
+        composable(Screen.MySizes.route) {
+            MySizesScreen(mainViewModel, onBack = { navController.popBackStack() })
+        }
         composable(Screen.Checkout.route) {
             CheckoutScreen(
                 viewModel = mainViewModel,
@@ -226,64 +254,84 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
         }
 
         composable(Screen.AdminDashboard.route) {
-            AdminDashboardScreen(
+            AdminRouteGuard(
                 viewModel = mainViewModel,
-                onLogout = {
-                    mainViewModel.logout(context)
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
+                module = "Dashboard", // El dashboard base se permite a todos los que puedan entrar al panel
+                onUnauthorized = { navController.popBackStack() }
+            ) {
+                AdminDashboardScreen(
+                    viewModel = mainViewModel,
+                    onLogout = {
+                        mainViewModel.logout(context)
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onNavigateToProductManagement = { type: String ->
+                        navController.navigate(Screen.AdminProductManagement.createRoute(type))
+                    },
+                    onNavigateToCategoryManagement = {
+                        navController.navigate(Screen.AdminCategoryManagement.route)
+                    },
+                    onNavigateToSizeManagement = {
+                        navController.navigate(Screen.AdminSizeManagement.route)
+                    },
+                    onNavigateToClientSizes = {
+                        navController.navigate(Screen.AdminClientSizes.route)
+                    },
+                    onNavigateToMarketplaceRequests = {
+                        navController.navigate(Screen.AdminMarketplaceRequests.route)
+                    },
+                    onNavigateToShippingManagement = {
+                        navController.navigate(Screen.AdminShipping.route)
+                    },
+                    onNavigateToPriceRules = {
+                        navController.navigate(Screen.AdminPriceRules.route)
+                    },
+                    onNavigateToStats = {
+                        navController.navigate(Screen.AdminStats.route)
+                    },
+                    onNavigateToCustomers = {
+                        navController.navigate(Screen.AdminCustomers.route)
+                    },
+                    onNavigateToAbandonedCarts = {
+                        navController.navigate(Screen.AdminAbandonedCarts.route)
+                    },
+                    onNavigateToAdminUsers = {
+                        navController.navigate(Screen.AdminUsers.route)
+                    },
+                    onNavigateToAdminRoles = {
+                        navController.navigate(Screen.AdminRoles.route)
                     }
-                },
-                onNavigateToProductManagement = { type: String ->
-                    navController.navigate(Screen.AdminProductManagement.createRoute(type))
-                },
-                onNavigateToCategoryManagement = {
-                    navController.navigate(Screen.AdminCategoryManagement.route)
-                },
-                onNavigateToSizeManagement = {
-                    navController.navigate(Screen.AdminSizeManagement.route)
-                },
-                onNavigateToClientSizes = {
-                    navController.navigate(Screen.AdminClientSizes.route)
-                },
-                onNavigateToMarketplaceRequests = {
-                    navController.navigate(Screen.AdminMarketplaceRequests.route)
-                },
-                onNavigateToShippingManagement = {
-                    navController.navigate(Screen.AdminShipping.route)
-                },
-                onNavigateToPriceRules = {
-                    navController.navigate(Screen.AdminPriceRules.route)
-                },
-                onNavigateToStats = {
-                    navController.navigate(Screen.AdminStats.route)
-                },
-                onNavigateToCustomers = {
-                    navController.navigate(Screen.AdminCustomers.route)
-                },
-                onNavigateToAbandonedCarts = {
-                    navController.navigate(Screen.AdminAbandonedCarts.route)
-                }
-            )
+                )
+            }
         }
 
         composable(Screen.AdminProductManagement.route) { backStackEntry ->
             val type = backStackEntry.arguments?.getString("type") ?: "store"
-            AdminProductManagementScreen(
+            val module = if (type == "client") "Productos Clientes" else "Productos Tienda"
+            AdminRouteGuard(
                 viewModel = mainViewModel,
-                managementType = type,
-                onBack = { navController.popBackStack() },
-                onAddProduct = {
-                    navController.navigate(Screen.AdminProductEdit.createRoute("new"))
-                },
-                onEditProduct = { productId ->
-                    navController.navigate(Screen.AdminProductEdit.createRoute(productId))
-                }
-            )
+                module = module,
+                onUnauthorized = { navController.popBackStack() }
+            ) {
+                AdminProductManagementScreen(
+                    viewModel = mainViewModel,
+                    managementType = type,
+                    onBack = { navController.popBackStack() },
+                    onAddProduct = {
+                        navController.navigate(Screen.AdminProductEdit.createRoute("new"))
+                    },
+                    onEditProduct = { productId ->
+                        navController.navigate(Screen.AdminProductEdit.createRoute(productId))
+                    }
+                )
+            }
         }
 
         composable(Screen.AdminProductEdit.route) { backStackEntry ->
             val productId = backStackEntry.arguments?.getString("productId")
+            // Asumimos que si llegó aquí es porque tiene permiso de VIEW en el módulo padre
             AdminStoreProductEditScreen(
                 viewModel = mainViewModel,
                 productId = if (productId == "new") null else productId,
@@ -292,72 +340,90 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
         }
 
         composable(Screen.AdminCategoryManagement.route) {
-            AdminCategoryManagementScreen(
-                viewModel = mainViewModel,
-                onBack = { navController.popBackStack() }
-            )
+            AdminRouteGuard(viewModel = mainViewModel, module = "Categorías", onUnauthorized = { navController.popBackStack() }) {
+                AdminCategoryManagementScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Screen.AdminSizeManagement.route) {
-            AdminSizeManagementScreen(
-                viewModel = mainViewModel,
-                onBack = { navController.popBackStack() }
-            )
+            AdminRouteGuard(viewModel = mainViewModel, module = "Tallas", onUnauthorized = { navController.popBackStack() }) {
+                AdminSizeManagementScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Screen.AdminClientSizes.route) {
-            AdminClientSizesScreen(
-                viewModel = mainViewModel,
-                onBack = { navController.popBackStack() }
-            )
+            AdminRouteGuard(viewModel = mainViewModel, module = "Tallas Clientes", onUnauthorized = { navController.popBackStack() }) {
+                AdminClientSizesScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Screen.AdminShipping.route) {
-            AdminShippingManagementScreen(
-                viewModel = mainViewModel,
-                onBack = { navController.popBackStack() }
-            )
+            AdminRouteGuard(viewModel = mainViewModel, module = "Envíos", onUnauthorized = { navController.popBackStack() }) {
+                AdminShippingManagementScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Screen.AdminPriceRules.route) {
-            AdminPriceRulesScreen(
-                viewModel = mainViewModel,
-                onBack = { navController.popBackStack() }
-            )
+            AdminRouteGuard(viewModel = mainViewModel, module = "Reglas de Precios", onUnauthorized = { navController.popBackStack() }) {
+                AdminPriceRulesScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Screen.AdminStats.route) {
-            AdminStatsScreen(
-                viewModel = mainViewModel,
-                onBack = { navController.popBackStack() },
-                onNavigateToProduct = { productId ->
-                    navController.navigate(Screen.ProductDetail.createRoute(productId))
-                }
-            )
+            AdminRouteGuard(viewModel = mainViewModel, module = "Estadísticas", onUnauthorized = { navController.popBackStack() }) {
+                AdminStatsScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() },
+                    onNavigateToProduct = { productId ->
+                        navController.navigate(Screen.ProductDetail.createRoute(productId))
+                    }
+                )
+            }
         }
 
         composable(Screen.AdminCustomers.route) {
-            AdminCustomersScreen(
-                viewModel = mainViewModel,
-                onBack = { navController.popBackStack() }
-            )
+            AdminRouteGuard(viewModel = mainViewModel, module = "Clientes", onUnauthorized = { navController.popBackStack() }) {
+                AdminCustomersScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Screen.AdminAbandonedCarts.route) {
-            AdminAbandonedCartsScreen(
-                viewModel = mainViewModel,
-                onBack = { navController.popBackStack() }
-            )
+            AdminRouteGuard(viewModel = mainViewModel, module = "Carritos Abandonados", onUnauthorized = { navController.popBackStack() }) {
+                AdminAbandonedCartsScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Screen.AdminMarketplaceRequests.route) {
-            AdminMarketplaceRequestsScreen(
-                viewModel = mainViewModel,
-                onBack = { navController.popBackStack() },
-                onNavigateToDetail = { requestId ->
-                    navController.navigate(Screen.AdminMarketplaceRequestDetail.createRoute(requestId))
-                }
-            )
+            AdminRouteGuard(viewModel = mainViewModel, module = "Marketplace", onUnauthorized = { navController.popBackStack() }) {
+                AdminMarketplaceRequestsScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() },
+                    onNavigateToDetail = { requestId ->
+                        navController.navigate(Screen.AdminMarketplaceRequestDetail.createRoute(requestId))
+                    }
+                )
+            }
         }
 
         composable(Screen.AdminMarketplaceRequestDetail.route) { backStackEntry ->
@@ -367,6 +433,24 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
                 viewModel = mainViewModel,
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        composable(Screen.AdminUsers.route) {
+            AdminRouteGuard(viewModel = mainViewModel, module = "Sistema", onUnauthorized = { navController.popBackStack() }) {
+                AdminUserManagementScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+
+        composable(Screen.AdminRoles.route) {
+            AdminRouteGuard(viewModel = mainViewModel, module = "Sistema", onUnauthorized = { navController.popBackStack() }) {
+                AdminRoleManagementScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

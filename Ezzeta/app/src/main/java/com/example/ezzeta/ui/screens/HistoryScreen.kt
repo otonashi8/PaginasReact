@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.ezzeta.data.model.Product
 import com.example.ezzeta.ui.components.*
@@ -33,6 +34,7 @@ import java.util.*
 fun HistoryScreen(viewModel: MainViewModel, onBack: () -> Unit, onProductClick: (String) -> Unit) {
     val history by viewModel.browsingHistory.collectAsState()
     val context = LocalContext.current
+    val activityMap by viewModel.productActivityMap.collectAsState()
     
     val groupedHistory = remember(history) {
         history.groupBy { formatHistoryDate(it.lastViewedAt) }
@@ -92,8 +94,17 @@ fun HistoryScreen(viewModel: MainViewModel, onBack: () -> Unit, onProductClick: 
                         LaunchedEffect(product.id) {
                             viewModel.prefetchProduct(product.id)
                         }
+                        val priceRules by viewModel.priceRules.collectAsState()
+                        val couponInput by viewModel.couponInput.collectAsState()
+                        val priceInfo = remember(product, priceRules, couponInput) {
+                            viewModel.getProductPriceInfo(product)
+                        }
+                        val activity = activityMap[product.id]
                         HistoryItem(
                             product = product,
+                            priceInfo = priceInfo,
+                            rankingText = activity?.rankingText,
+                            wishlistCount = activity?.wishlistCount ?: 0,
                             onFavoriteClick = { viewModel.toggleProductFavorite(context, product.id) },
                             onClick = { onProductClick(product.id) },
                             onQuickViewClick = { viewModel.onQuickViewProduct(context, product) }
@@ -128,7 +139,15 @@ private fun formatHistoryDate(timestamp: Long): String {
 }
 
 @Composable
-fun HistoryItem(product: Product, onFavoriteClick: () -> Unit, onClick: () -> Unit, onQuickViewClick: () -> Unit) {
+fun HistoryItem(
+    product: Product,
+    priceInfo: MainViewModel.ProductPriceInfo,
+    rankingText: String? = null,
+    wishlistCount: Int = 0,
+    onFavoriteClick: () -> Unit,
+    onClick: () -> Unit,
+    onQuickViewClick: () -> Unit
+) {
     val storeName = when (product.storeId) {
         "s1" -> "EZZETA"
         "s2" -> "CREPANTE"
@@ -146,14 +165,31 @@ fun HistoryItem(product: Product, onFavoriteClick: () -> Unit, onClick: () -> Un
             modifier = Modifier.padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AsyncImage(
-                model = product.imageUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
+            Box {
+                AsyncImage(
+                    model = product.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                if (priceInfo.discountPercent > 0) {
+                    Surface(
+                        modifier = Modifier.align(Alignment.TopStart),
+                        color = Color(0xFFE53935),
+                        shape = RoundedCornerShape(bottomEnd = 8.dp)
+                    ) {
+                        Text(
+                            text = "-${priceInfo.discountPercent}%",
+                            color = Color.White,
+                            fontSize = 8.sp,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
             
             Column(
                 modifier = Modifier
@@ -172,7 +208,39 @@ fun HistoryItem(product: Product, onFavoriteClick: () -> Unit, onClick: () -> Un
                     fontWeight = FontWeight.Bold,
                     maxLines = 1
                 )
-                Text(text = "S/ ${product.price}", style = MaterialTheme.typography.bodyMedium)
+                
+                if (rankingText != null) {
+                    Text(text = rankingText, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
+                if (wishlistCount > 0) {
+                    Text(text = "♡ $wishlistCount lo tienen en su lista", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (priceInfo.discountPercent > 0) {
+                        Text(
+                            text = "S/ ${String.format(Locale.US, "%.2f", priceInfo.originalPrice)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
+                    Text(
+                        text = "S/ ${String.format(Locale.US, "%.2f", priceInfo.finalPrice)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (priceInfo.discountPercent > 0) Color(0xFFE53935) else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                if (priceInfo.hasCombo) {
+                    Text(
+                        text = "Promo combo disponible",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
             }
 
             IconButton(onClick = onQuickViewClick) {

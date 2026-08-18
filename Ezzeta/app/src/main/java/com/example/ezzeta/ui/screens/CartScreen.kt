@@ -69,19 +69,21 @@ fun CartScreen(
     val cartItems by viewModel.cartItems.collectAsState()
     val allProducts by viewModel.allProducts.collectAsState()
     val lastDeletedItem by viewModel.lastDeletedItem.collectAsState()
-    val subtotal by viewModel.subtotal.collectAsState()
-    val totalSavings by viewModel.totalSavings.collectAsState()
-    val planDiscount by viewModel.planDiscount.collectAsState()
+
+    val cartSummary by viewModel.cartSummary.collectAsState()
+    val subtotal = cartSummary.subtotal
+    val totalSavings = cartSummary.totalSavings
+    val planDiscount = cartSummary.planDiscount
+    val shippingCost = cartSummary.shippingCost
+    val appliedRules = cartSummary.appliedRules
+    val total = cartSummary.total
+    val selectedCount = cartSummary.selectedCount
+
     val userPlan by viewModel.userPlan.collectAsState()
-    val shippingCost by viewModel.shippingCost.collectAsState()
     val shippingConfig by viewModel.shippingConfig.collectAsState()
-    val appliedRules by viewModel.appliedRules.collectAsState()
-    val totalRulesDiscount by viewModel.totalRulesDiscount.collectAsState()
     val couponInput by viewModel.couponInput.collectAsState()
 
     val activityMap by viewModel.productActivityMap.collectAsState()
-    val total by viewModel.total.collectAsState()
-    val selectedCount by viewModel.selectedCartItemCount.collectAsState()
     val context = LocalContext.current
 
     // Agrupar productos por tienda para mostrar cabeceras
@@ -157,7 +159,7 @@ fun CartScreen(
                             )
                         }
 
-                        // Sección de Cupón (Fase 22 - Corregido flujo de entrada)
+                        // Sección de Cupón
                         val couponValidationMessage by viewModel.couponValidationMessage.collectAsState()
                         var couponText by remember { mutableStateOf("") }
 
@@ -476,7 +478,7 @@ fun CartScreen(
                 }
             }
 
-            // --- Sección "Llena tu cesta con" ---
+            // Sección "Llena tu cesta con"
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 val suggestedProducts = remember(allProducts, cartItems) {

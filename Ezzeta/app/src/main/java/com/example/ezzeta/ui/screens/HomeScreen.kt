@@ -197,36 +197,9 @@ fun HomeScreen(
                     }
                 }
 
-                // Sección Recientes y Populares (Fase 14)
-                if (searchQuery.isEmpty()) {
-                    item(span = { GridItemSpan(2) }, key = "recientes_section") {
-                        ProductCarousel(
-                            title = "Recientes",
-                            products = recentProducts,
-                            viewModel = viewModel,
-                            onProductClick = onProductClick,
-                            onFavoriteClick = { viewModel.toggleProductFavorite(context, it.id) },
-                            onQuickViewClick = { viewModel.onQuickViewProduct(context, it) },
-                            activityMap = activityMap
-                        )
-                    }
-
-                    item(span = { GridItemSpan(2) }, key = "populares_section") {
-                        ProductCarousel(
-                            title = "Populares",
-                            products = popularProducts,
-                            viewModel = viewModel,
-                            onProductClick = onProductClick,
-                            onFavoriteClick = { viewModel.toggleProductFavorite(context, it.id) },
-                            onQuickViewClick = { viewModel.onQuickViewProduct(context, it) },
-                            activityMap = activityMap
-                        )
-                    }
-                }
-
                 item(span = { GridItemSpan(2) }, key = "recommendation_header") {
                     Text(
-                        text = if (searchQuery.isEmpty()) "Novedades de la Tienda" else "Resultados para '$searchQuery'",
+                        text = if (searchQuery.isEmpty()) "Ezzeta Productos" else "Resultados para '$searchQuery'",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(16.dp)

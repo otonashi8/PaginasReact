@@ -149,7 +149,7 @@ export const CartDrawer = () => {
     (selectedProductsSubtotal * discountRate).toFixed(2)
   );
 
-  // Detect combos in the cart
+  // combos en carrito
   const cartItemsForComboDetection: CartItem[] = cart.map(item => ({
     productId: item.productId,
     quantity: item.quantity,

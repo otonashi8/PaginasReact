@@ -107,8 +107,9 @@ fun MyProductEditScreen(
                                 }
                             }
 
-                            viewModel.updateProduct(context, updatedProduct)
-                            onBack()
+                            viewModel.updateProduct(context, updatedProduct) { success ->
+                            if (success) onBack()
+                        }
                         },
                         modifier = Modifier.padding(end = 8.dp),
                         enabled = !isModerating
@@ -172,7 +173,7 @@ fun MyProductEditScreen(
                     )
                 }
             } else {
-                Text("El precio se gestiona por talla (Fase 2)", color = Color.Gray, fontSize = 12.sp)
+                Text("El precio se gestiona por talla", color = Color.Gray, fontSize = 12.sp)
             }
 
             if (!product.useStockBySize) {

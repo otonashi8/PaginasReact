@@ -24,8 +24,7 @@ object UserRepository {
     fun init(context: Context) {
         try {
             val rawData = LocalJsonStorage.loadRaw(context, USERS_FILE)
-            
-            var users: MutableList<User> = mutableListOf()
+            val users: MutableList<User> = mutableListOf()
             
             if (rawData != null) {
                 val trimmed = rawData.trim()
@@ -40,21 +39,32 @@ object UserRepository {
                 }
             }
             
+            var dataChanged = false
+
             // Asegurar campos no nulos tras deserialización y migración Admin
             val fixedUsers = users.map { u ->
                 var updated = u.copy(
-                    addresses = u.addresses ?: emptyList(),
+                    addresses = (u.addresses ?: emptyList()).map { addr ->
+                        addr.copy(
+                            province = addr.province ?: addr.department,
+                            ubigeoCode = addr.ubigeoCode ?: ""
+                        )
+                    },
                     savedCards = u.savedCards ?: emptyList(),
                     followedStoreIds = u.followedStoreIds ?: emptySet()
                 )
                 // Migración Super Admin
                 if (u.email == "admin" || u.alias == "Admin") {
-                    updated = updated.copy(
-                        isAdmin = true,
-                        isAdminUser = true,
-                        roleId = "super_admin"
-                    )
+                    if (!updated.isAdmin || !updated.isAdminUser || updated.roleId != "super_admin") {
+                        updated = updated.copy(
+                            isAdmin = true,
+                            isAdminUser = true,
+                            roleId = "super_admin"
+                        )
+                        dataChanged = true
+                    }
                 }
+                if (updated != u) dataChanged = true
                 updated
             }.toMutableList()
             
@@ -70,10 +80,11 @@ object UserRepository {
                     roleId = "super_admin",
                     isActive = true
                 ))
+                dataChanged = true
             }
             
             _allUsers.value = fixedUsers
-            saveAllToLocal(context)
+            if (dataChanged) saveAllToLocal(context)
 
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val currentUuid = prefs.getString(KEY_CURRENT_UUID, null)
@@ -131,6 +142,10 @@ object UserRepository {
     }
 
     fun logout(context: Context) {
+        // Limpiar SharedPreferences primero
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().remove(KEY_CURRENT_UUID).apply()
+        
+        // Crear nuevo invitado y actualizar estado
         val newUuid = UUID.randomUUID().toString()
         val newGuest = User(uuid = newUuid, alias = "", isGuest = true)
         

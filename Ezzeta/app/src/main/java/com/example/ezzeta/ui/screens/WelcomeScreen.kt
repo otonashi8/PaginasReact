@@ -102,9 +102,12 @@ fun WelcomeScreen(navController: NavHostController, viewModel: MainViewModel) {
         TextButton(
             onClick = {
                 if (alias.isNotBlank()) {
-                    viewModel.setUserName(context, alias)
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    viewModel.setUserName(context, alias) { success ->
+                        if (success) {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            }
+                        }
                     }
                 } else {
                     showError = true

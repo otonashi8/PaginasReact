@@ -129,11 +129,14 @@ fun AdminStoreProductEditScreen(
                             )
                             
                             if (productId == null) {
-                                viewModel.addProduct(context, updatedProduct)
+                                viewModel.addProduct(context, updatedProduct) { success ->
+                                    if (success) onBack()
+                                }
                             } else {
-                                viewModel.updateProduct(context, updatedProduct)
+                                viewModel.updateProduct(context, updatedProduct) { success ->
+                                    if (success) onBack()
+                                }
                             }
-                            onBack()
                         },
                         modifier = Modifier.padding(end = 8.dp)
                     ) {

@@ -55,13 +55,15 @@ fun CheckoutScreen(
 
     var addressName by remember { mutableStateOf("") }
     val user by viewModel.currentUser.collectAsState()
-    
-    val subtotal by viewModel.subtotal.collectAsState()
-    val planDiscount by viewModel.planDiscount.collectAsState()
+
+    val cartSummary by viewModel.cartSummary.collectAsState()
+    val subtotal = cartSummary.subtotal
+    val planDiscount = cartSummary.planDiscount
+    val shippingCost = cartSummary.shippingCost
+    val appliedRules = cartSummary.appliedRules
+    val total = cartSummary.total
+
     val userPlan by viewModel.userPlan.collectAsState()
-    val shippingCost by viewModel.shippingCost.collectAsState()
-    val appliedRules by viewModel.appliedRules.collectAsState()
-    val total by viewModel.total.collectAsState()
     
     var paymentMethod by remember { mutableStateOf("card") } // "tarjeta" o"yape"
 
@@ -73,7 +75,7 @@ fun CheckoutScreen(
     var cardExpiry by remember { mutableStateOf("") }
     var cardCvc by remember { mutableStateOf("") }
     
-    // fomulario iape+
+    // fomulario yape+
     var yapePhone by remember { mutableStateOf("") }
     var yapeCode by remember { mutableStateOf("") }
     
@@ -133,7 +135,10 @@ fun CheckoutScreen(
                             onClick = {
                                 address = addr.address
                                 selectedDept = addr.department
+                                selectedProv = addr.province
                                 selectedDistrict = addr.district
+                                selectedUbigeoCode = addr.ubigeoCode
+                                viewModel.onShippingDeptChanged(addr.department)
                             },
                             shape = RoundedCornerShape(12.dp),
                             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
@@ -514,7 +519,7 @@ fun CheckoutScreen(
             Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = termsAccepted, onCheckedChange = { termsAccepted = it })
-                Text("He leído y estoy de acuerdo con los términos y condiciones de la web*", fontSize = 12.sp)
+                Text("He leído y estoy de acuerdo con los términos y condiciones de la App*", fontSize = 12.sp)
             }
             
             Spacer(modifier = Modifier.height(32.dp))
@@ -541,7 +546,7 @@ fun CheckoutScreen(
                         )
                     }
 
-                    // Sección de Cupón en Checkout (Solo visualización - Fase 22 corregido)
+                    // Sección de Cupón en Checkout
                     val coupons = appliedRules.filter { it.isCoupon }
                     val autoDiscounts = appliedRules.filter { !it.isCoupon }
 

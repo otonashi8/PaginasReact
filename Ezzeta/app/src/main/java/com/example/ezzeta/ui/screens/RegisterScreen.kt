@@ -90,9 +90,12 @@ fun RegisterScreen(navController: NavHostController, viewModel: MainViewModel) {
             Button(
                 onClick = { 
                     if (name.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
-                        viewModel.registerUser(context, name, email)
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        viewModel.registerUser(context, name, email) { success ->
+                            if (success) {
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                }
+                            }
                         }
                     }
                 },

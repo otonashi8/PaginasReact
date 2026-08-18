@@ -40,6 +40,17 @@ import com.example.ezzeta.ui.viewmodel.MainViewModel
 fun CustomerServiceScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
 
+    // Estado del nuevo formulario de contacto
+    var contactType by remember { mutableStateOf("Consulta") }
+    var contactSubject by remember { mutableStateOf("") }
+    var contactMessage by remember { mutableStateOf("") }
+    var isSending by remember { mutableStateOf(false) }
+    var showContactForm by remember { mutableStateOf(true) }
+
+    val contactTypes = listOf("Consulta", "Soporte", "Sugerencia", "Otros")
+    var typeExpanded by remember { mutableStateOf(false) }
+
+    // Estado del Libro de Reclamaciones (existente)
     var showComplaintForm by remember { mutableStateOf(false) }
     var fullName by remember { mutableStateOf("") }
     var dni by remember { mutableStateOf("") }
@@ -75,6 +86,79 @@ fun CustomerServiceScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            Text(
+                "Contáctanos",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ExposedDropdownMenuBox(
+                        expanded = typeExpanded,
+                        onExpandedChange = { typeExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = contactType,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Tipo de consulta*") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
+                            contactTypes.forEach { type ->
+                                DropdownMenuItem(text = { Text(type) }, onClick = { contactType = type; typeExpanded = false })
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = contactSubject,
+                        onValueChange = { contactSubject = it },
+                        label = { Text("Asunto*") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = contactMessage,
+                        onValueChange = { contactMessage = it },
+                        label = { Text("Mensaje / Detalle*") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3
+                    )
+
+                    Button(
+                        onClick = {
+                            isSending = true
+                            viewModel.submitCustomerForm(context, contactType, contactSubject.trim(), contactMessage.trim()) { success ->
+                                isSending = false
+                                if (success) {
+                                    contactSubject = ""
+                                    contactMessage = ""
+                                    contactType = "Consulta"
+                                }
+                            }
+                        },
+                        enabled = !isSending && contactSubject.isNotBlank() && contactMessage.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        if (isSending) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = Color.White)
+                            Spacer(modifier = Modifier.width(12.dp))
+                        }
+                        Text("Enviar consulta")
+                    }
+                }
+            }
+
             Text(
                 "¿Cómo podemos ayudarte?",
                 style = MaterialTheme.typography.headlineSmall,
@@ -259,7 +343,7 @@ fun CustomerServiceScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                         text = if (complaintType == "Queja") 
                             "Queja: malestar o descontento respecto a la atencion al publico" 
                         else 
-                            "Reclamo: disconformidad relacionada con los productos o servicios",
+                            "Reclamo: disconformidad relacionada con los productos",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray,
                         modifier = Modifier.padding(vertical = 4.dp)

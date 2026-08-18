@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -23,10 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.ezzeta.data.model.User
 import kotlinx.coroutines.delay
 
 @Composable
@@ -45,7 +46,7 @@ fun ScrollToTopButton(
             contentColor = Color.White,
             shape = CircleShape,
             modifier = Modifier
-                .padding(bottom = 8.dp) // Un pequeño margen sobre el bottom bar
+                .padding(bottom = 8.dp)
                 .size(48.dp)
         ) {
             Icon(
@@ -142,6 +143,38 @@ fun PromoBanner() {
                         )
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun UserAvatar(
+    user: User?,
+    modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    iconSize: Dp = size * 0.6f
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        if (user?.profileImageUrl != null) {
+            AsyncImage(
+                model = user.profileImageUrl,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = null,
+                modifier = Modifier.size(iconSize),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
         }
     }
 }

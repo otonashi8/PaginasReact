@@ -231,7 +231,16 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
             OrdersHistoryScreen(mainViewModel, onBack = { navController.popBackStack() })
         }
         composable(Screen.Following.route) {
-            FollowingStoresScreen(mainViewModel, onBack = { navController.popBackStack() })
+            FollowingScreen(
+                viewModel = mainViewModel, 
+                onBack = { navController.popBackStack() },
+                onNavigateToStore = { storeId ->
+                    navController.navigate(Screen.StoreDetail.createRoute(storeId))
+                },
+                onNavigateToUser = { userId ->
+                    navController.navigate(Screen.SellerCatalog.createRoute(userId))
+                }
+            )
         }
         composable(Screen.MySizes.route) {
             MySizesScreen(mainViewModel, onBack = { navController.popBackStack() })
@@ -251,6 +260,9 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
         }
         composable(Screen.AddressBook.route) {
             AddressBookScreen(mainViewModel, onBack = { navController.popBackStack() })
+        }
+        composable(Screen.PaymentMethods.route) {
+            PaymentMethodsScreen(mainViewModel, onBack = { navController.popBackStack() })
         }
 
         composable(Screen.AdminDashboard.route) {
@@ -302,6 +314,15 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
                     },
                     onNavigateToAdminRoles = {
                         navController.navigate(Screen.AdminRoles.route)
+                    },
+                    onNavigateToAdminForms = {
+                        navController.navigate(Screen.AdminForms.route)
+                    },
+                    onNavigateToWordModeration = {
+                        navController.navigate(Screen.AdminWordModeration.route)
+                    },
+                    onNavigateToReports = {
+                        navController.navigate(Screen.AdminReports.route)
                     }
                 )
             }
@@ -447,6 +468,33 @@ fun EzzetaNavGraph(navController: NavHostController, mainViewModel: MainViewMode
         composable(Screen.AdminRoles.route) {
             AdminRouteGuard(viewModel = mainViewModel, module = "Sistema", onUnauthorized = { navController.popBackStack() }) {
                 AdminRoleManagementScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+
+        composable(Screen.AdminForms.route) {
+            AdminRouteGuard(viewModel = mainViewModel, module = "Formularios", onUnauthorized = { navController.popBackStack() }) {
+                AdminFormsScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+
+        composable(Screen.AdminWordModeration.route) {
+            AdminRouteGuard(viewModel = mainViewModel, module = "Moderación de palabras", onUnauthorized = { navController.popBackStack() }) {
+                AdminWordModerationScreen(
+                    viewModel = mainViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+
+        composable(Screen.AdminReports.route) {
+            AdminRouteGuard(viewModel = mainViewModel, module = "Reportes", onUnauthorized = { navController.popBackStack() }) {
+                AdminReportsScreen(
                     viewModel = mainViewModel,
                     onBack = { navController.popBackStack() }
                 )

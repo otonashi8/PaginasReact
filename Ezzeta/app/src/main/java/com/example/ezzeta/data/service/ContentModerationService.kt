@@ -1,12 +1,14 @@
 package com.example.ezzeta.data.service
 
 import com.example.ezzeta.BuildConfig
+import com.example.ezzeta.data.model.BlockedWord
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.text.Normalizer
 
 sealed class ModerationResult {
     object Allowed : ModerationResult()
@@ -27,7 +29,7 @@ object ContentModerationService {
         RegexOption.IGNORE_CASE
     )
 
-    // Regex for standard email format
+    // Regex formato email
     private val emailRegex = Regex(
         "[a-zA-Z0-9+._%-+]{1,256}" +
         "@" +
@@ -39,21 +41,28 @@ object ContentModerationService {
     )
 
     private val socialMediaRegex = Regex(
-        "(?i)(?:instagram|ig|tiktok|facebook|fb|telegram|tg|messenger|snapchat|twitter|link en|sígueme|búscame|mi perfil|mi usuario|página|web|url|http|https)" +
+        "(?i)(?:of|onlyfans|redes|solo fans|instagram|ig|tiktok|facebook|fb|telegram|tg|messenger|snapchat|twitter|link en|sígueme|búscame|mi perfil|mi usuario|página|web|url|http|https)" +
         "(?:\\s|:)*" +
         "(?:@\\w+|[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}/\\S*|www\\.\\S*)",
         RegexOption.IGNORE_CASE
     )
 
     private val externalContactPhrases = listOf(
-        "sígueme en", "escríbeme por", "contacta conmigo", "mi instagram", 
+        "sígueme en", "escríbeme por", "contacta conmigo", "mi instagram",
         "mi whatsapp", "búscame como", "link en mi bio", "contacto directo",
-        "hablamos por", "escríbeme al", "trato directo"
+        "hablamos por", "escríbeme al", "trato directo", "mejor atención", "tambien en",
+        "disponible en","para mas detalles", "sigueme por", "enlace directo"
     )
 
-    suspend fun validateContent(text: String): ModerationResult {
+    suspend fun validateContent(text: String, localBlockedWords: List<BlockedWord> = emptyList()): ModerationResult {
         if (text.isBlank()) return ModerationResult.Allowed
 
+        // 1. Moderación Local
+        if (containsBlockedWord(text, localBlockedWords)) {
+            return ModerationResult.Blocked("El contenido contiene términos no permitidos. Modifica el texto e inténtalo nuevamente.")
+        }
+
+        // 2. Moderación por Reglas
         if (phoneRegex.containsMatchIn(text)) {
             return ModerationResult.Blocked("No se permite incluir números de teléfono en campos públicos.")
         }
@@ -71,7 +80,34 @@ object ContentModerationService {
             return ModerationResult.Blocked("No se permite redirigir el contacto fuera de la aplicación.")
         }
 
+        // 3. Moderación Externa (Neutrino)
         return validateWithNeutrino(text)
+    }
+
+    private fun containsBlockedWord(text: String, blockedWords: List<BlockedWord>): Boolean {
+        if (blockedWords.isEmpty()) return false
+        
+        val normalizedText = normalizeText(text)
+        
+        return blockedWords.any { blocked ->
+            val normalizedBlocked = normalizeText(blocked.word)
+            if (blocked.isPartialMatch) {
+                normalizedText.contains(normalizedBlocked)
+            } else {
+                // Coincidencia exacta de palabra (usando boundaries para evitar falsos positivos)
+                // Usamos Regex con \b para detectar límites de palabra.
+                // Sin embargo, Normalizer puede afectar los límites si no se tiene cuidado.
+                // Para una validación robusta y simple de "palabra exacta":
+                val regex = Regex("\\b${Regex.escape(normalizedBlocked)}\\b", RegexOption.IGNORE_CASE)
+                regex.containsMatchIn(normalizedText)
+            }
+        }
+    }
+
+    private fun normalizeText(text: String): String {
+        return Normalizer.normalize(text, Normalizer.Form.NFD)
+            .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
+            .lowercase()
     }
 
     private suspend fun validateWithNeutrino(text: String): ModerationResult = withContext(Dispatchers.IO) {

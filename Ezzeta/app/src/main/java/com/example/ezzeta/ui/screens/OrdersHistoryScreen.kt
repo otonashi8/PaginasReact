@@ -101,7 +101,7 @@ fun OrdersHistoryScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                             if (expanded) {
                                 Spacer(modifier = Modifier.height(12.dp))
                                 
-                                // Indicador de Estado (Fase 16)
+                                // Indicador de Estado
                                 OrderStatusIndicator(status = order.orderStatus)
                                 
                                 // Botón de Simulación Temporal

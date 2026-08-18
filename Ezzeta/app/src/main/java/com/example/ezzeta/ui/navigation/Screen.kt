@@ -69,6 +69,9 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     object AdminAbandonedCarts : Screen("admin_abandoned_carts")
     object AdminUsers : Screen("admin_users")
     object AdminRoles : Screen("admin_roles")
+    object AdminForms : Screen("admin_forms")
+    object AdminWordModeration : Screen("admin_word_moderation")
+    object AdminReports : Screen("admin_reports")
 }
 
 val bottomNavItems = listOf(

@@ -118,6 +118,12 @@ fun PriceRuleItem(
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
+                    Text(
+                        text = if (rule.isStackable) "Apilable" else "Exclusiva",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (rule.isStackable) Color(0xFF2E7D32) else MaterialTheme.colorScheme.secondary
+                    )
                 }
                 
                 Switch(checked = rule.isActive, onCheckedChange = { onToggle() })
@@ -166,6 +172,7 @@ fun RuleEditorDialog(
     var couponCode by remember { mutableStateOf(rule?.couponCode ?: "") }
     var minSubtotal by remember { mutableStateOf(rule?.minSubtotal?.toString() ?: "") }
     var finalComboPrice by remember { mutableStateOf(rule?.finalComboPrice?.toString() ?: "") }
+    var isStackable by remember { mutableStateOf(rule?.isStackable ?: false) }
     
     val targetIds = remember { mutableStateListOf<String>().apply { addAll(rule?.targetIds ?: emptyList()) } }
     val comboReqs = remember { mutableStateListOf<ComboRequirement>().apply { addAll(rule?.comboRequirements ?: emptyList()) } }
@@ -310,6 +317,12 @@ fun RuleEditorDialog(
                 OutlinedTextField(value = priority, onValueChange = { priority = it }, label = { Text("Prioridad (Menor = Más importante)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(checked = isStackable, onCheckedChange = { isStackable = it })
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = if (isStackable) "Apilable (Combinable)" else "Exclusiva (No combinable)")
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = requiresCoupon, onCheckedChange = { requiresCoupon = it })
                     Text("Requiere Cupón")
                 }
@@ -334,7 +347,8 @@ fun RuleEditorDialog(
                     comboRequirements = comboReqs.toList(),
                     minSubtotal = minSubtotal.toDoubleOrNull(),
                     finalComboPrice = finalComboPrice.toDoubleOrNull(),
-                    isActive = rule?.isActive ?: true
+                    isActive = rule?.isActive ?: true,
+                    isStackable = isStackable
                 )
                 onSave(updatedRule)
             }, enabled = name.isNotBlank()) { Text("Guardar") }

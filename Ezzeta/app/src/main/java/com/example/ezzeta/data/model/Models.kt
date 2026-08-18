@@ -164,10 +164,10 @@ data class AdvantagePlan(
 data class UserAddress(
     val id: String,
     val name: String? = null,
-    val address: String,
-    val department: String,
-    val province: String,
-    val district: String,
+    val address: String = "",
+    val department: String = "",
+    val province: String = "",
+    val district: String = "",
     val ubigeoCode: String? = null
 )
 
@@ -265,6 +265,7 @@ data class PriceRule(
     val couponCode: String? = null,
     val priority: Int = 10,
     val isActive: Boolean = true,
+    val isStackable: Boolean = false,
     val finalComboPrice: Double? = null
 )
 
@@ -320,4 +321,57 @@ data class CustomerStat(
     val email: String,
     val totalValue: Double,
     val count: Int // Pedidos comprados o Unidades vendidas
+)
+
+enum class FormStatus {
+    SIN_REVISAR, REVISADO, SOLUCIONADO
+}
+
+data class CustomerForm(
+    val id: String,
+    val type: String,
+    val subject: String,
+    val description: String,
+    val userId: String? = null,
+    val userName: String? = null,
+    val userEmail: String? = null,
+    val createdAt: Long = System.currentTimeMillis(),
+    val status: FormStatus = FormStatus.SIN_REVISAR
+)
+
+data class BlockedWord(
+    val id: String,
+    val word: String,
+    val isPartialMatch: Boolean = false,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+enum class ReportType(val displayName: String) {
+    SPAM("Spam"),
+    PRODUCTO_FALSO("Producto falso"),
+    PRODUCTO_ENGANOSO("Producto engañoso"),
+    PRODUCTO_PROHIBIDO("Producto prohibido"),
+    INFORMACION_FALSA("Información falsa"),
+    CONTENIDO_OFENSIVO("Contenido ofensivo"),
+    PRECIO_ENGANOSO("Precio engañoso"),
+    OTRO("Otro")
+}
+
+enum class ReportStatus {
+    SIN_REVISAR, EN_REVISION, RESUELTO, DESCARTADO
+}
+
+data class MarketplaceReport(
+    val id: String,
+    val productId: String,
+    val productName: String, // Snapshot
+    val sellerId: String,
+    val sellerName: String, // Snapshot
+    val reporterId: String,
+    val reporterName: String,
+    val reporterEmail: String,
+    val type: ReportType,
+    val description: String?,
+    val createdAt: Long = System.currentTimeMillis(),
+    val status: ReportStatus = ReportStatus.SIN_REVISAR
 )

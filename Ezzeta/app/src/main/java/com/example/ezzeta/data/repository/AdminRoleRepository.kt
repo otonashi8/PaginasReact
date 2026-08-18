@@ -30,7 +30,8 @@ object AdminRoleRepository {
         val modules = listOf(
             "Dashboard", "Productos Tienda", "Productos Clientes", "Marketplace", "Clientes",
             "Pedidos", "Reglas de Precios", "Estadísticas", "Carritos Abandonados",
-            "Categorías", "Tallas", "Tallas Clientes", "Envíos", "Sistema"
+            "Categorías", "Tallas", "Tallas Clientes", "Envíos", "Sistema", "Formularios",
+            "Moderación de palabras", "Reportes"
         )
         
         val superAdminPermissions = modules.associateWith { 
@@ -55,7 +56,8 @@ object AdminRoleRepository {
         val modules = listOf(
             "Dashboard", "Productos Tienda", "Productos Clientes", "Marketplace", "Clientes",
             "Pedidos", "Reglas de Precios", "Estadísticas", "Carritos Abandonados",
-            "Categorías", "Tallas", "Tallas Clientes", "Envíos", "Sistema"
+            "Categorías", "Tallas", "Tallas Clientes", "Envíos", "Sistema", "Formularios",
+            "Moderación de palabras", "Reportes"
         )
         val fullPermissions = modules.associateWith { 
             AdminPermission(view = true, create = true, edit = true, delete = true)

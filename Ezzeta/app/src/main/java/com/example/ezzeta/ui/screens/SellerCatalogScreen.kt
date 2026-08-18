@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.ezzeta.ui.components.ProductCard
+import com.example.ezzeta.ui.components.UserAvatar
 import com.example.ezzeta.ui.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,12 +33,23 @@ fun SellerCatalogScreen(
         if (sellerId != null) viewModel.getProductsBySeller(sellerId) else emptyList()
     }
     
-    val sellerName = products.firstOrNull()?.sellerName ?: "Catálogo del Vendedor"
+    val allUsers by viewModel.registeredUsers.collectAsState()
+    val seller = remember(allUsers, sellerId) {
+        allUsers.find { it.uuid == sellerId }
+    }
+    
+    val sellerName = seller?.alias ?: products.firstOrNull()?.sellerName ?: "Catálogo del Vendedor"
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(sellerName, fontWeight = FontWeight.Bold) },
+                title = { 
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        UserAvatar(user = seller, size = 32.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(sellerName, fontWeight = FontWeight.Bold)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")

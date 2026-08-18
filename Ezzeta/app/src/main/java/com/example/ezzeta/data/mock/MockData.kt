@@ -12,7 +12,6 @@ object MockData {
         // Marketplace Categories
         Category("m1", "Segunda Mano", "", listOf("Ropa", "Electrónica", "Hogar"), "MARKETPLACE"),
         Category("m2", "Artesanías", "", listOf("Joyas", "Decoración", "Tejidos"), "MARKETPLACE"),
-        Category("m3", "Servicios", "", listOf("Diseño", "Reparaciones", "Clases"), "MARKETPLACE")
     )
 
     val stores = listOf(

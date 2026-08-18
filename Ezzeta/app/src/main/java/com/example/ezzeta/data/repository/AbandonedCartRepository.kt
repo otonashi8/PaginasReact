@@ -22,10 +22,7 @@ class AbandonedCartRepository {
         }
     }
 
-    /**
-     * Sincroniza el estado actual del carrito del usuario con una sesión de abandono.
-     * Si no existe una sesión ACTIVE para el usuario, crea una nueva.
-     */
+    // Sincroniza el estado actual del carrito del usuario con una sesión de abandono. Si no existe una sesión ACTIVE para el usuario, crea una nueva. //
     fun syncCartSnapshot(context: Context, items: List<CartItem>, user: User?) {
         val currentCarts = _abandonedCarts.value.toMutableList()
         
@@ -75,10 +72,7 @@ class AbandonedCartRepository {
         LocalJsonStorage.saveToFile(context, FILE_NAME, currentCarts)
     }
 
-    /**
-     * Marca productos específicos como comprados.
-     * Se llama durante el checkout.
-     */
+    // Marca productos específicos como comprados. Se llama durante el checkout.//
     fun markItemsAsPurchased(context: Context, purchasedItemKeys: List<String>, user: User?) {
         val currentCarts = _abandonedCarts.value.toMutableList()
         

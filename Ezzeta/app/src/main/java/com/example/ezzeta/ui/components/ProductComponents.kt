@@ -60,21 +60,27 @@ fun ProductCard(
         onAppear?.invoke()
     }
     
-    val storeName = when (product.storeId) {
-        "s1" -> "EZZETA"
-        "s2" -> "CREPANTE"
-        "s3" -> "MAXETA"
-        "s4" -> "UOMO CATTIVO"
-        "s5" -> "3x100"
-        else -> "Tienda"
+    val storeName = remember(product.storeId) {
+        when (product.storeId) {
+            "s1" -> "EZZETA"
+            "s2" -> "CREPANTE"
+            "s3" -> "MAXETA"
+            "s4" -> "UOMO CATTIVO"
+            "s5" -> "3x100"
+            else -> "Tienda"
+        }
     }
 
-    val displayPrice = priceInfo?.finalPrice ?: product.price
-    val oldPrice = priceInfo?.let { if (it.discountPercent > 0) it.originalPrice else null } ?: product.oldPrice
-    val discountPercent = priceInfo?.let { if (it.discountPercent > 0) it.discountPercent else null }
-        ?: if (product.oldPrice != null && product.oldPrice > product.price) {
-            ((1 - (product.price / product.oldPrice)) * 100).toInt()
-        } else null
+    val displayPrice = remember(priceInfo, product.price) { priceInfo?.finalPrice ?: product.price }
+    val oldPrice = remember(priceInfo, product.oldPrice) { 
+        priceInfo?.let { if (it.discountPercent > 0) it.originalPrice else null } ?: product.oldPrice 
+    }
+    val discountPercent = remember(priceInfo, product.oldPrice, product.price) {
+        priceInfo?.let { if (it.discountPercent > 0) it.discountPercent else null }
+            ?: if (product.oldPrice != null && product.oldPrice > product.price) {
+                ((1 - (product.price / product.oldPrice)) * 100).toInt()
+            } else null
+    }
 
     Card(
         modifier = modifier.padding(8.dp),
@@ -122,23 +128,6 @@ fun ProductCard(
                             fontSize = 10.sp,
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                             fontWeight = FontWeight.Black
-                        )
-                    }
-                }
-
-                // Indicador de Combo
-                if (priceInfo?.hasCombo == true) {
-                    Surface(
-                        modifier = Modifier.padding(top = 40.dp, end = 8.dp).align(Alignment.TopEnd),
-                        color = MaterialTheme.colorScheme.tertiary,
-                        shape = RectangleShape
-                    ) {
-                        Text(
-                            text = "PROMO COMBO",
-                            color = MaterialTheme.colorScheme.onTertiary,
-                            fontSize = 8.sp,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -294,12 +283,12 @@ fun ProductCarousel(
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(
-                count = products.size,
-                key = { index -> products[index].id }
-            ) { index ->
-                val product = products[index]
+                items = products,
+                key = { it.id }
+            ) { product ->
                 val priceRules by viewModel.priceRules.collectAsState()
                 val couponInput by viewModel.couponInput.collectAsState()
+                
                 val priceInfo = remember(product, priceRules, couponInput) {
                     viewModel.getProductPriceInfo(product)
                 }

@@ -1,9 +1,13 @@
 package com.example.ezzeta.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.FlowRow
@@ -33,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.ezzeta.data.model.AdvantagePlan
+import com.example.ezzeta.ui.components.UserAvatar
 import com.example.ezzeta.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
@@ -88,6 +93,13 @@ fun ProfileScreen(
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            uri?.let { viewModel.uploadProfileImage(context, it) }
+        }
+    )
 
     if (showSettingsSheet) {
         ModalBottomSheet(
@@ -185,8 +197,9 @@ fun ProfileScreen(
             confirmButton = {
                 TextButton(onClick = {
                     if (newAlias.isNotBlank()) {
-                        viewModel.updateAlias(context, newAlias)
-                        showEditAliasDialog = false
+                        viewModel.updateAlias(context, newAlias) { success ->
+                            if (success) showEditAliasDialog = false
+                        }
                     }
                 }) {
                     Text("Guardar")
@@ -219,10 +232,39 @@ fun ProfileScreen(
         ) {
             item {
                 Box(
-                    modifier = Modifier.size(100.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.size(100.dp),
+                    contentAlignment = Alignment.BottomEnd
                 ) {
-                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(60.dp))
+                    UserAvatar(user = user, size = 100.dp)
+                    
+                    if (user?.isGuest == false) {
+                        Surface(
+                            onClick = {
+                                photoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            },
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            contentColor = Color.White,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Edit, contentDescription = "Cambiar foto", modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
+                }
+                
+                if (user?.isGuest == false && user?.profileImageUrl != null) {
+                    TextButton(
+                        onClick = { viewModel.removeProfileImage(context) },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Eliminar foto")
+                    }
                 }
                 
                 Text(
@@ -429,7 +471,7 @@ fun SettingsMenuContent(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // --- Sección de Suscripción ---
+        // Sección de Suscripción
         if (userPlan != null) {
             Text(
                 text = "Mi Suscripción",
@@ -501,7 +543,7 @@ fun SettingsMenuContent(
             modifier = Modifier.padding(bottom = 12.dp)
         )
         
-        // --- Redes por Marca ---
+        // Redes por Marca
         val fbIcon = "https://cdn-icons-png.flaticon.com/512/145/145802.png"
         val ytIcon = "https://cdn-icons-png.flaticon.com/512/174/174883.png"
         val igIcon = "https://static.vecteezy.com/system/resources/thumbnails/018/930/413/small/instagram-logo-instagram-icon-transparent-free-png.png"

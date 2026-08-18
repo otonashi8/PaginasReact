@@ -13,8 +13,12 @@ object PersistenceManager {
     private const val HISTORY_FILE_PREFIX = "history_"
     private const val CART_FILE_PREFIX = "cart_"
     private const val ORDERS_FILE_PREFIX = "orders_"
+    private const val KEY_ADMIN_GROUP_PREFIX = "admin_group_"
 
     private var sharedPreferences: SharedPreferences? = null
+    
+    // Cache en memoria para conteos de wishlist para evitar lecturas de SharedPreferences
+    private var wishlistCountsCache: Map<String, Int>? = null
 
     private fun getPrefs(context: Context): SharedPreferences {
         return sharedPreferences ?: synchronized(this) {
@@ -36,6 +40,8 @@ object PersistenceManager {
 
     fun saveFavorites(context: Context, favoriteIds: Set<String>) {
         getPrefs(context).edit().putStringSet(KEY_FAVORITES_PREFIX + getUserId(), favoriteIds).apply()
+        // Invalidar cache tras guardar
+        wishlistCountsCache = null
     }
 
     fun getFavorites(context: Context): Set<String> {
@@ -43,6 +49,8 @@ object PersistenceManager {
     }
 
     fun getAllWishlistCounts(context: Context): Map<String, Int> {
+        wishlistCountsCache?.let { return it }
+        
         val allEntries = getPrefs(context).all
         val counts = mutableMapOf<String, Int>()
         
@@ -53,6 +61,7 @@ object PersistenceManager {
                 }
             }
         }
+        wishlistCountsCache = counts
         return counts
     }
 
@@ -124,5 +133,15 @@ object PersistenceManager {
                 )
             } catch (e: Exception) { null }
         }
+    }
+
+    // organizar admin
+
+    fun saveAdminGroupState(context: Context, groupKey: String, isExpanded: Boolean) {
+        getPrefs(context).edit().putBoolean(KEY_ADMIN_GROUP_PREFIX + groupKey, isExpanded).apply()
+    }
+
+    fun getAdminGroupState(context: Context, groupKey: String): Boolean {
+        return getPrefs(context).getBoolean(KEY_ADMIN_GROUP_PREFIX + groupKey, false)
     }
 }

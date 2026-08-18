@@ -30,21 +30,30 @@ fun AddressBookScreen(
 ) {
     val user by viewModel.currentUser.collectAsState()
     val context = LocalContext.current
+    var addressToEdit by remember { mutableStateOf<com.example.ezzeta.data.model.UserAddress?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
-    if (showAddDialog) {
-        AddAddressDialog(
-            onDismiss = { showAddDialog = false },
-            onConfirm = { name, address, dept, dist ->
+    if (showAddDialog || addressToEdit != null) {
+        AddressEditDialog(
+            address = addressToEdit,
+            viewModel = viewModel,
+            onDismiss = { 
+                showAddDialog = false
+                addressToEdit = null
+            },
+            onConfirm = { name, fullAddress, dept, prov, dist, ubigeo ->
                 viewModel.addAddress(
                     context = context,
-                    address = address,
+                    address = fullAddress,
                     dept = dept,
-                    prov = dept,
+                    prov = prov,
                     dist = dist,
-                    name = name
+                    ubigeo = ubigeo,
+                    name = name,
+                    addressId = addressToEdit?.id
                 )
                 showAddDialog = false
+                addressToEdit = null
             }
         )
     }
@@ -73,7 +82,7 @@ fun AddressBookScreen(
         val addresses = user?.addresses ?: emptyList()
         
         if (addresses.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         Icons.Default.LocationOn, 
@@ -97,6 +106,7 @@ fun AddressBookScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         shape = RoundedCornerShape(12.dp),
+                        onClick = { addressToEdit = addr },
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     ) {
                         Row(
@@ -109,7 +119,10 @@ fun AddressBookScreen(
                                     Text(addr.name, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                                 }
                                 Text(addr.address, fontWeight = FontWeight.Bold)
-                                Text("${addr.district}, ${addr.department}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                Text("${addr.district}, ${addr.province}, ${addr.department}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                if (!addr.ubigeoCode.isNullOrBlank()) {
+                                    Text("Ubigeo: ${addr.ubigeoCode}", style = MaterialTheme.typography.labelSmall, color = Color.Gray.copy(alpha = 0.7f))
+                                }
                             }
                             IconButton(onClick = { viewModel.deleteAddress(context, addr.id) }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
@@ -124,31 +137,44 @@ fun AddressBookScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddAddressDialog(
+fun AddressEditDialog(
+    address: com.example.ezzeta.data.model.UserAddress?,
+    viewModel: MainViewModel,
     onDismiss: () -> Unit,
-    onConfirm: (name: String, address: String, dept: String, dist: String) -> Unit
+    onConfirm: (name: String, address: String, dept: String, prov: String, dist: String, ubigeo: String?) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var selectedDept by remember { mutableStateOf("") }
-    var selectedDistrict by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(address?.name ?: "") }
+    var fullAddress by remember { mutableStateOf(address?.address ?: "") }
+    
+    val ubigeoData by viewModel.ubigeoData.collectAsState()
+    val isLoadingUbigeo by viewModel.isLoadingUbigeo.collectAsState()
+    val ubigeoError by viewModel.ubigeoError.collectAsState()
 
-    val departments = listOf("Lima", "Arequipa", "Cusco", "La Libertad", "Piura")
-    val districtsMap = mapOf(
-        "Lima" to listOf("Miraflores", "San Isidro", "Barranco", "Surco", "La Molina"),
-        "Arequipa" to listOf("Yanahuara", "Cayma", "Cercado", "Selva Alegre"),
-        "Cusco" to listOf("Cercado", "San Blas", "San Sebastian"),
-        "La Libertad" to listOf("Trujillo", "Victor Larco", "Huanchaco"),
-        "Piura" to listOf("Piura", "Castilla", "Catacaos")
-    )
+    var selectedDept by remember { mutableStateOf(address?.department ?: "") }
+    var selectedProv by remember { mutableStateOf(address?.province ?: "") }
+    var selectedDistrict by remember { mutableStateOf(address?.district ?: "") }
+    var selectedUbigeoCode by remember { mutableStateOf(address?.ubigeoCode) }
+
+    val departments = remember(ubigeoData) { ubigeoData.keys.toList().sorted() }
+    val provinces = remember(selectedDept, ubigeoData) {
+        ubigeoData[selectedDept]?.keys?.toList()?.sorted() ?: emptyList()
+    }
+    val districts = remember(selectedDept, selectedProv, ubigeoData) {
+        ubigeoData[selectedDept]?.get(selectedProv)?.keys?.toList()?.sorted() ?: emptyList()
+    }
+
+    // Actualizar ubigeo cuando cambia el distrito
+    LaunchedEffect(selectedDept, selectedProv, selectedDistrict) {
+        selectedUbigeoCode = ubigeoData[selectedDept]?.get(selectedProv)?.get(selectedDistrict)?.ubigeo
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nueva Dirección", fontWeight = FontWeight.Bold) },
+        title = { Text(if (address == null) "Nueva Dirección" else "Editar Dirección", fontWeight = FontWeight.Bold) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedTextField(
                     value = name,
@@ -159,16 +185,23 @@ fun AddAddressDialog(
                 )
                 
                 OutlinedTextField(
-                    value = address,
-                    onValueChange = { address = it },
+                    value = fullAddress,
+                    onValueChange = { fullAddress = it },
                     label = { Text("Dirección completa*") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                if (isLoadingUbigeo) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                } else if (ubigeoError != null) {
+                    Text(ubigeoError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+
+                // Departamento
                 var deptExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = deptExpanded,
-                    onExpandedChange = { deptExpanded = it }
+                    onExpandedChange = { if (!isLoadingUbigeo) deptExpanded = it }
                 ) {
                     OutlinedTextField(
                         value = selectedDept,
@@ -176,7 +209,8 @@ fun AddAddressDialog(
                         readOnly = true,
                         label = { Text("Departamento*") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = deptExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        enabled = !isLoadingUbigeo && departments.isNotEmpty()
                     )
                     ExposedDropdownMenu(
                         expanded = deptExpanded,
@@ -186,8 +220,12 @@ fun AddAddressDialog(
                             DropdownMenuItem(
                                 text = { Text(dept) },
                                 onClick = {
-                                    selectedDept = dept
-                                    selectedDistrict = ""
+                                    if (selectedDept != dept) {
+                                        selectedDept = dept
+                                        selectedProv = ""
+                                        selectedDistrict = ""
+                                        selectedUbigeoCode = null
+                                    }
                                     deptExpanded = false
                                 }
                             )
@@ -195,10 +233,46 @@ fun AddAddressDialog(
                     }
                 }
 
+                // Provincia
+                var provExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = provExpanded,
+                    onExpandedChange = { if (selectedDept.isNotEmpty()) provExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = selectedProv,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Provincia*") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = provExpanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        enabled = selectedDept.isNotEmpty() && provinces.isNotEmpty()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = provExpanded,
+                        onDismissRequest = { provExpanded = false }
+                    ) {
+                        provinces.forEach { prov ->
+                            DropdownMenuItem(
+                                text = { Text(prov) },
+                                onClick = {
+                                    if (selectedProv != prov) {
+                                        selectedProv = prov
+                                        selectedDistrict = ""
+                                        selectedUbigeoCode = null
+                                    }
+                                    provExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Distrito
                 var distExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = distExpanded,
-                    onExpandedChange = { if (selectedDept.isNotEmpty()) distExpanded = it }
+                    onExpandedChange = { if (selectedProv.isNotEmpty()) distExpanded = it }
                 ) {
                     OutlinedTextField(
                         value = selectedDistrict,
@@ -207,13 +281,13 @@ fun AddAddressDialog(
                         label = { Text("Distrito*") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = distExpanded) },
                         modifier = Modifier.fillMaxWidth().menuAnchor(),
-                        enabled = selectedDept.isNotEmpty()
+                        enabled = selectedProv.isNotEmpty() && districts.isNotEmpty()
                     )
                     ExposedDropdownMenu(
                         expanded = distExpanded,
                         onDismissRequest = { distExpanded = false }
                     ) {
-                        districtsMap[selectedDept]?.forEach { dist ->
+                        districts.forEach { dist ->
                             DropdownMenuItem(
                                 text = { Text(dist) },
                                 onClick = {
@@ -224,12 +298,28 @@ fun AddAddressDialog(
                         }
                     }
                 }
+
+                // Ubigeo (Solo lectura)
+                if (selectedUbigeoCode != null) {
+                    OutlinedTextField(
+                        value = selectedUbigeoCode!!,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Código Ubigeo") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        ),
+                        textStyle = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(name, address, selectedDept, selectedDistrict) },
-                enabled = address.isNotBlank() && selectedDept.isNotBlank() && selectedDistrict.isNotBlank()
+                onClick = { onConfirm(name, fullAddress, selectedDept, selectedProv, selectedDistrict, selectedUbigeoCode) },
+                enabled = fullAddress.isNotBlank() && selectedDept.isNotBlank() && selectedProv.isNotBlank() && selectedDistrict.isNotBlank() && selectedUbigeoCode != null
             ) {
                 Text("Guardar")
             }

@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.example.ezzeta.ui.utils.CommunicationsHelper
+import com.example.ezzeta.ui.utils.ImageUtils
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -28,6 +29,9 @@ class MainViewModel : ViewModel() {
     private val shippingRepository = ShippingRepository()
     private val priceRuleRepository = PriceRuleRepository()
     private val abandonedCartRepository = AbandonedCartRepository()
+    private val customerFormRepository = CustomerFormRepository
+    private val blockedWordRepository = BlockedWordRepository
+    private val marketplaceReportRepository = MarketplaceReportRepository
     
     val currentUser: StateFlow<User?> = UserRepository.currentUser
     val isAdmin: StateFlow<Boolean> = currentUser.map { it?.isAdmin ?: false }
@@ -78,8 +82,40 @@ class MainViewModel : ViewModel() {
     private val _isModerating = MutableStateFlow(false)
     val isModerating: StateFlow<Boolean> = _isModerating.asStateFlow()
 
+    // Reorganización del Panel Administrativo
+    private val _adminGroupsExpanded = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val adminGroupsExpanded: StateFlow<Map<String, Boolean>> = _adminGroupsExpanded.asStateFlow()
+
+    val marketplaceReports: StateFlow<List<MarketplaceReport>> = marketplaceReportRepository.reports
+
     val allProducts: StateFlow<List<Product>> = productRepository.getProducts()
 
+    data class CartSummary(
+        val subtotal: Double = 0.0,
+        val totalSavings: Double = 0.0,
+        val appliedRules: List<AppliedPriceRule> = emptyList(),
+        val totalRulesDiscount: Double = 0.0,
+        val planDiscount: Double = 0.0,
+        val shippingCost: Double = 0.0,
+        val total: Double = 0.0,
+        val selectedCount: Int = 0,
+        val totalCount: Int = 0
+    )
+
+    data class FollowedUserInfo(
+        val id: String,
+        val alias: String,
+        val profileImageUrl: String?,
+        val followerCount: Int,
+        val hasMarketplaceProducts: Boolean
+    )
+
+    data class FollowedStoreInfo(
+        val id: String,
+        val name: String,
+        val logoUrl: String,
+        val followerCount: Int
+    )
 
     private val _advantagePlans = MutableStateFlow(listOf(
         AdvantagePlan("bronze", "Bronce", 19.90, 5, 8, 0xFF8B4513, "Star"), // Marrón cuero/bronce oscuro
@@ -168,151 +204,101 @@ class MainViewModel : ViewModel() {
         items.sumOf { it.quantity }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    val selectedCartItemCount: StateFlow<Int> = _cartItems.map { items ->
-        items.filter { it.isSelected }.sumOf { it.quantity }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val cartSummary: StateFlow<CartSummary> = combine(
+        _cartItems,
+        priceRules,
+        _couponInput,
+        userPlan,
+        shippingConfig,
+        shippingRates,
+        _selectedShippingDept
+    ) { args ->
+        val items = args[0] as List<CartItem>
+        val rules = args[1] as List<PriceRule>
+        val coupon = args[2] as String
+        val plan = args[3] as AdvantagePlan?
+        val config = args[4] as ShippingConfig
+        val rates = args[5] as List<ShippingRate>
+        val dept = args[6] as String
 
-    val totalSavings: StateFlow<Double> = _cartItems.map { items ->
-        items.filter { it.isSelected }.sumOf { item ->
+        val selectedItems = items.filter { it.isSelected }
+        val selectedStoreItems = selectedItems.filter { !it.product.isClientProduct }
+        
+        val totalCount = items.sumOf { it.quantity }
+        val selectedCount = selectedItems.sumOf { it.quantity }
+        
+        val subtotal = selectedItems.sumOf { it.effectivePrice * it.quantity }
+        
+        val totalSavings = selectedItems.sumOf { item ->
             val product = item.product
             if (product.oldPrice != null && product.oldPrice > product.price) {
                 (product.oldPrice - product.price) * item.quantity
-            } else {
-                0.0
-            }
+            } else 0.0
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
-    val subtotal: StateFlow<Double> = _cartItems.map { items ->
-        items.filter { it.isSelected }.sumOf { it.effectivePrice * it.quantity }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
-
-    // Descuentos por Reglas de Precios
-    val appliedRules: StateFlow<List<AppliedPriceRule>> = combine(_cartItems, priceRules, _couponInput) { items, rules, coupon ->
-        // Solo procesar productos EZZETA seleccionados
-        val selectedStoreItems = items.filter { it.isSelected && !it.product.isClientProduct }
-        if (selectedStoreItems.isEmpty()) return@combine emptyList<AppliedPriceRule>()
-        
-        // Una regla que requiere cupón solo se activa si el código coincide exactamente
-        val activeRules = rules.filter { 
-            it.isActive && (!it.requiresCoupon || (it.couponCode != null && it.couponCode.equals(coupon, ignoreCase = true))) 
-        }.sortedBy { it.priority }
-        
-        val applied = mutableListOf<AppliedPriceRule>()
-        var storeSubtotal = selectedStoreItems.sumOf { it.effectivePrice * it.quantity }
-        
-        // Seguimiento de qué items ya tienen descuento para evitar duplicidad según prioridad
-        val discountedItemKeys = mutableSetOf<String>()
-
-        activeRules.forEach { rule ->
-            var ruleDiscount = 0.0
-            
-            when (rule.type) {
-                PriceRuleType.PRODUCT -> {
-                    selectedStoreItems.forEach { item ->
-                        val itemKey = "${item.product.id}_${item.size}"
-                        if (rule.targetIds.contains(item.product.id) && !discountedItemKeys.contains(itemKey)) {
-                            val itemTotal = item.effectivePrice * item.quantity
-                            val d = if (rule.isPercentage) itemTotal * (rule.discountValue / 100.0) else rule.discountValue * item.quantity
-                            ruleDiscount += d
-                            discountedItemKeys.add(itemKey)
-                        }
-                    }
-                }
-                PriceRuleType.CATEGORY -> {
-                    selectedStoreItems.forEach { item ->
-                        val itemKey = "${item.product.id}_${item.size}"
-                        if (rule.targetIds.contains(item.product.categoryId) && !discountedItemKeys.contains(itemKey)) {
-                            val itemTotal = item.effectivePrice * item.quantity
-                            val d = if (rule.isPercentage) itemTotal * (rule.discountValue / 100.0) else rule.discountValue * item.quantity
-                            ruleDiscount += d
-                            discountedItemKeys.add(itemKey)
-                        }
-                    }
-                }
-                PriceRuleType.ORDER_TOTAL -> {
-                    // El subtotal mínimo solo cuenta productos EZZETA seleccionados
-                    if (rule.minSubtotal == null || storeSubtotal >= rule.minSubtotal) {
-                        val d = if (rule.isPercentage) storeSubtotal * (rule.discountValue / 100.0) else rule.discountValue
-                        ruleDiscount += d
-                    }
-                }
-                PriceRuleType.COMBO -> {
-                    if (rule.finalComboPrice != null && rule.comboRequirements.isNotEmpty()) {
-                        // Calcular cuántos combos completos se pueden formar
-                        var possibleCombos = Int.MAX_VALUE
-                        rule.comboRequirements.forEach { req ->
-                            val countInCart = selectedStoreItems.filter { 
-                                (req.productId != null && it.product.id == req.productId) || 
-                                (req.categoryId != null && it.product.categoryId == req.categoryId)
-                            }.sumOf { it.quantity }
-                            
-                            possibleCombos = minOf(possibleCombos, countInCart / req.quantity)
-                        }
-                        
-                        if (possibleCombos > 0 && possibleCombos != Int.MAX_VALUE) {
-                            // Calcular el precio actual del conjunto para el descuento
-                            var currentComboSetPrice = 0.0
-                            rule.comboRequirements.forEach { req ->
-                                var remainingQty = req.quantity * possibleCombos
-                                selectedStoreItems.filter { 
-                                    (req.productId != null && it.product.id == req.productId) || 
-                                    (req.categoryId != null && it.product.categoryId == req.categoryId)
-                                }.forEach { item ->
-                                    val take = minOf(item.quantity, remainingQty)
-                                    currentComboSetPrice += item.effectivePrice * take
-                                    remainingQty -= take
-                                }
-                            }
-                            
-                            val targetPrice = rule.finalComboPrice * possibleCombos
-                            ruleDiscount = (currentComboSetPrice - targetPrice).coerceAtLeast(0.0)
-                        }
-                    }
-                }
-            }
-                    if (ruleDiscount > 0) {
-                applied.add(AppliedPriceRule(rule.id, rule.name, ruleDiscount, isCoupon = rule.requiresCoupon))
-                // Si es un descuento global, reduce el subtotal para la siguiente regla
-                if (rule.type == PriceRuleType.ORDER_TOTAL) {
-                    storeSubtotal -= ruleDiscount
-                }
-            }
+        if (selectedStoreItems.isEmpty()) {
+            val sCost = if (subtotal > 0) calculateShipping(subtotal, config, rates, dept) else 0.0
+            return@combine CartSummary(
+                subtotal = subtotal,
+                totalSavings = totalSavings,
+                shippingCost = sCost,
+                total = (subtotal + sCost).coerceAtLeast(0.0),
+                selectedCount = selectedCount,
+                totalCount = totalCount
+            )
         }
-        applied
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val totalRulesDiscount: StateFlow<Double> = appliedRules.map { rules ->
-        rules.sumOf { it.discountAmount }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
-
-    val planDiscount: StateFlow<Double> = combine(_cartItems, userPlan, totalRulesDiscount) { items, plan, rulesDisc ->
-        val selectedStoreItems = items.filter { it.isSelected && !it.product.isClientProduct }
+        // 1. Reglas de Precios
+        val pricingResult = calculateBestPricing(selectedStoreItems, rules, coupon)
+        val rulesDisc = pricingResult.totalDiscount
+        
+        // 2. Descuento de Plan (Se aplica sobre el subtotal de tienda tras reglas)
         val storeSubtotal = selectedStoreItems.sumOf { it.effectivePrice * it.quantity }
         val subAfterRules = (storeSubtotal - rulesDisc).coerceAtLeast(0.0)
-        if (plan != null) (subAfterRules * plan.discountPercent / 100.0) else 0.0
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+        val pDiscount = if (plan != null) (subAfterRules * plan.discountPercent / 100.0) else 0.0
+        
+        // 3. Envío (Se calcula sobre el subtotal bruto del carrito seleccionado)
+        val sCost = calculateShipping(subtotal, config, rates, dept)
+        
+        val finalTotal = (subtotal + sCost - rulesDisc - pDiscount).coerceAtLeast(0.0)
+        
+        CartSummary(
+            subtotal = subtotal,
+            totalSavings = totalSavings,
+            appliedRules = pricingResult.appliedRules,
+            totalRulesDiscount = rulesDisc,
+            planDiscount = pDiscount,
+            shippingCost = sCost,
+            total = finalTotal,
+            selectedCount = selectedCount,
+            totalCount = totalCount
+        )
+    }.flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CartSummary())
 
-    val shippingCost: StateFlow<Double> = combine(subtotal, shippingConfig, shippingRates, _selectedShippingDept) { sub, config, rates, dept ->
-        if (sub >= config.freeShippingThreshold) {
-            0.0
+    private fun calculateShipping(sub: Double, config: ShippingConfig, rates: List<ShippingRate>, dept: String): Double {
+        if (sub >= config.freeShippingThreshold) return 0.0
+        val specificRate = rates.filter { it.isActive && it.region.equals(dept, ignoreCase = true) }
+            .minByOrNull { it.priority }
+        
+        return if (specificRate != null) {
+            specificRate.cost
         } else {
-            val specificRate = rates.filter { it.isActive && it.region.equals(dept, ignoreCase = true) }
+            val generalRate = rates.filter { it.isActive && it.region == "GENERAL" }
                 .minByOrNull { it.priority }
-            
-            if (specificRate != null) {
-                specificRate.cost
-            } else {
-                val generalRate = rates.filter { it.isActive && it.region == "GENERAL" }
-                    .minByOrNull { it.priority }
-                generalRate?.cost ?: 0.0
-            }
+            generalRate?.cost ?: 0.0
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    }
 
-    val total: StateFlow<Double> = combine(subtotal, shippingCost, planDiscount, totalRulesDiscount) { s, sh, d, rd -> 
-        (s + sh - d - rd).coerceAtLeast(0.0) 
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    // Mantener compatibilidad con pantallas existentes redirigiendo al summary central
+    val subtotal: StateFlow<Double> = cartSummary.map { it.subtotal }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    val totalSavings: StateFlow<Double> = cartSummary.map { it.totalSavings }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    val appliedRules: StateFlow<List<AppliedPriceRule>> = cartSummary.map { it.appliedRules }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val totalRulesDiscount: StateFlow<Double> = cartSummary.map { it.totalRulesDiscount }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    val planDiscount: StateFlow<Double> = cartSummary.map { it.planDiscount }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    val shippingCost: StateFlow<Double> = cartSummary.map { it.shippingCost }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    val total: StateFlow<Double> = cartSummary.map { it.total }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    val selectedCartItemCount: StateFlow<Int> = cartSummary.map { it.selectedCount }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
 
     private fun createCampaignFlow(campaignName: String): StateFlow<List<Product>> {
@@ -355,7 +341,6 @@ class MainViewModel : ViewModel() {
         }.toMap()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    // FASE 28: Popularidad y Actividad
     data class ProductActivity(
         val rankingText: String? = null,
         val wishlistCount: Int = 0
@@ -368,7 +353,12 @@ class MainViewModel : ViewModel() {
         _orders,
         categories,
         _wishlistCounts
-    ) { products, orders, cats, wishCounts ->
+    ) { args ->
+        val products = args[0] as List<Product>
+        val orders = args[1] as List<Order>
+        val cats = args[2] as List<Category>
+        val wishCounts = args[3] as Map<String, Int>
+
         val activityMap = mutableMapOf<String, ProductActivity>()
         
         // 1. Calcular Ventas por Categoría (Solo EZZETA)
@@ -399,7 +389,8 @@ class MainViewModel : ViewModel() {
         }
         
         activityMap
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+    }.flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     fun refreshWishlistCounts(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -408,7 +399,6 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    // FASE 27: Información de Precios Dinámica
     data class ProductPriceInfo(
         val originalPrice: Double,
         val finalPrice: Double,
@@ -420,41 +410,18 @@ class MainViewModel : ViewModel() {
         val originalPrice = product.getPriceForSize(size)
         if (product.isClientProduct) return ProductPriceInfo(originalPrice, originalPrice)
 
-        val rules = priceRules.value
-        val coupon = _couponInput.value
-
-        val activeRules = rules.filter {
-            it.isActive && (!it.requiresCoupon || (it.couponCode != null && it.couponCode.equals(coupon, ignoreCase = true)))
-        }.sortedBy { it.priority }
-
-        var finalPrice = originalPrice
-        var hasCombo = false
-        var discountApplied = false
-
-        activeRules.forEach { rule ->
-            when (rule.type) {
-                PriceRuleType.PRODUCT -> {
-                    if (!discountApplied && rule.targetIds.contains(product.id)) {
-                        val discount = if (rule.isPercentage) originalPrice * (rule.discountValue / 100.0) else rule.discountValue
-                        finalPrice = (originalPrice - discount).coerceAtLeast(0.0)
-                        discountApplied = true
-                    }
-                }
-                PriceRuleType.CATEGORY -> {
-                    if (!discountApplied && rule.targetIds.contains(product.categoryId)) {
-                        val discount = if (rule.isPercentage) originalPrice * (rule.discountValue / 100.0) else rule.discountValue
-                        finalPrice = (originalPrice - discount).coerceAtLeast(0.0)
-                        discountApplied = true
-                    }
-                }
-                PriceRuleType.COMBO -> {
-                    val isPart = rule.comboRequirements.any {
-                        (it.productId != null && it.productId == product.id) ||
-                        (it.categoryId != null && it.categoryId == product.categoryId)
-                    }
-                    if (isPart) hasCombo = true
-                }
-                else -> {}
+        // Evaluar mejor escenario para 1 unidad de este producto
+        val tempItem = CartItem(product, 1, size)
+        val result = calculateBestPricing(listOf(tempItem), priceRules.value, _couponInput.value)
+        
+        val finalPrice = result.finalPrice
+        
+        // Determinar si es parte de un combo para mostrar el badge informativo
+        // Aunque no se aplique el descuento por falta de cantidad, mostramos el badge
+        val isPartOfActiveCombo = priceRules.value.any { rule ->
+            rule.isActive && rule.type == PriceRuleType.COMBO && rule.comboRequirements.any { req ->
+                (req.productId != null && req.productId == product.id) ||
+                (req.categoryId != null && req.categoryId == product.categoryId)
             }
         }
 
@@ -465,9 +432,159 @@ class MainViewModel : ViewModel() {
         return ProductPriceInfo(
             originalPrice = originalPrice,
             finalPrice = finalPrice,
-            hasCombo = hasCombo,
+            hasCombo = isPartOfActiveCombo,
             discountPercent = discountPercent
         )
+    }
+
+    // Lógica Central de Precios
+    data class PricingScenarioResult(
+        val appliedRules: List<AppliedPriceRule>,
+        val totalDiscount: Double,
+        val finalPrice: Double
+    )
+
+    private fun evaluatePricingScenario(
+        items: List<CartItem>,
+        rules: List<PriceRule>
+    ): PricingScenarioResult {
+        val ezzetaItems = items.filter { !it.product.isClientProduct }
+        if (ezzetaItems.isEmpty()) return PricingScenarioResult(emptyList(), 0.0, 0.0)
+
+        // Precios unitarios actuales para aplicación secuencial
+        val currentUnitPrices = ezzetaItems.map { it.effectivePrice }.toMutableList()
+        val applied = mutableListOf<AppliedPriceRule>()
+        var totalDiscount = 0.0
+
+        rules.sortedBy { it.priority }.forEach { rule ->
+            var ruleDiscount = 0.0
+            
+            when (rule.type) {
+                PriceRuleType.PRODUCT -> {
+                    ezzetaItems.forEachIndexed { index, item ->
+                        if (rule.targetIds.contains(item.product.id)) {
+                            val currentPrice = currentUnitPrices[index]
+                            val d = if (rule.isPercentage) currentPrice * (rule.discountValue / 100.0) else rule.discountValue
+                            ruleDiscount += d * item.quantity
+                            currentUnitPrices[index] = (currentPrice - d).coerceAtLeast(0.0)
+                        }
+                    }
+                }
+                PriceRuleType.CATEGORY -> {
+                    ezzetaItems.forEachIndexed { index, item ->
+                        if (rule.targetIds.contains(item.product.categoryId)) {
+                            val currentPrice = currentUnitPrices[index]
+                            val d = if (rule.isPercentage) currentPrice * (rule.discountValue / 100.0) else rule.discountValue
+                            ruleDiscount += d * item.quantity
+                            currentUnitPrices[index] = (currentPrice - d).coerceAtLeast(0.0)
+                        }
+                    }
+                }
+                PriceRuleType.ORDER_TOTAL -> {
+                    val currentSubtotal = ezzetaItems.mapIndexed { index, item -> currentUnitPrices[index] * item.quantity }.sum()
+                    if (rule.minSubtotal == null || currentSubtotal >= rule.minSubtotal) {
+                        val d = if (rule.isPercentage) currentSubtotal * (rule.discountValue / 100.0) else rule.discountValue
+                        ruleDiscount = d
+                        
+                        if (currentSubtotal > 0) {
+                            val factor = (currentSubtotal - d) / currentSubtotal
+                            for (i in currentUnitPrices.indices) {
+                                currentUnitPrices[i] = (currentUnitPrices[i] * factor).coerceAtLeast(0.0)
+                            }
+                        }
+                    }
+                }
+                PriceRuleType.COMBO -> {
+                    if (rule.finalComboPrice != null && rule.comboRequirements.isNotEmpty()) {
+                        var possibleCombos = Int.MAX_VALUE
+                        rule.comboRequirements.forEach { req ->
+                            val countInCart = ezzetaItems.filter { 
+                                (req.productId != null && it.product.id == req.productId) || 
+                                (req.categoryId != null && it.product.categoryId == req.categoryId)
+                            }.sumOf { it.quantity }
+                            possibleCombos = minOf(possibleCombos, countInCart / req.quantity)
+                        }
+                        
+                        if (possibleCombos > 0 && possibleCombos != Int.MAX_VALUE) {
+                            var currentComboSetPrice = 0.0
+                            rule.comboRequirements.forEach { req ->
+                                var remainingQty = req.quantity * possibleCombos
+                                ezzetaItems.forEachIndexed { index, item ->
+                                    if (remainingQty <= 0) return@forEachIndexed
+                                    if ((req.productId != null && item.product.id == req.productId) || 
+                                        (req.categoryId != null && item.product.categoryId == req.categoryId)) {
+                                        val take = minOf(item.quantity, remainingQty)
+                                        currentComboSetPrice += currentUnitPrices[index] * take
+                                        remainingQty -= take
+                                    }
+                                }
+                            }
+                            
+                            val targetPrice = rule.finalComboPrice * possibleCombos
+                            ruleDiscount = (currentComboSetPrice - targetPrice).coerceAtLeast(0.0)
+                            
+                            if (ruleDiscount > 0 && currentComboSetPrice > 0) {
+                                val factor = targetPrice / currentComboSetPrice
+                                rule.comboRequirements.forEach { req ->
+                                    var remainingQty = req.quantity * possibleCombos
+                                    ezzetaItems.forEachIndexed { index, item ->
+                                        if (remainingQty <= 0) return@forEachIndexed
+                                        if ((req.productId != null && item.product.id == req.productId) || 
+                                            (req.categoryId != null && item.product.categoryId == req.categoryId)) {
+                                            val take = minOf(item.quantity, remainingQty)
+                                            currentUnitPrices[index] = currentUnitPrices[index] * factor
+                                            remainingQty -= take
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (ruleDiscount > 0) {
+                applied.add(AppliedPriceRule(rule.id, rule.name, ruleDiscount, isCoupon = rule.requiresCoupon))
+                totalDiscount += ruleDiscount
+            }
+        }
+        
+        val initialSubtotal = ezzetaItems.sumOf { it.effectivePrice * it.quantity }
+        return PricingScenarioResult(applied, totalDiscount, (initialSubtotal - totalDiscount).coerceAtLeast(0.0))
+    }
+
+    private fun calculateBestPricing(
+        items: List<CartItem>,
+        allRules: List<PriceRule>,
+        coupon: String
+    ): PricingScenarioResult {
+        val activeRules = allRules.filter {
+            it.isActive && (!it.requiresCoupon || (it.couponCode != null && it.couponCode.equals(coupon, ignoreCase = true)))
+        }
+
+        val baseSubtotal = items.filter { !it.product.isClientProduct }.sumOf { it.effectivePrice * it.quantity }
+        if (activeRules.isEmpty()) {
+            return PricingScenarioResult(emptyList(), 0.0, baseSubtotal)
+        }
+
+        val scenarios = mutableListOf<PricingScenarioResult>()
+
+        // Escenario 1: Todas las apilables combinadas
+        val stackableRules = activeRules.filter { it.isStackable }
+        if (stackableRules.isNotEmpty()) {
+            scenarios.add(evaluatePricingScenario(items, stackableRules))
+        }
+
+        // Escenarios 2..N: Cada regla exclusiva por separado (que no sea stackable)
+        activeRules.filter { !it.isStackable }.forEach { exclusive ->
+            scenarios.add(evaluatePricingScenario(items, listOf(exclusive)))
+        }
+        
+        // Escenario Base: Sin reglas
+        scenarios.add(PricingScenarioResult(emptyList(), 0.0, baseSubtotal))
+
+        // El mejor escenario es el que deje el precio final más bajo (menor costo para el cliente)
+        return scenarios.minByOrNull { it.finalPrice } ?: PricingScenarioResult(emptyList(), 0.0, baseSubtotal)
     }
 
     // Estadísticas para Admin
@@ -491,7 +608,7 @@ class MainViewModel : ViewModel() {
     
     val allClientCustomSizes: StateFlow<List<SizeOption>> = sizeRepository.allUserCustomSizes
     
-    // Gestión de Clientes (Fase 19)
+    // Gestión de Clientes
     val registeredUsers: StateFlow<List<User>> = UserRepository.allUsers
 
     val userCustomSizes: StateFlow<List<SizeOption>> = combine(allClientCustomSizes, currentUser) { all, user ->
@@ -536,6 +653,7 @@ class MainViewModel : ViewModel() {
     )
 
     val marketplaceRequests: StateFlow<List<MarketplaceRequest>> = productRepository.getRequests()
+    val customerForms: StateFlow<List<CustomerForm>> = customerFormRepository.forms
 
 
     val adminUsers: StateFlow<List<User>> = registeredUsers.map { users ->
@@ -582,7 +700,8 @@ class MainViewModel : ViewModel() {
         }
         
         registered + guests
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun adminCreateUser(context: Context, name: String, email: String, phone: String?, roleId: String? = null, isAdminUser: Boolean = false) {
         if (!hasPermission("Sistema", "CREATE")) {
@@ -645,25 +764,71 @@ class MainViewModel : ViewModel() {
         AdminRoleRepository.deleteRole(context.applicationContext, roleId)
     }
 
+    // Gestión de Formularios
+    fun submitCustomerForm(context: Context, type: String, subject: String, description: String, onResult: (Boolean) -> Unit) {
+        if (type.isBlank() || subject.isBlank() || description.isBlank()) {
+            Toast.makeText(context, "Todos los campos son obligatorios", Toast.LENGTH_SHORT).show()
+            onResult(false)
+            return
+        }
+        
+        val user = currentUser.value
+        val newForm = CustomerForm(
+            id = "FORM_${System.currentTimeMillis()}",
+            type = type,
+            subject = subject,
+            description = description,
+            userId = if (user?.isGuest == true) null else user?.uuid,
+            userName = user?.alias ?: "Invitado",
+            userEmail = user?.email,
+            status = FormStatus.SIN_REVISAR
+        )
+        
+        val success = customerFormRepository.addForm(context.applicationContext, newForm)
+        if (success) {
+            Toast.makeText(context, "Consulta enviada correctamente", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Error al enviar la consulta", Toast.LENGTH_SHORT).show()
+        }
+        onResult(success)
+    }
+
+    fun updateCustomerFormStatus(context: Context, formId: String, status: FormStatus) {
+        if (!hasPermission("Formularios", "EDIT")) {
+            Toast.makeText(context, "No tienes permiso para editar formularios", Toast.LENGTH_SHORT).show()
+            return
+        }
+        customerFormRepository.updateStatus(context.applicationContext, formId, status)
+    }
+
+    fun deleteCustomerForm(context: Context, formId: String) {
+        if (!hasPermission("Formularios", "DELETE")) {
+            Toast.makeText(context, "No tienes permiso para eliminar formularios", Toast.LENGTH_SHORT).show()
+            return
+        }
+        customerFormRepository.deleteForm(context.applicationContext, formId)
+        Toast.makeText(context, "Formulario eliminado", Toast.LENGTH_SHORT).show()
+    }
+
     fun getCustomerOrders(userIdOrEmail: String): List<Order> {
         return _orders.value.filter { 
             it.buyerId == userIdOrEmail || (it.buyerEmail.isNotBlank() && it.buyerEmail == userIdOrEmail)
         }
     }
 
-    // Reactive Stats Engine
     val filteredOrderItems: StateFlow<List<Pair<Order, CartItem>>> = combine(
         _orders, statsMode, statsDateFilter
     ) { allOrders, mode, dateFilter ->
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US)
         val now = Calendar.getInstance()
+        val nowTime = now.time
         
         allOrders.flatMap { order ->
             val orderDate = try { sdf.parse(order.date) } catch (e: Exception) { null }
             val isDateMatch = when (dateFilter) {
-                "TODAY" -> orderDate?.let { isSameDay(it, now.time) } ?: false
-                "WEEK" -> orderDate?.let { isSameWeek(it, now.time) } ?: false
-                "MONTH" -> orderDate?.let { isSameMonth(it, now.time) } ?: false
+                "TODAY" -> orderDate?.let { isSameDay(it, nowTime) } ?: false
+                "WEEK" -> orderDate?.let { isSameWeek(it, nowTime) } ?: false
+                "MONTH" -> orderDate?.let { isSameMonth(it, nowTime) } ?: false
                 else -> true
             }
 
@@ -677,7 +842,8 @@ class MainViewModel : ViewModel() {
                 }
             }.map { order to it }
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Abandoned Carts Engine
     val rawAbandonedCarts = abandonedCartRepository.abandonedCarts
@@ -742,6 +908,8 @@ class MainViewModel : ViewModel() {
     val statsResults: StateFlow<List<StatResult>> = combine(
         filteredOrderItems, statsDimension, statsSearchQuery
     ) { items, dimension, query ->
+        if (items.isEmpty()) return@combine emptyList<StatResult>()
+        
         val grouped = when (dimension) {
             "PRODUCT" -> items.groupBy { it.second.product.id }
             "PRODUCT_UNIQUE" -> items.groupBy { "${it.second.product.id}_${it.second.size}" }
@@ -752,6 +920,10 @@ class MainViewModel : ViewModel() {
             else -> items.groupBy { it.second.product.id }
         }
 
+        // Cache de categorías para evitar búsquedas repetidas en el loop
+        val catsCache = categories.value.associateBy { it.id }
+        val storesCache = productRepository.getStores().associateBy { it.id }
+
         grouped.map { (key, group) ->
             val firstItem = group.first().second
             val name = when (dimension) {
@@ -761,8 +933,8 @@ class MainViewModel : ViewModel() {
                     "${firstItem.product.name} ($sizeLabel)"
                 }
                 "SIZE" -> if (key.isBlank()) "Única" else key
-                "CATEGORY" -> categories.value.find { it.id == key }?.name ?: key
-                "STORE" -> getStoreById(key)?.name ?: key
+                "CATEGORY" -> catsCache[key]?.name ?: key
+                "STORE" -> storesCache[key]?.name ?: key
                 "SELLER" -> group.first().second.product.sellerName ?: key
                 else -> key
             }
@@ -778,14 +950,14 @@ class MainViewModel : ViewModel() {
         }
         .filter { result ->
             if (dimension == "PRODUCT_UNIQUE" && query.isNotBlank()) {
-                // El buscador busca por nombre real del producto, no por el nombre compuesto
                 val productId = result.id.substringBeforeLast("_")
                 val productName = items.find { it.second.product.id == productId }?.second?.product?.name ?: ""
                 productName.contains(query, ignoreCase = true)
             } else true
         }
         .sortedWith(compareByDescending<StatResult> { it.units }.thenByDescending { it.revenue }.thenBy { it.name })
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Rankings
     val topSpenders: StateFlow<List<CustomerStat>> = _orders.map { allOrders ->
@@ -799,7 +971,8 @@ class MainViewModel : ViewModel() {
                     count = orders.size
                 )
             }.sortedByDescending { it.totalValue }.take(10)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val topSellers: StateFlow<List<CustomerStat>> = _orders.map { allOrders ->
         try {
@@ -819,7 +992,8 @@ class MainViewModel : ViewModel() {
         } catch (e: Exception) {
             emptyList()
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private fun isSameDay(d1: Date, d2: Date): Boolean {
         val cal1 = Calendar.getInstance().apply { time = d1 }
@@ -843,6 +1017,66 @@ class MainViewModel : ViewModel() {
     }
 
     val userFollows: StateFlow<List<UserFollow>> = followRepository.follows
+
+    // Flujos reactivos para la sección Siguiendo
+    val followedUsersInfo: StateFlow<List<FollowedUserInfo>> = combine(
+        currentUser,
+        userFollows,
+        registeredUsers,
+        allProducts
+    ) { args ->
+        val user = args[0] as User?
+        val follows = args[1] as List<UserFollow>
+        val allUsers = args[2] as List<User>
+        val products = args[3] as List<Product>
+
+        if (user == null) return@combine emptyList<FollowedUserInfo>()
+
+        // Usuarios que sigo
+        val followingIds = follows.filter { it.followerId == user.uuid && it.targetType == "SELLER" }
+            .map { it.sellerId }
+            .toSet()
+
+        followingIds.mapNotNull { targetId ->
+            val targetUser = allUsers.find { it.uuid == targetId } ?: return@mapNotNull null
+            val count = follows.count { it.sellerId == targetId && it.targetType == "SELLER" }
+            val hasProducts = products.any { it.sellerId == targetId && it.isClientProduct }
+            
+            FollowedUserInfo(
+                id = targetId,
+                alias = targetUser.alias,
+                profileImageUrl = targetUser.profileImageUrl,
+                followerCount = count,
+                hasMarketplaceProducts = hasProducts
+            )
+        }.sortedBy { it.alias }
+    }.flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val followedStoresInfo: StateFlow<List<FollowedStoreInfo>> = combine(
+        currentUser,
+        userFollows
+    ) { user, follows ->
+        if (user == null) return@combine emptyList<FollowedStoreInfo>()
+
+        val allStores = productRepository.getStores()
+        val followingIds = follows.filter { it.followerId == user.uuid && it.targetType == "STORE" }
+            .map { it.sellerId }
+            .toSet()
+
+        followingIds.mapNotNull { targetId ->
+            val store = allStores.find { it.id == targetId } ?: return@mapNotNull null
+            val count = follows.count { it.sellerId == targetId && it.targetType == "STORE" }
+            
+            FollowedStoreInfo(
+                id = targetId,
+                name = store.name,
+                logoUrl = store.logoUrl,
+                followerCount = count
+            )
+        }.sortedBy { it.name }
+    }.flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val mySales: StateFlow<List<Pair<Order, CartItem>>> = combine(_orders, currentUser) { allOrders, user ->
         val userId = user?.uuid ?: ""
@@ -869,6 +1103,10 @@ class MainViewModel : ViewModel() {
                     shippingRepository.init(appContext)
                     priceRuleRepository.init(appContext)
                     abandonedCartRepository.init(appContext)
+                    customerFormRepository.init(appContext)
+                    blockedWordRepository.init(appContext)
+                    marketplaceReportRepository.init(appContext)
+                    initAdminGroups(appContext)
                     loadUserData(appContext)
                     refreshWishlistCounts(appContext)
                 }
@@ -924,16 +1162,34 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun setUserName(context: Context, alias: String) {
+    fun setUserName(context: Context, alias: String, onResult: (Boolean) -> Unit = {}) {
         val appContext = context.applicationContext
-        UserRepository.setUser(appContext, alias, isGuest = true, isAdmin = false)
-        viewModelScope.launch { loadUserData(appContext) }
+        viewModelScope.launch {
+            val moderation = validateTextContent(alias)
+            if (moderation is ModerationResult.Blocked) {
+                Toast.makeText(context, moderation.reason, Toast.LENGTH_LONG).show()
+                onResult(false)
+                return@launch
+            }
+            UserRepository.setUser(appContext, alias, isGuest = true, isAdmin = false)
+            loadUserData(appContext)
+            onResult(true)
+        }
     }
 
-    fun registerUser(context: Context, name: String, email: String) {
+    fun registerUser(context: Context, name: String, email: String, onResult: (Boolean) -> Unit = {}) {
         val appContext = context.applicationContext
-        UserRepository.setUser(appContext, alias = name, email = email, isGuest = false, isAdmin = false)
-        viewModelScope.launch { loadUserData(appContext) }
+        viewModelScope.launch {
+            val moderation = validateTextContent(name)
+            if (moderation is ModerationResult.Blocked) {
+                Toast.makeText(context, moderation.reason, Toast.LENGTH_LONG).show()
+                onResult(false)
+                return@launch
+            }
+            UserRepository.setUser(appContext, alias = name, email = email, isGuest = false, isAdmin = false)
+            loadUserData(appContext)
+            onResult(true)
+        }
     }
 
     fun loginUser(context: Context, email: String, isAdmin: Boolean = false) {
@@ -973,8 +1229,17 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch { loadUserData(appContext) }
     }
 
-    fun updateAlias(context: Context, newAlias: String) {
-        UserRepository.updateAlias(context, newAlias)
+    fun updateAlias(context: Context, newAlias: String, onResult: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val moderation = validateTextContent(newAlias)
+            if (moderation is ModerationResult.Blocked) {
+                Toast.makeText(context, moderation.reason, Toast.LENGTH_LONG).show()
+                onResult(false)
+                return@launch
+            }
+            UserRepository.updateAlias(context, newAlias)
+            onResult(true)
+        }
     }
 
     fun subscribeToPlan(context: Context, planId: String) {
@@ -1168,11 +1433,14 @@ class MainViewModel : ViewModel() {
         PersistenceManager.saveCart(context, current)
     }
 
-    fun addAddress(context: Context, address: String, dept: String, prov: String, dist: String, ubigeo: String? = null, name: String? = null) {
+    fun addAddress(context: Context, address: String, dept: String, prov: String, dist: String, ubigeo: String? = null, name: String? = null, addressId: String? = null) {
         val current = UserRepository.currentUser.value
         if (current != null) {
+            val addressList = current.addresses.toMutableList()
+            val index = if (addressId != null) addressList.indexOfFirst { it.id == addressId } else -1
+            
             val newAddress = UserAddress(
-                id = java.util.UUID.randomUUID().toString(),
+                id = addressId ?: java.util.UUID.randomUUID().toString(),
                 name = if (name.isNullOrBlank()) null else name,
                 address = address,
                 department = dept,
@@ -1180,8 +1448,14 @@ class MainViewModel : ViewModel() {
                 district = dist,
                 ubigeoCode = ubigeo
             )
-            val updatedAddresses = current.addresses + newAddress
-            UserRepository.updateUser(context, current.copy(addresses = updatedAddresses))
+            
+            if (index != -1) {
+                addressList[index] = newAddress
+            } else {
+                addressList.add(newAddress)
+            }
+            
+            UserRepository.updateUser(context, current.copy(addresses = addressList))
         }
     }
 
@@ -1536,16 +1810,37 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun addProduct(context: Context, product: Product) {
+    fun addProduct(context: Context, product: Product, onResult: (Boolean) -> Unit = {}) {
         val module = if (product.isClientProduct) "Productos Clientes" else "Productos Tienda"
         if (!hasPermission(module, "CREATE")) {
             Toast.makeText(context, "No tienes permiso para crear productos", Toast.LENGTH_SHORT).show()
+            onResult(false)
             return
         }
-        productRepository.addProduct(context.applicationContext, product)
+        
+        viewModelScope.launch {
+            _isModerating.value = true
+            val moderationResult = validateProductContent(product)
+            _isModerating.value = false
+            
+            when (moderationResult) {
+                is ModerationResult.Allowed -> {
+                    productRepository.addProduct(context.applicationContext, product)
+                    onResult(true)
+                }
+                is ModerationResult.Blocked -> {
+                    Toast.makeText(context, moderationResult.reason, Toast.LENGTH_LONG).show()
+                    onResult(false)
+                }
+                is ModerationResult.Error -> {
+                    Toast.makeText(context, "Error de validación. Intente de nuevo.", Toast.LENGTH_SHORT).show()
+                    onResult(false)
+                }
+            }
+        }
     }
 
-    fun updateProduct(context: Context, product: Product) {
+    fun updateProduct(context: Context, product: Product, onResult: (Boolean) -> Unit = {}) {
         val user = currentUser.value
         val module = if (product.isClientProduct) "Productos Clientes" else "Productos Tienda"
         
@@ -1555,6 +1850,7 @@ class MainViewModel : ViewModel() {
         
         if (!isOwner && !hasAdminEdit) {
             Toast.makeText(context, "No tienes permiso para editar este producto", Toast.LENGTH_SHORT).show()
+            onResult(false)
             return
         }
         
@@ -1566,37 +1862,86 @@ class MainViewModel : ViewModel() {
             when (moderationResult) {
                 is ModerationResult.Allowed -> {
                     productRepository.updateProduct(context.applicationContext, product)
+                    onResult(true)
                 }
                 is ModerationResult.Blocked -> {
                     Toast.makeText(context, moderationResult.reason, Toast.LENGTH_LONG).show()
+                    onResult(false)
                 }
                 is ModerationResult.Error -> {
                     Toast.makeText(context, "Error de validación. Intente de nuevo.", Toast.LENGTH_SHORT).show()
+                    onResult(false)
                 }
             }
         }
     }
 
     private suspend fun validateProductContent(product: Product): ModerationResult {
+        val localWords = blockedWordRepository.getWordsSync()
 
-        val nameResult = ContentModerationService.validateContent(product.name)
+        val nameResult = ContentModerationService.validateContent(product.name, localWords)
         if (nameResult !is ModerationResult.Allowed) return nameResult
 
-        val descResult = ContentModerationService.validateContent(product.description)
+        val descResult = ContentModerationService.validateContent(product.description, localWords)
         if (descResult !is ModerationResult.Allowed) return descResult
 
 
         product.variants?.forEach { variant ->
-            val variantResult = ContentModerationService.validateContent(variant.name)
+            val variantResult = ContentModerationService.validateContent(variant.name, localWords)
             if (variantResult !is ModerationResult.Allowed) return variantResult
         }
         
         product.customSizes?.forEach { size ->
-            val sizeResult = ContentModerationService.validateContent(size)
+            val sizeResult = ContentModerationService.validateContent(size, localWords)
             if (sizeResult !is ModerationResult.Allowed) return sizeResult
         }
 
         return ModerationResult.Allowed
+    }
+
+    // Moderación Centralizada
+    suspend fun validateTextContent(text: String): ModerationResult {
+        return ContentModerationService.validateContent(text, blockedWordRepository.getWordsSync())
+    }
+
+    val blockedWords: StateFlow<List<BlockedWord>> = blockedWordRepository.blockedWords
+
+    fun addBlockedWord(context: Context, word: String, isPartial: Boolean) {
+        if (!hasPermission("Moderación de palabras", "CREATE")) {
+            Toast.makeText(context, "No tienes permiso para agregar palabras", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val blocked = BlockedWord(
+            id = "bw_${System.currentTimeMillis()}",
+            word = word.trim(),
+            isPartialMatch = isPartial
+        )
+        if (blockedWordRepository.addWord(context, blocked)) {
+            Toast.makeText(context, "Palabra agregada", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "La palabra ya existe", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun updateBlockedWord(context: Context, blockedWord: BlockedWord) {
+        if (!hasPermission("Moderación de palabras", "EDIT")) {
+            Toast.makeText(context, "No tienes permiso para editar palabras", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (blockedWordRepository.updateWord(context, blockedWord)) {
+            Toast.makeText(context, "Palabra actualizada", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Error al actualizar o palabra duplicada", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun deleteBlockedWord(context: Context, wordId: String) {
+        if (!hasPermission("Moderación de palabras", "DELETE")) {
+            Toast.makeText(context, "No tienes permiso para eliminar palabras", Toast.LENGTH_SHORT).show()
+            return
+        }
+        blockedWordRepository.deleteWord(context, wordId)
+        Toast.makeText(context, "Palabra eliminada", Toast.LENGTH_SHORT).show()
     }
 
     fun sendMarketplaceRequest(
@@ -1861,6 +2206,41 @@ class MainViewModel : ViewModel() {
         priceRuleRepository.deleteRule(context.applicationContext, ruleId)
     }
 
+    fun uploadProfileImage(context: Context, uri: Uri) {
+        val user = currentUser.value ?: return
+        if (user.isGuest) return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val savedPath = ImageUtils.resizeAndSaveProfileImage(context.applicationContext, uri, user.uuid)
+            if (savedPath != null) {
+                // Eliminar imagen anterior si existe
+                if (user.profileImageUrl != null && user.profileImageUrl != savedPath) {
+                    ImageUtils.deleteProfileImage(user.profileImageUrl)
+                }
+                
+                withContext(Dispatchers.Main) {
+                    val updatedUser = user.copy(profileImageUrl = savedPath)
+                    UserRepository.updateUser(context.applicationContext, updatedUser)
+                }
+            }
+        }
+    }
+
+    fun removeProfileImage(context: Context) {
+        val user = currentUser.value ?: return
+        if (user.isGuest || user.profileImageUrl == null) return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            ImageUtils.deleteProfileImage(user.profileImageUrl)
+            withContext(Dispatchers.Main) {
+                val updatedUser = user.copy(profileImageUrl = null)
+                UserRepository.updateUser(context.applicationContext, updatedUser)
+            }
+        }
+    }
+
+    fun getUserById(userId: String): User? = registeredUsers.value.find { it.uuid == userId }
+
     fun shareWishlist(context: Context, wishlist: List<Product>) {
         if (wishlist.isEmpty()) {
             Toast.makeText(context, "Tu lista de deseos está vacía", Toast.LENGTH_SHORT).show()
@@ -1874,5 +2254,122 @@ class MainViewModel : ViewModel() {
         }
 
         context.startActivity(Intent.createChooser(intent, "Compartir lista de deseos"))
+    }
+
+    // reportes marketplace
+
+    fun createMarketplaceReport(
+        context: Context,
+        product: Product,
+        type: ReportType,
+        description: String?,
+        onSuccess: () -> Unit
+    ) {
+        val user = currentUser.value
+        if (user == null) {
+            Toast.makeText(context, "Debes iniciar sesión para reportar", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (user.uuid == product.sellerId) {
+            Toast.makeText(context, "No puedes reportar tu propio producto", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (!product.isClientProduct) {
+            Toast.makeText(context, "Solo se pueden reportar productos de Marketplace", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Validar duplicados activos (SIN_REVISAR o EN_REVISION)
+        val existingReport = marketplaceReports.value.find { 
+            it.productId == product.id && 
+            it.reporterId == user.uuid && 
+            it.type == type &&
+            (it.status == ReportStatus.SIN_REVISAR || it.status == ReportStatus.EN_REVISION)
+        }
+        if (existingReport != null) {
+            Toast.makeText(context, "Ya has enviado un reporte activo por este motivo", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        viewModelScope.launch {
+            // Moderación de la descripción
+            if (!description.isNullOrBlank()) {
+                if (description.length > 500) {
+                    Toast.makeText(context, "La descripción es demasiado larga (máx. 500 car.)", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                val localWords = blockedWordRepository.getWordsSync()
+                val moderationResult = ContentModerationService.validateContent(description, localWords)
+                if (moderationResult is ModerationResult.Blocked) {
+                    Toast.makeText(context, moderationResult.reason, Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+            }
+
+            val report = MarketplaceReport(
+                id = java.util.UUID.randomUUID().toString(),
+                productId = product.id,
+                productName = product.name,
+                sellerId = product.sellerId ?: "",
+                sellerName = product.sellerName ?: "Vendedor desconocido",
+                reporterId = user.uuid,
+                reporterName = user.alias,
+                reporterEmail = user.email ?: "",
+                type = type,
+                description = description,
+                createdAt = System.currentTimeMillis(),
+                status = ReportStatus.SIN_REVISAR
+            )
+
+            withContext(Dispatchers.IO) {
+                marketplaceReportRepository.addReport(context, report)
+            }
+            Toast.makeText(context, "Tu reporte fue enviado correctamente", Toast.LENGTH_SHORT).show()
+            onSuccess()
+        }
+    }
+
+    fun updateMarketplaceReportStatus(context: Context, reportId: String, newStatus: ReportStatus) {
+        if (!hasPermission("Reportes", "EDIT")) {
+            Toast.makeText(context, "No tienes permiso para editar reportes", Toast.LENGTH_SHORT).show()
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            marketplaceReportRepository.updateStatus(context, reportId, newStatus)
+        }
+    }
+
+    fun deleteMarketplaceReport(context: Context, reportId: String) {
+        if (!hasPermission("Reportes", "DELETE")) {
+            Toast.makeText(context, "No tienes permiso para eliminar reportes", Toast.LENGTH_SHORT).show()
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            marketplaceReportRepository.deleteReport(context, reportId)
+        }
+    }
+
+    // organizar admin
+
+    private fun initAdminGroups(context: Context) {
+        val groups = listOf("sistema", "ventas", "clientes", "marketplace", "soporte", "inventario")
+        val states = groups.associateWith { key ->
+            PersistenceManager.getAdminGroupState(context, key)
+        }
+        _adminGroupsExpanded.value = states
+    }
+
+    fun toggleAdminGroup(context: Context, groupKey: String) {
+        val current = _adminGroupsExpanded.value.toMutableMap()
+        val newState = !(current[groupKey] ?: false)
+        current[groupKey] = newState
+        _adminGroupsExpanded.value = current
+        
+        viewModelScope.launch(Dispatchers.IO) {
+            PersistenceManager.saveAdminGroupState(context.applicationContext, groupKey, newState)
+        }
     }
 }

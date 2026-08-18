@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.ezzeta.ui.components.ProductCard
 import com.example.ezzeta.ui.components.QuantitySelector
+import com.example.ezzeta.ui.components.UserAvatar
 import com.example.ezzeta.ui.viewmodel.MainViewModel
 import java.util.Locale
 import kotlinx.coroutines.delay
@@ -85,6 +87,8 @@ fun ProductDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
+    var showReportDialog by remember { mutableStateOf(false) }
+
     // Tallas dinámicas desde el modelo
     val sizes = remember(product) { product?.getAvailableSizes() ?: emptyList() }
     
@@ -299,14 +303,26 @@ fun ProductDetailScreen(
                             Text(
                                 text = product.name,
                                 style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
                             )
-                            IconButton(onClick = { viewModel.toggleProductFavorite(context, product.id) }) {
-                                Icon(
-                                    imageVector = if (product.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                    contentDescription = null,
-                                    tint = if (product.isFavorite) Color.Red else Color.Gray
-                                )
+                            Row {
+                                if (product.isClientProduct && currentUser != null && currentUser?.uuid != product.sellerId) {
+                                    IconButton(onClick = { showReportDialog = true }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Flag,
+                                            contentDescription = "Reportar producto",
+                                            tint = Color.Gray
+                                        )
+                                    }
+                                }
+                                IconButton(onClick = { viewModel.toggleProductFavorite(context, product.id) }) {
+                                    Icon(
+                                        imageVector = if (product.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                        contentDescription = null,
+                                        tint = if (product.isFavorite) Color.Red else Color.Gray
+                                    )
+                                }
                             }
                         }
                         
@@ -558,6 +574,10 @@ fun ProductDetailScreen(
                     if (product.isClientProduct && product.sellerId != null) {
                         val sellerName = product.sellerName ?: "Vendedor Marketplace"
                         val userFollows by viewModel.userFollows.collectAsState()
+                        val allUsers by viewModel.registeredUsers.collectAsState()
+                        val seller = remember(allUsers, product.sellerId) {
+                            allUsers.find { it.uuid == product.sellerId }
+                        }
                         
                         val followerCount = remember(userFollows, product.sellerId) { 
                             viewModel.getFollowerCount(product.sellerId) 
@@ -571,21 +591,26 @@ fun ProductDetailScreen(
                             Text(
                                 text = "Vendido por",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.Gray
+                                color = Color.Gray,
+                                modifier = Modifier.padding(bottom = 8.dp)
                             )
-                            Text(
-                                text = sellerName,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 4.dp)
-                            )
-                            
-                            Text(
-                                text = "$followerCount seguidores",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                UserAvatar(user = seller, size = 50.dp)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = sellerName,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "$followerCount seguidores",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
 
                             Spacer(modifier = Modifier.height(16.dp))
 
@@ -673,8 +698,102 @@ fun ProductDetailScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
+
+            if (showReportDialog) {
+                ReportProductDialog(
+                    product = product,
+                    onDismiss = { showReportDialog = false },
+                    onConfirm = { type, desc ->
+                        viewModel.createMarketplaceReport(context, product, type, desc) {
+                            showReportDialog = false
+                        }
+                    }
+                )
+            }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReportProductDialog(
+    product: com.example.ezzeta.data.model.Product,
+    onDismiss: () -> Unit,
+    onConfirm: (com.example.ezzeta.data.model.ReportType, String) -> Unit
+) {
+    var selectedType by remember { mutableStateOf(com.example.ezzeta.data.model.ReportType.SPAM) }
+    var description by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Reportar producto") },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    "Selecciona el motivo por el que deseas reportar este producto.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded }
+                ) {
+                    OutlinedTextField(
+                        value = selectedType.displayName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Motivo") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        com.example.ezzeta.data.model.ReportType.values().forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type.displayName) },
+                                onClick = {
+                                    selectedType = type
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { if (it.length <= 500) description = it },
+                    label = { Text("Descripción adicional (opcional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 5,
+                    supportingText = {
+                        Text(
+                            text = "${description.length}/500",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.End
+                        )
+                    }
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(selectedType, description) }) {
+                Text("Enviar reporte")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
 
 @Composable

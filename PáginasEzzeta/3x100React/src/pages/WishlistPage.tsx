@@ -84,7 +84,7 @@ export const WishlistPage = () => {
           </div>
 
           <QuickAddModal
-            product={selectedQuickProduct ?? (paginatedItems[0] ?? null) as any}
+            product={selectedQuickProduct}
             isOpen={Boolean(selectedQuickProduct)}
             initialSize={selectedQuickProduct?.sizes?.[0]}
             onClose={() => setSelectedQuickProduct(null)}

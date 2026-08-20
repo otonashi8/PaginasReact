@@ -77,7 +77,6 @@ export const ClientesCrudPanel = () => {
                             { label: 'ID', value: (row) => row.id },
                             { label: 'Tipo registro', value: (row) => row.tipoRegistro },
                             { label: 'Nombres', value: (row) => row.nombres },
-                            { label: 'Apellidos', value: (row) => row.apellidos },
                             { label: 'Usuario', value: (row) => row.usuario ?? '' },
                             { label: 'Correo', value: (row) => row.correo },
                             { label: 'Teléfono', value: (row) => row.telefono },

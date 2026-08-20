@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Heart, Minus, Plus, ShoppingBag, X } from 'lucide-react';
+import { Heart, ShoppingBag, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useHoldNumber } from '../hooks/useHoldNumber';
 import { Link } from 'react-router-dom';
 import { ImagePlaceholder } from './ImagePlaceholder';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +12,7 @@ import { getPlanById, type SubscriptionPlan } from '../plans';
 import { getProducts } from '../services/contentService';
 import { resolveProductPrice, resolveCartCoupon, usePricingRules, detectarCombosEnCarrito, type CartItem  } from '../services/pricingService';
 import PriceDisplay from '../components/PriceDisplay';
+import QuickAddModal from './QuickAddModal';
 import { obtenerPromoCodes } from '../data/promoCodes';
 import { storageManager, StorageKeys } from '../storage';
 import CartCheckout from './CartCheckout';
@@ -44,13 +44,11 @@ type AppliedCoupon = {
 export const CartDrawer = () => {
   const { isAuthenticated, user, recordPurchase } = useAuth();
   const { favorites, toggleFavorite } = useWishlist();
-  const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, changeItemSize, addToCart, clearCart } = useCart();
+  const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, changeItemSize, clearCart } = useCart();
   const products = getProducts();
   const [deleteConfirm, setDeleteConfirm] = useState<{ productId: number; size: string } | null>(null);
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'checkout' | 'payment'>('cart');
   const [recommendedModalProduct, setRecommendedModalProduct] = useState<(typeof products)[number] | null>(null);
-  const [recommendedSize, setRecommendedSize] = useState('M');
-  const { value: recommendedQuantity, setValue: setRecommendedQuantity, start: startRecommendedChange } = useHoldNumber(1, { min: 1, step: 1, interval: 120 });
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlan['id']>(user?.plan ?? 'bronze');
   const [plansVersion, setPlansVersion] = useState(0);
@@ -83,9 +81,11 @@ export const CartDrawer = () => {
   const initialDraft = getDraft();
   const [checkoutDepartamento, setCheckoutDepartamento] = useState(initialDraft.departamento ?? '');
   const [departamentoError, setDepartamentoError] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
 
   const handleDepartamentoChange = (departamento: string) => {
     setDepartamentoError(false);
+    setCheckoutError('');
     const nextDraft = {
       ...getDraft(),
       departamento,
@@ -100,12 +100,17 @@ export const CartDrawer = () => {
   const handleProceedToCheckout = () => {
     if (!checkoutDepartamento.trim()) {
       setDepartamentoError(true);
+      setCheckoutError('Selecciona tu departamento para calcular el envío.');
       return;
     }
 
-    if (shippingResult.shippingCalculable) {
-      setCheckoutStep('checkout');
+    if (!shippingResult.shippingCalculable) {
+      setCheckoutError('No hay una tarifa de envío configurada para este departamento.');
+      return;
     }
+
+    setCheckoutError('');
+    setCheckoutStep('checkout');
   };
 
   useEffect(() => {
@@ -187,8 +192,6 @@ export const CartDrawer = () => {
     configuracion: configuracionEnvio,
     freeShippingCoupon,
   });
-
-  const canProceedToCheckout = checkoutDepartamento.trim().length > 0 && shippingResult.shippingCalculable;
 
   const shipping = shippingResult.shippingAmount ?? 0;
   const discountedSubtotal = Number(Math.max(0, selectedProductsSubtotal - discountAmount - promoDiscountAmount - comboInfo.descuentoTotalCombos).toFixed(2));
@@ -387,7 +390,7 @@ export const CartDrawer = () => {
                   removeAppliedPromo={removeAppliedPromo}
                   setIsMembershipModalOpen={setIsMembershipModalOpen}
                   setCheckoutStep={setCheckoutStep}
-                  isCheckoutDisabled={!canProceedToCheckout}
+                  checkoutError={checkoutError}
                 />
               )}
 
@@ -469,8 +472,6 @@ export const CartDrawer = () => {
                                   event.preventDefault();
                                   event.stopPropagation();
                                   setRecommendedModalProduct(product);
-                                  setRecommendedSize(product.sizes[0] ?? 'M');
-                                  setRecommendedQuantity(1);
                                 }}
                                 className="inline-flex items-center justify-center rounded-full border border-black/10 bg-black p-2 text-white transition hover:bg-red-600"
                               >
@@ -484,107 +485,12 @@ export const CartDrawer = () => {
                   })}
                 </div>
               </div>
-              {recommendedModalProduct ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/45 px-4 py-4 sm:py-6 backdrop-blur-[2px]">
-                  <motion.div
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
-                    className="my-auto w-full max-w-xl rounded-[1.5rem] border border-black/10 bg-white p-4 sm:p-6 shadow-[0_26px_70px_rgba(0,0,0,0.2)]">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-xl sm:text-2xl font-semibold text-black">Agregar al carrito</h3>
-                        <p className="mt-2 text-sm text-black/70">{recommendedModalProduct.name}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setRecommendedModalProduct(null)}
-                        className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:border-red-600 hover:text-red-600"
-                      >✕</button>
-                    </div>
-
-                    <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-                      <div className="overflow-hidden rounded-[1.5rem] bg-white h-64 sm:h-80 lg:h-auto">
-                        <img
-                          src={recommendedModalProduct.image}
-                          alt={recommendedModalProduct.name}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div className="space-y-4">
-                        <div>
-                          <span className="text-sm uppercase tracking-[0.2em] text-black/60">Precio</span>
-                          <p><PriceDisplay product={recommendedModalProduct} /></p>
-                        </div>
-                        <label className="block">
-                          <span className="text-sm uppercase tracking-[0.2em] text-black/60">Talla</span>
-                          <select
-                            value={recommendedSize}
-                            onChange={(event) => setRecommendedSize(event.target.value)}
-                            className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none"
-                          >
-                            {recommendedModalProduct.sizes.map((sizeOption) => (
-                              <option key={sizeOption} value={sizeOption}>
-                                {sizeOption}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label className="block">
-                          <span className="text-sm uppercase tracking-[0.2em] text-black/60">Cantidad</span>
-                          <div className="mt-2 flex items-center justify-center sm:justify-start gap-3">
-                            <button
-                              type="button"
-                              onMouseDown={() => startRecommendedChange(-1)}
-                              onTouchStart={() => startRecommendedChange(-1)}
-                              className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:bg-black/5 hover:text-white"
-                            >
-                              <Minus size={16} />
-                            </button>
-
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              value={recommendedQuantity}
-                              onChange={(e) => {
-                                const v = e.target.value.replace(/\D/g, '');
-                                setRecommendedQuantity(v === '' ? 1 : Number(v));
-                              }}
-                              className="w-16 rounded-full border border-black/10 bg-white py-2 text-center text-lg font-semibold text-black outline-none"
-                            />
-
-                            <button
-                              type="button"
-                              onMouseDown={() => startRecommendedChange(1)}
-                              onTouchStart={() => startRecommendedChange(1)}
-                              className="rounded-full border border-black/10 bg-white p-2 text-black transition hover:bg-black/5 hover:text-white"
-                            >
-                              <Plus size={16} />
-                            </button>
-                          </div>
-                        </label>
-                        <PermissionGate permission={PERMISSIONS.salesCreate}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              addToCart(recommendedModalProduct.id, recommendedSize, recommendedQuantity);
-                              setRecommendedModalProduct(null);
-                            }}
-                            className="w-full rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600"
-                          >
-                            Agregar al carrito
-                          </button>
-                        </PermissionGate>
-                      </div>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              ) : null}
+              <QuickAddModal
+                product={recommendedModalProduct}
+                isOpen={Boolean(recommendedModalProduct)}
+                initialSize={recommendedModalProduct?.sizes?.[0]}
+                onClose={() => setRecommendedModalProduct(null)}
+              />
               <div className="h-10" />
             </div>
           </motion.aside>

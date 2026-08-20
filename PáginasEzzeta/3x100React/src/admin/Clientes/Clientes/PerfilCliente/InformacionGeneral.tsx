@@ -13,14 +13,10 @@ export const InformacionGeneral = ({ cliente }: Props) => {
                     <p className="mt-1 text-sm text-zinc-500">Datos de contacto y estado del cliente.</p>
                 </div>
             </div>
-            <div className="mt-2 grid gap-4 sm:grid-cols-4">
+            <div className="mt-2 grid gap-4 sm:grid-cols-3">
                 <div>
                     <p className="text-sm text-zinc-500">Nombre</p>
                     <p className="font-medium">{cliente.nombres}</p>
-                </div>
-                <div>
-                    <p className="text-sm text-zinc-500">Apellidos</p>
-                    <p className="font-medium">{cliente.apellidos}</p>
                 </div>
                 <div>
                     <p className="text-sm text-zinc-500">Usuario</p>
@@ -41,10 +37,6 @@ export const InformacionGeneral = ({ cliente }: Props) => {
                 <div>
                     <p className="text-sm text-zinc-500">DNI / RUC</p>
                     <p className="font-medium">{cliente.documento ?? "No registrado"}</p>
-                </div>
-                <div>
-                    <p className="text-sm text-zinc-500">Género</p>
-                    <p className="font-medium">{cliente.genero}</p>
                 </div>
                 <div>
                     <p className="text-sm text-zinc-500">Tipo de cliente</p>

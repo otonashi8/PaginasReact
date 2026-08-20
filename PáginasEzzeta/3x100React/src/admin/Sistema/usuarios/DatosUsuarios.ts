@@ -12,7 +12,6 @@ function crearAdministrador(): Usuario {
     return {
         id: 1,
         nombres: "Administrador",
-        apellidos: "Sistema",
         usuario: "admin",
         correo: "admin@empresa.com",
         telefono: "",

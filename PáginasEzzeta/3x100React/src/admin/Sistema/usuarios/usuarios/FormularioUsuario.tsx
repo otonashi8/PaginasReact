@@ -34,7 +34,6 @@ export const FormularioUsuario = ({
     const validar = () => {
         const nuevosErrores: string[] = [];
         if (!usuario.nombres.trim()) nuevosErrores.push("Nombres requerido");
-        if (!usuario.apellidos.trim()) nuevosErrores.push("Apellidos requerido");
         if (!usuario.usuario.trim()) nuevosErrores.push("Usuario requerido");
         if (!usuario.correo.trim()) nuevosErrores.push("Correo requerido");
         if (!usuario.contraseña.trim()) nuevosErrores.push("Contraseña requerida");

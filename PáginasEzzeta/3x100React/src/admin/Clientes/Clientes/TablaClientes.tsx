@@ -1,7 +1,6 @@
 import type { Cliente } from "./TiposClientes";
 import { subscriptionPlans } from "../../../plans";
 import { AccionesCliente } from "./componentes/AccionesCliente";
-import { pedidosClienteMock } from "./DatosClientes";
 import {
     calcularTotalGeneradoCliente,
     formatearTipoCliente,
@@ -63,7 +62,7 @@ export const TablaClientes = ({
                         ) : (
                             clientes.map((cliente) => {
                                 const plan = obtenerPlanCliente(cliente);
-                                const pedidos = cliente.pedidos ?? pedidosClienteMock.filter((pedido) => pedido.clienteId === cliente.id);
+                                const pedidos = cliente.pedidos ?? [];
                                 const totalGenerado = calcularTotalGeneradoCliente(cliente, pedidos);
 
                                 return (

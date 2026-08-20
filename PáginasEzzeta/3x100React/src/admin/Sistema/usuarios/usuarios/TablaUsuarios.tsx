@@ -76,11 +76,6 @@ export const TablaUsuarios = ({
                                         </div>
                                     </td>
                                     <td className="px-5 py-4">
-                                        {usuario.nombres}
-                                        {" "}
-                                        {usuario.apellidos}
-                                    </td>
-                                    <td className="px-5 py-4">
                                         {obtenerNombreRol(
                                             usuario.rolId
                                         )}

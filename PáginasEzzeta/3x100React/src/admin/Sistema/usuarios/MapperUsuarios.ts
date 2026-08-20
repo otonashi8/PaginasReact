@@ -3,7 +3,6 @@ import type { Usuario } from "../usuarios/TiposUsuarios";
 type UsuarioApi = {
     id: number;
     nombres: string;
-    apellidos: string;
     usuario: string;
     correo: string;
     telefono: string;
@@ -24,7 +23,6 @@ export const MapperUsuarios = {
         return {
             id: usuario.id,
             nombres: usuario.nombres,
-            apellidos: usuario.apellidos,
             usuario: usuario.usuario,
             correo: usuario.correo,
             telefono: usuario.telefono,
@@ -44,7 +42,6 @@ export const MapperUsuarios = {
         return {
             id: usuario.id,
             nombres: usuario.nombres,
-            apellidos: usuario.apellidos,
             usuario: usuario.usuario,
             correo: usuario.correo,
             telefono: usuario.telefono,

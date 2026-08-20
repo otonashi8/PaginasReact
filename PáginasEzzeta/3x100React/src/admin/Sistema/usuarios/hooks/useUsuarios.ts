@@ -10,7 +10,6 @@ export const useUsuarios = () => {
     const usuarioVacio: Usuario = {
         id: 0,
         nombres: "",
-        apellidos: "",
         usuario: "",
         correo: "",
         telefono: "",
@@ -58,10 +57,6 @@ export const useUsuarios = () => {
         return usuarios.filter((usuario) => {
             const coincideBusqueda =
                 usuario.nombres
-                    .toLowerCase()
-                    .includes(texto)
-                ||
-                usuario.apellidos
                     .toLowerCase()
                     .includes(texto)
                 ||

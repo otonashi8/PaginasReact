@@ -20,7 +20,6 @@ const navigationLinks: NavigationLink[] = [
   { label: 'Inicio', href: '/' },
   { label: '3x100', href: 'https://3x100.pe', external: true },
   { label: 'Tienda', href: '/tienda' },
-  { label: 'Outfit S/200', href: '/outfit-s200' },
   { label: 'Contacto', href: '/contacto' },
   { label: 'Beneficios', href: '/beneficios' },
 ];

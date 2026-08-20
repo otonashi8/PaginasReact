@@ -20,7 +20,7 @@ export const TarjetaUsuario = ({
         <article className="rounded-none border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="font-semibold">{usuario.nombres} {usuario.apellidos}</h3>
+                    <h3 className="font-semibold">{usuario.nombres}</h3>
                     <p className="text-sm text-zinc-500">@{usuario.usuario}</p>
                 </div>
                 <EstadoUsuarioBadge

@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ProductHoverImage } from '../components/ProductHoverImage';
 import { PriceDisplay } from '../components/PriceDisplay';
-import { getHomeBannerRotationSeconds, getHomeProducts, getHomeSlides } from '../services/homeContentService';
+import { getHomeBannerRotationSeconds, getHomeSlides } from '../services/homeContentService';
+import { useProductsCatalog } from '../services/contentService';
 
 type BenefitItem = {
   title: string;
@@ -81,10 +82,10 @@ const luminousTitle = '¡PRENDAS A MEJORES PRECIOS!';
 
 export const HomePage = () => {
   const slides = getHomeSlides();
+  const products = useProductsCatalog();
   const featuredProducts = useMemo(() => {
-    const products = getHomeProducts();
-    return products.slice(0, 8);
-  }, []);
+    return products.filter((product) => product.featured).slice(0, 8);
+  }, [products]);
   const bannerRotationMs = getHomeBannerRotationSeconds() * 1000;
   const [activeSlide, setActiveSlide] = useState(0);
   const [isMobileViewport, setIsMobileViewport] = useState(() =>
@@ -134,7 +135,7 @@ export const HomePage = () => {
   return (
     <section className="space-y-8 pb-8 pt-0">
       {slides.length > 0 ? (
-        <div className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-white -mt-24">
+        <div className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-white">
           <div className="relative h-[64vh] min-h-[380px] overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
@@ -179,21 +180,6 @@ export const HomePage = () => {
         </div>
       ) : null}
 
-      <div className="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.04)] sm:p-8 lg:p-10">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.32em] text-red-600">Estilo urbano</p>
-            <h1 className="mt-3 text-3xl font-semibold uppercase tracking-[0.16em] text-black sm:text-4xl lg:text-5xl">
-              Diseña tu look con piezas que hablan por ti.
-            </h1>
-          </div>
-
-          <p className="max-w-xl text-sm leading-7 text-black/70 sm:text-base">
-            Descubre una colección pensada para quienes buscan comodidad, identidad y presencia en cada detalle.
-          </p>
-        </div>
-      </div>
-
       <div className="grid gap-4 grid-cols-2 xl:grid-cols-4">
         {benefits.map((benefit, index) => {
           const Icon = benefit.icon;
@@ -209,13 +195,13 @@ export const HomePage = () => {
               className="rounded-[1.5rem] border border-zinc-200 bg-white p-6 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)]"
             >
               <div className="flex justify-center">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-red-600/10 bg-red-600/10 text-red-600">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-orange-600/10 bg-orange-600/10 text-orange-600">
                   <Icon size={22} />
                 </div>
               </div>
               <h2 className="text-lg font-semibold text-black">
                 {firstWord}{' '}
-                <span className="text-red-600">{highlightedText}</span>
+                <span className="text-orange-600">{highlightedText}</span>
               </h2>
               <p className="mt-2 text-sm leading-6 text-black/70">{benefit.description}</p>
             </motion.article>
@@ -225,7 +211,7 @@ export const HomePage = () => {
 
       <section className="rounded-[2rem] bg-black px-6 py-10 sm:px-8 lg:px-10 lg:py-12">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.32em] text-red-600">Promociones</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.32em] text-orange-600">Promociones</p>
           <h2 className="mt-4 text-3xl font-semibold uppercase tracking-[0.18em] text-white sm:text-4xl">
             ¡LAS MEJORES OFERTAS!
           </h2>
@@ -242,7 +228,7 @@ export const HomePage = () => {
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="rounded-[1.4rem] border border-white/10 bg-zinc-900/90 p-6 text-left shadow-[0_10px_30px_rgba(0,0,0,0.2)]"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600/15 text-sm font-semibold text-red-400">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-600/15 text-sm font-semibold text-orange-400">
                 0{index + 1}
               </div>
               <h3 className="mt-5 text-xl font-semibold uppercase tracking-[0.16em] text-white">{step.title}</h3>
@@ -254,7 +240,7 @@ export const HomePage = () => {
 
       <section className="rounded-[2rem] border border-zinc-200 bg-white px-6 py-10 shadow-[0_10px_40px_rgba(0,0,0,0.03)] sm:px-8 lg:px-10 lg:py-12">
         <div className="mb-8 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.32em] text-red-600">Oferta destacada</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.32em] text-orange-600">Oferta destacada</p>
           <h2 className="mt-3 flex flex-wrap justify-center gap-1 text-3xl font-semibold uppercase tracking-[0.18em] text-black sm:text-4xl lg:text-5xl">
             {luminousTitle.split('').map((char, index) => (
               <motion.span
@@ -301,7 +287,7 @@ export const HomePage = () => {
                     <p className="mt-2 text-sm leading-6 text-black/70">{product.category}</p>
                     <div className="mt-4 flex items-center justify-between gap-3">
                       <PriceDisplay product={product} />
-                      <span className="rounded-full bg-red-600/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-red-600">
+                      <span className="rounded-full bg-orange-600/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-600">
                         Ver más
                       </span>
                     </div>
@@ -335,7 +321,7 @@ export const HomePage = () => {
 
       <section className="rounded-[2rem] border border-zinc-200 bg-white px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
         <div className="mb-6 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.32em] text-red-600">Explora más</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.32em] text-orange-600">Explora más</p>
           <h2 className="mt-3 text-2xl font-semibold uppercase tracking-[0.16em] text-black sm:text-3xl">
             Descubre las páginas relacionadas
           </h2>

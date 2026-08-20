@@ -7,7 +7,6 @@ import { PlanClienteSection } from "./PerfilCliente/PlanCliente";
 import { WishlistCliente } from "./PerfilCliente/WishlistCliente";
 import { CheckoutDraftCliente } from "./PerfilCliente/CheckoutDraftCliente";
 import { RecientesVistosCliente } from "./PerfilCliente/RecientesVistosCliente";
-import { pagosClienteMock, pedidosClienteMock, wishlistClienteMock } from "./DatosClientes";
 import {
     calcularTicketPromedioCliente,
     calcularTotalGeneradoCliente,
@@ -28,9 +27,9 @@ export const PerfilClientes = ({ cliente }: Props) => {
         );
     }
 
-    const pedidos = cliente.pedidos ?? pedidosClienteMock.filter((pedido) => pedido.clienteId === cliente.id);
-    const pagos = cliente.pagos ?? pagosClienteMock.filter((pago) => pago.clienteId === cliente.id);
-    const wishlist = cliente.wishlist ?? wishlistClienteMock.filter((item) => item.clienteId === cliente.id);
+    const pedidos = cliente.pedidos ?? [];
+    const pagos = cliente.pagos ?? [];
+    const wishlist = cliente.wishlist ?? [];
     const wishlistStorageIds = cliente.wishlistStorageIds;
     const plan = obtenerPlanCliente(cliente);
     const checkoutDraft = cliente.checkoutDraft;

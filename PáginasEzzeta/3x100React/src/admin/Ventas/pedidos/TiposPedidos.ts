@@ -13,7 +13,6 @@ export type MetodoPago =
     | "tarjeta"
     | "yape"
     | "plin"
-    | "paypal"
     | "transferencia";
 
 export interface ProductoPedido {
@@ -115,9 +114,6 @@ export const metodosPago: {
     },
     {valor: "plin",
         etiqueta: "Plin"
-    },
-    {valor: "paypal",
-        etiqueta: "PayPal"
     },
     {valor: "transferencia",
         etiqueta: "Transferencia"

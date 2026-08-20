@@ -26,7 +26,7 @@ type MembershipModalProps = {
 };
 
 type FlowStep = 'plan' | 'account' | 'payment' | 'success';
-type PaymentMethod = 'card' | 'yape' | 'paypal' | 'cash';
+type PaymentMethod = 'card' | 'yape' | 'cash';
 
 type PaymentFormState = {
   paymentMethod: PaymentMethod;
@@ -247,7 +247,6 @@ export const MembershipModal = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[80] flex items-center justify-center bg-black/65 p-3 sm:p-6 overflow-y-auto backdrop-blur-[2px]"
-          onClick={onClose}
         >
           <motion.div
             initial={{ y: 24, opacity: 0, scale: 0.98 }}
@@ -269,7 +268,7 @@ export const MembershipModal = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="self-end sm:self-auto rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:border-black/30"
+                className="self-end sm:self-auto rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-red-500 transition hover:border-black/30"
               >
                 X
               </button>
@@ -312,9 +311,9 @@ export const MembershipModal = ({
               <div className="rounded-[1.4rem] border border-black/10 bg-white p-5 shadow-[0_12px_30px_rgba(0,0,0,0.06)]">
                 <div className="flex items-center gap-2">
                   <Sparkles size={16} className="text-red-600" />
-                  <p className="text-sm uppercase tracking-[0.28em] text-black/60">Beneficios</p>
+                  <p className="text-sm uppercase tracking-[0.28em] text-red-500/60">Beneficios</p>
                 </div>
-                <ul className="mt-4 space-y-2 text-sm text-black/75">
+                <ul className="mt-4 space-y-2 text-sm text-red-500/75">
                   {currentPlan.beneficios.map((benefit) => (
                     <li key={benefit} className="flex items-start gap-2">
                       <Check size={15} className="mt-0.5 shrink-0 text-red-600" />
@@ -354,7 +353,6 @@ export const MembershipModal = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[80] flex items-center justify-center bg-black/65 p-3 sm:p-5 overflow-y-auto backdrop-blur-[2px]"
-        onClick={onClose}
       >
         <motion.div
           initial={{ y: 24, opacity: 0, scale: 0.98 }}
@@ -433,7 +431,7 @@ export const MembershipModal = ({
                       whileHover={{ y: -3, scale: 1.01 }}
                       whileTap={{ scale: 0.995 }}
                       onClick={() => handlePlanSelect(plan)}
-                      className={`rounded-[1.4rem] border p-4 text-left shadow-[0_10px_24px_rgba(0,0,0,0.06)] transition ${isSelected ? 'border-black bg-black text-white' : 'border-black/10 bg-white text-black hover:border-black/30'}`}
+                      className={`rounded-[1.4rem] border p-4 text-left shadow-[0_10px_24px_rgba(0,0,0,0.06)] transition ${isSelected ? 'border-black bg-black text-white' : 'border-black/10 bg-white text-black/70 hover:border-black/30'}`}
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2">
@@ -471,7 +469,7 @@ export const MembershipModal = ({
                 </div>
 
                 <div className="mt-5 rounded-[1.2rem] border border-black/10 bg-white p-4">
-                  <div className="flex items-center gap-2 text-red-600">
+                  <div className="flex items-center gap-2 text-black">
                     <ShieldCheck size={16} />
                     <span className="text-sm font-semibold uppercase tracking-[0.2em]">Incluye</span>
                   </div>
@@ -535,7 +533,6 @@ export const MembershipModal = ({
                   <select name="paymentMethod" value={paymentForm.paymentMethod} onChange={handlePaymentChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none">
                     <option value="card">Tarjeta</option>
                     <option value="yape">Yape</option>
-                    <option value="paypal">PayPal</option>
                     <option value="cash">Contra entrega</option>
                   </select>
                 </label>
@@ -551,7 +548,7 @@ export const MembershipModal = ({
               {error ? <p className="text-sm text-red-600 lg:col-span-2">{error}</p> : null}
 
               <div className="flex flex-col gap-3 sm:flex-row lg:col-span-2">
-                <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setFlowStep('plan')} className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-black/5">
+                <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setFlowStep('plan')} className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-red-500 transition hover:bg-black/5">
                   Volver
                 </motion.button>
                 <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
@@ -567,28 +564,28 @@ export const MembershipModal = ({
             <motion.form key="payment" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mt-6 rounded-2xl border border-black/10 bg-white p-4 sm:p-5 shadow-[0_12px_32px_rgba(0,0,0,0.07)]" onSubmit={handlePaymentSubmit}>
               <div className="space-y-3 sm:space-y-4">
                 <div className="rounded-[1.2rem] border border-black/10 bg-white p-4">
-                  <p className="text-xs uppercase tracking-[0.25em] text-black/50">Plan seleccionado</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-red-500/50">Plan seleccionado</p>
                   <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-lg font-semibold text-black">{selectedPlan.nombre}</p>
-                      <p className="text-center text-sm text-black/70 sm:text-left">{selectedPlan.descuento}% de descuento mensual</p>
+                      <p className="text-lg font-semibold text-red-500">{selectedPlan.nombre}</p>
+                      <p className="text-center text-sm text-red-500/70 sm:text-left">{selectedPlan.descuento}% de descuento mensual</p>
                     </div>
-                    <div className="self-start rounded-full bg-white px-3 py-1 text-sm font-medium text-black">S/{selectedPlan.precio}</div>
+                    <div className="self-start rounded-full bg-white px-3 py-1 text-sm font-medium text-red-500">S/{selectedPlan.precio}</div>
                   </div>
                 </div>
 
                 {paymentForm.paymentMethod === 'card' ? (
                   <div className="space-y-4 rounded-[1.2rem] border border-black/10 bg-white p-4">
-                    <label className="block text-sm text-black/75">
+                    <label className="block text-sm text-red-500/75">
                       <span className="mb-1 block font-medium">Número de tarjeta</span>
                       <input name="cardNumber" value={paymentForm.cardNumber} onChange={handlePaymentChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="4242 4242 4242 4242" required />
                     </label>
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                      <label className="block text-sm text-black/75">
+                      <label className="block text-sm text-red-500/75">
                         <span className="mb-1 block font-medium">Nombre en la tarjeta</span>
                         <input name="cardName" value={paymentForm.cardName} onChange={handlePaymentChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="Juan Pérez" required />
                       </label>
-                      <label className="block text-sm text-black/75">
+                      <label className="block text-sm text-red-500/75">
                         <span className="mb-1 block font-medium">Expiración / CVC</span>
                         <div className="flex flex-col gap-2 sm:flex-row">
                           <input name="cardExpiry" value={paymentForm.cardExpiry} onChange={handlePaymentChange} className="w-full sm:w-1/2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="MM/AA" required />
@@ -600,14 +597,14 @@ export const MembershipModal = ({
                 ) : null}
 
                 {paymentForm.paymentMethod === 'yape' ? (
-                  <label className="block text-sm text-black/75">
+                  <label className="block text-sm text-red-500/75">
                     <span className="mb-1 block font-medium">Número Yape</span>
                     <input name="yapePhone" value={paymentForm.yapePhone} onChange={handlePaymentChange} className="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none" placeholder="987654321" required />
                   </label>
                 ) : null}
 
                 {paymentForm.paymentMethod === 'cash' ? (
-                  <div className="rounded-[1.2rem] border border-black/10 bg-white p-4 text-sm text-black/70">
+                  <div className="rounded-[1.2rem] border border-black/10 bg-white p-4 text-sm text-red-500/70">
                     Puedes pagar al recibir el pedido en la dirección indicada.
                   </div>
                 ) : null}
@@ -616,7 +613,7 @@ export const MembershipModal = ({
               {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setFlowStep('account')} className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-black/5">
+                <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={() => setFlowStep('account')} className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-red-500 transition hover:bg-black/5">
                   Volver
                 </motion.button>
                 <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
@@ -633,8 +630,8 @@ export const MembershipModal = ({
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white">
                 <CreditCard size={24} />
               </div>
-              <h3 className="mt-4 text-xl sm:text-2xl font-semibold text-black">¡Tu miembrosía ya está activa!</h3>
-              <p className="mt-3 text-sm text-black/70">
+              <h3 className="mt-4 text-xl sm:text-2xl font-semibold text-red-500">¡Tu miembrosía ya está activa!</h3>
+              <p className="mt-3 text-sm text-red-500/70">
                 {selectedPlan.nombre} quedó activado con un descuento del {selectedPlan.descuento}% y podrás seguir comprando con beneficios exclusivos.
               </p>
               <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} type="button" onClick={handleComplete} className="mt-6 rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600">

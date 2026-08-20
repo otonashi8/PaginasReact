@@ -157,18 +157,12 @@ export type CartItem = {
   size: string;
 };
 
-/**
- * Detects combos in a cart and calculates discounts
- */
 export const detectarCombosEnCarrito = (
   cartItems: CartItem[],
   products: Product[],
   reglas: ReglaPrecio[] = obtenerReglas()
 ): CartComboInfo => {
-  // Create a map of products for quick lookup
   const productMap = new Map(products.map(p => [p.id, p]));
-
-  // Get all combo rules
   const comboRules = reglas.filter(r => r.tipo === 'combo' && r.estado);
 
   const combosAplicados: ComboApplied[] = [];
@@ -205,7 +199,6 @@ export const detectarCombosEnCarrito = (
           const producto = productMap.get(item.productId);
           if (!producto) continue;
 
-          // Simple check if producto matches elemento
           if (elemento.tipo === 'producto' && String(producto.id) === elemento.valor) {
             const cantidadAUsar = Math.min(item.quantity, elemento.cantidad);
             precioNormalTotal += producto.price * cantidadAUsar;
@@ -228,7 +221,6 @@ export const detectarCombosEnCarrito = (
 
       combosAplicados.push(comboInfo);
     } else if (deteccion.elementosFaltantes.length > 0) {
-      // Combo incomplete
       combosIncompletos.push(comboInfo);
     }
   }

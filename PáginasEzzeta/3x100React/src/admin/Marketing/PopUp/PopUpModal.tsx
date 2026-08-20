@@ -37,7 +37,7 @@ export const PopUpModal = ({ popup, open, onClose, onAction }: PopUpModalProps) 
         aria-label={`Pop-Up ${popup.nombre}`}
       >
         <motion.div
-          className="relative w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-[0_35px_80px_rgba(0,0,0,0.35)]"
+          className="relative w-fit max-w-full overflow-hidden rounded-3xl bg-white shadow-[0_35px_80px_rgba(0,0,0,0.35)]"
           initial={{ y: 24, opacity: 0, scale: 0.98 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 24, opacity: 0, scale: 0.98 }}
@@ -52,7 +52,7 @@ export const PopUpModal = ({ popup, open, onClose, onAction }: PopUpModalProps) 
             <X size={20} />
           </button>
 
-          <div className="relative max-h-[85vh] overflow-hidden bg-black">
+          <div className="relative max-h-[85vh] max-w-[92vw] overflow-hidden bg-white">
             {popup.tipoContenido === 'video' ? (
               <div className={contentClassName}>
                 {isInteractive ? (
@@ -64,20 +64,17 @@ export const PopUpModal = ({ popup, open, onClose, onAction }: PopUpModalProps) 
                   >
                     <video
                       src={popup.recursoMedia}
-                      className="h-full w-full max-h-[75vh] min-h-[280px] object-contain"
+                      className="block h-auto max-h-[75vh] max-w-[92vw] w-auto object-contain"
                       muted
                       loop
                       playsInline
                       controls={false}
                     />
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3 text-sm text-white">
-                      Haz click para ir a {popup.destino}
-                    </div>
                   </button>
                 ) : (
                   <video
                     src={popup.recursoMedia}
-                    className="h-full w-full max-h-[75vh] min-h-[280px] object-contain"
+                    className="block h-auto max-h-[75vh] max-w-[92vw] w-auto object-contain"
                     controls
                   />
                 )}
@@ -101,12 +98,9 @@ export const PopUpModal = ({ popup, open, onClose, onAction }: PopUpModalProps) 
                       <img
                         src={popup.imagenDesktop || popup.imagenMobile}
                         alt={popup.nombre}
-                        className="h-full w-full max-h-[75vh] min-h-[280px] object-contain"
+                        className="block h-auto max-h-[75vh] max-w-[92vw] w-auto object-contain"
                       />
                     </picture>
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3 text-sm text-white">
-                      Haz click para ir a {popup.destino}
-                    </div>
                   </button>
                 ) : (
                   <picture>
@@ -119,7 +113,7 @@ export const PopUpModal = ({ popup, open, onClose, onAction }: PopUpModalProps) 
                     <img
                       src={popup.imagenDesktop || popup.imagenMobile}
                       alt={popup.nombre}
-                      className="h-full w-full max-h-[75vh] min-h-[280px] object-contain"
+                      className="block h-auto max-h-[75vh] max-w-[92vw] w-auto object-contain"
                     />
                   </picture>
                 )}

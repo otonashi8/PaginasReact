@@ -25,7 +25,7 @@ export default function CartSummary({
   onDepartamentoChange,
   departamentoError,
   onProceedToCheckout,
-  isCheckoutDisabled,
+  checkoutError,
 }: any) {
   const departments = useMemo(() => getPeruDepartments(), []);
   return (
@@ -131,13 +131,13 @@ export default function CartSummary({
         )}
 
         {hasActivePlan && (
-          <div className="rounded-[1rem] border-2 border-red-600 bg-red-50 p-4 sm:p-5 text-sm text-black/80 shadow-sm">
+          <div className="rounded-[1rem] border-2 border-green-600 bg-green-50 p-4 sm:p-5 text-sm text-black/80 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.25em] text-black/50">Plan activo</p>
                 <p className="mt-1 font-semibold text-black">{activePlan.nombre}</p>
               </div>
-              <span className="rounded-full border border-red-600 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-600">{activePlan.descuento}%</span>
+              <span className="rounded-full border border-red-600 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-600">-{activePlan.descuento}%</span>
             </div>
 
             <div className="mt-4 space-y-2 text-sm">
@@ -189,11 +189,11 @@ export default function CartSummary({
                 onClick={onProceedToCheckout}
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.99 }}
-                disabled={isCheckoutDisabled}
-                className={`w-full rounded-full px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(220,38,38,0.3)] transition ${isCheckoutDisabled ? 'cursor-not-allowed bg-zinc-400 hover:bg-zinc-400' : 'bg-red-600 hover:bg-red-500'}`}>
+                className="w-full rounded-full bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(220,38,38,0.3)] transition hover:bg-red-500">
                 Pagar ahora
               </motion.button>
             </PermissionGate>
+            {checkoutError ? <p className="text-sm text-red-600">{checkoutError}</p> : null}
           </div>
         </div>
       </div>

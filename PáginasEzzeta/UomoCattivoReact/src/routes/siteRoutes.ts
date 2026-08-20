@@ -8,7 +8,6 @@ export type SiteRouteOption = {
 export const siteRouteOptions: SiteRouteOption[] = [
   { label: 'Inicio', value: '/', allowRedirect: true },
   { label: 'Tienda', value: '/tienda', allowRedirect: true },
-  { label: 'Outfit S/200', value: '/outfit-s200', allowRedirect: true },
   { label: 'Producto', value: '/producto/:slug', allowRedirect: false, isDynamic: true },
   { label: 'Nosotros', value: '/nosotros', allowRedirect: true },
   { label: 'Contacto', value: '/contacto', allowRedirect: true },

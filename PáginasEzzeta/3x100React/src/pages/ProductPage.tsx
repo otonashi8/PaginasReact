@@ -247,7 +247,7 @@ export const ProductPage = () => {
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.99 }}
               onClick={() => addToCart(product.id, selectedSize, quantity)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-none bg-orange-600 px-5 py-5 text-sm font-semibold uppercase tracking-[0.13em] text-white transition-colors hover:border-orange-600 hover:bg-orange-600"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-none bg-black px-5 py-5 text-sm font-semibold uppercase tracking-[0.13em] text-white transition-colors hover:border-orange-600 hover:bg-orange-600"
             >
               <ShoppingBag size={16} /> Agregar al carrito
             </motion.button>
@@ -258,7 +258,7 @@ export const ProductPage = () => {
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.99 }}
               onClick={() => toggleFavorite(product.id)}
-              className={`inline-flex w-full items-center justify-center gap-2 rounded-none border px-5 py-5 text-sm font-semibold uppercase tracking-[0.13em] transition-colors ${isFavorite ? 'border-orange-600 bg-orange-600 text-white' : 'border-black/20 bg-white text-black hover:border-orange-600 hover:text-orange-600'}`}
+              className={`inline-flex w-full items-center justify-center gap-2 rounded-none border px-5 py-5 text-sm font-semibold uppercase tracking-[0.13em] transition-colors ${isFavorite ? 'border-red-600 bg-red-600 text-white' : 'border-black/20 bg-white text-black hover:border-orange-600 hover:text-orange-600'}`}
             >
               <Heart size={16} /> Favoritos
             </motion.button>

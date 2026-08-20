@@ -49,6 +49,5 @@ export const validarStockDelCarrito = (items: (Product & { quantity: number; siz
 export const mapPaymentMethod = (value: string) => {
   if (value === 'card') return 'tarjeta';
   if (value === 'yape') return 'yape';
-  if (value === 'paypal') return 'paypal';
   return 'efectivo';
 };

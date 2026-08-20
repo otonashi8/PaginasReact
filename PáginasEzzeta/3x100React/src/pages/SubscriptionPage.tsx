@@ -17,7 +17,7 @@ type PaymentFormState = {
   email: string;
   phone: string;
   address: string;
-  paymentMethod: 'card' | 'yape' | 'paypal' | 'cash';
+  paymentMethod: 'card' | 'yape' | 'cash';
   cardNumber: string;
   cardName: string;
   cardExpiry: string;
@@ -271,7 +271,6 @@ export const SubscriptionPage = () => {
                   <select name="paymentMethod" value={paymentForm.paymentMethod} onChange={handlePaymentChange} className="w-full rounded-full border border-white/10 bg-white px-4 py-3 text-sm text-black outline-none">
                     <option value="card">Tarjeta</option>
                     <option value="yape">Yape</option>
-                    <option value="paypal">PayPal</option>
                     <option value="cash">Efectivo</option>
                   </select>
                 </label>
@@ -303,10 +302,6 @@ export const SubscriptionPage = () => {
                     <span className="mb-1 block">Número Yape</span>
                     <input name="yapePhone" value={paymentForm.yapePhone} onChange={handlePaymentChange} className="w-full rounded-full border border-white/10 bg-white px-4 py-3 text-sm text-black outline-none" placeholder="987654321" required />
                   </label>
-                )}
-
-                {paymentForm.paymentMethod === 'paypal' && (
-                  <p className="rounded-[1rem] border border-white/10 bg-black/20 p-3 text-sm text-white/70">Se abrirá una pantalla de confirmación ficticia al completar el flujo.</p>
                 )}
 
                 {paymentForm.paymentMethod === 'cash' && (

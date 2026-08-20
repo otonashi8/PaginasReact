@@ -47,19 +47,6 @@ export const InformacionUsuario = ({
                     />
                 </div>
                 <div>
-                    <label className="mb-1 block text-sm font-medium">Apellidos</label>
-                    <input
-                        type="text"
-                        value={usuario.apellidos}
-                        onChange={(e)=>
-                            actualizar(
-                                "apellidos",
-                                e.target.value
-                            )
-                        }className="w-full rounded-none border border-zinc-300 px-3 py-2 text-sm"
-                    />
-                </div>
-                <div>
                     <label className="mb-1 block text-sm font-medium">Usuario</label>
                     <input
                         type="text"

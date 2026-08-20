@@ -6,7 +6,7 @@ type Props = {
 
 export const ComparativaRegistroPanel = ({ comparativa }: Props) => {
     return (
-        <section className="rounded-none border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="rounded-none border border-zinc-200 bg-white p-2 shadow-sm">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-lg font-semibold text-zinc-900">Registrados vs Guest</h2>
@@ -15,8 +15,8 @@ export const ComparativaRegistroPanel = ({ comparativa }: Props) => {
             </div>
             <div className="mt-6 space-y-4">
                 {comparativa.map((item) => (
-                    <div key={item.tipo} className="rounded-none border border-zinc-200 bg-zinc-50 p-4">
-                        <div className="flex items-center justify-between gap-4">
+                    <div key={item.tipo} className="rounded-none border border-zinc-200 bg-zinc-50 p-2">
+                        <div className="flex items-center justify-between gap-2">
                             <div>
                                 <p className="text-sm uppercase tracking-[0.18em] text-zinc-500">{item.tipo === "registrado" ? "Registrados" : "Guest"}</p>
                                 <p className="mt-1 text-xl font-semibold text-zinc-900">{item.cantidad}</p>

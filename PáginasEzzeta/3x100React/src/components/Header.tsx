@@ -18,9 +18,7 @@ type NavigationLink = {
 
 const navigationLinks: NavigationLink[] = [
   { label: 'Inicio', href: '/' },
-  { label: '3x100', href: 'https://3x100.pe', external: true },
   { label: 'Tienda', href: '/tienda' },
-  { label: 'Outfit S/200', href: '/outfit-s200' },
   { label: 'Contacto', href: '/contacto' },
   { label: 'Beneficios', href: '/beneficios' },
 ];
@@ -183,7 +181,31 @@ export const Header = () => {
 
   return (
     <>
-      <header className={`sticky top-0 z-50 w-full border-b backdrop-blur-xl transition duration-300 ${headerBackgroundClass}`}>
+      <style>{`
+        @keyframes headerMarquee {
+          0% { transform: translateX(110%); }
+          100% { transform: translateX(-100%); }
+        }
+
+        .header-marquee-track {
+          display: inline-flex;
+          align-items: center;
+          animation: headerMarquee 18s linear infinite;
+          will-change: transform;
+          min-width: max-content;
+          width: max-content;
+        }
+
+      `}</style>
+      <header className={`${isScrolled ? 'fixed left-0 top-0' : 'relative'} z-50 w-full border-b backdrop-blur-xl transition duration-300 ${headerBackgroundClass}`}>
+        <div className="overflow-hidden bg-orange-500">
+          <div className="relative flex items-center overflow-hidden py-2.5 text-center">
+            <div className="header-marquee-track flex min-w-max items-center gap-8 whitespace-nowrap px-0 text-sm font-semibold uppercase tracking-[0.28em] text-white sm:text-base">
+              <span className="flex-shrink-0">🔥3 X S/100 EN TODA LA TIENDA🔥 ENVIOS A TODO EL PERÚ </span>
+              <span aria-hidden="true" className="flex-shrink-0">🔥3 X S/100 EN TODA LA TIENDA🔥 ENVIOS A TODO EL PERÚ</span>
+            </div>
+          </div>
+        </div>
         <div className="mx-auto flex w-full max-w-[1920px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <button
             type="button"
@@ -416,17 +438,25 @@ export const Header = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:px-4 sm:py-6"
-            onClick={() => setIsLoginModalOpen(false)}
           >
             <motion.div
               initial={{ y: 24, opacity: 0, scale: 0.98 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 24, opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-xl max-h-[92dvh] overflow-y-auto rounded-[1.5rem] border border-black/10 bg-white p-5 shadow-2xl sm:rounded-[2rem] sm:p-8"
+              className="relative w-full max-w-xl max-h-[92dvh] overflow-y-auto rounded-[1.5rem] border border-black/10 bg-white p-5 shadow-2xl sm:rounded-[2rem] sm:p-8"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="mb-5 text-center sm:mb-6 sm:text-left">
+              <button
+                type="button"
+                onClick={() => setIsLoginModalOpen(false)}
+                aria-label="Cerrar inicio de sesión"
+                className="absolute right-4 top-4 rounded-full border border-black/10 p-2 text-black transition hover:border-red-600 hover:text-red-600"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="mb-5 pr-10 text-center sm:mb-6 sm:text-left">
                 <p className="text-sm uppercase tracking-[0.3em] text-black/60">Acceso mayorista</p>
                 <h2 className="mt-2 text-2xl font-semibold text-black sm:text-3xl">Acceso Exclusivo para Mayoristas</h2>
                 <p className="mt-3 text-sm text-black/70">Inicia sesión para acceder a los beneficios exclusivos de tu membresía.</p>

@@ -148,7 +148,7 @@ export default function CartCheckout({
               className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-black outline-none"
             />
             <p className="mt-2 text-sm text-black/70">
-              {shippingLabel === 'GRATIS' ? '🎉 Envío gratis' : shipping !== undefined ? `S/${shipping.toFixed(2)} de envío` : 'Costo de envío por calcular'}
+              {shippingLabel === 'GRATIS' ? '🎉 Envío gratis' : shipping !== undefined ? `S/${shipping.toFixed(2)} de envío` : 'Seleccione Departamento de Envío'}
             </p>
           </label>
 

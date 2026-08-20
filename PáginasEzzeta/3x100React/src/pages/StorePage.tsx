@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Heart, Minus, Plus, ShoppingBag, SlidersHorizontal, X } from 'lucide-react';
+import { Heart, ShoppingBag, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useHoldNumber } from '../hooks/useHoldNumber';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ProductHoverImage } from '../components/ProductHoverImage';
 import { TypewriterTitle } from '../components/TypewriterTitle';
@@ -12,6 +11,7 @@ import { PERMISSIONS } from '../utils/permissionCodes';
 import PriceDisplay from '../components/PriceDisplay';
 import { resolveProductPrice } from '../services/pricingService';
 import { PermissionGate } from '../components/PermissionGate';
+import QuickAddModal from '../components/QuickAddModal';
 
 type FilterCategory = 'Todas' | 'POLO' | 'POLERA' | 'JEAN';
 type FilterSection = 'categories' | 'subcategories' | 'price' | 'sizes';
@@ -85,7 +85,7 @@ const gridClassMap: Record< 1 | 2 | 3 | 4, string> = {
 };
 
 export const StorePage = () => {
-  const { favorites, toggleFavorite, addToCart } = useWishlist();
+  const { favorites, toggleFavorite } = useWishlist();
   const products = getProducts();
   const [searchParams] = useSearchParams();
   const search = searchParams.get("search") ?? "";
@@ -94,8 +94,6 @@ export const StorePage = () => {
   const [draftCategory, setDraftCategory] = useState<FilterCategory>('Todas');
   const [draftSubcategory, setDraftSubcategory] = useState('Todas');
   const [quickCartProduct, setQuickCartProduct] = useState<Product | null>(null);
-  const [quickCartSize, setQuickCartSize] = useState('M');
-  const { value: quickCartQuantity, setValue: setQuickCartQuantity, start: startQuickCartChange } = useHoldNumber(1, { min: 1, step: 1, interval: 120 });
   const [priceBounds, setPriceBounds] = useState<[number, number]>([0, 0]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<[number, number]>([0, 0]);
   const [draftPriceRange, setDraftPriceRange] = useState<[number, number]>([0, 0]);
@@ -261,17 +259,9 @@ export const StorePage = () => {
 
   const openQuickCart = (product: Product) => {
     setQuickCartProduct(product);
-    setQuickCartSize(product.sizes[0] ?? 'M');
-    setQuickCartQuantity(1);
   };
 
   const closeQuickCart = () => setQuickCartProduct(null);
-
-  const confirmQuickCart = () => {
-    if (!quickCartProduct) return;
-    addToCart(quickCartProduct.id, quickCartSize, quickCartQuantity);
-    closeQuickCart();
-  };
 
   return (
     <section className="relative overflow-hidden bg-white pb-8">
@@ -287,7 +277,7 @@ export const StorePage = () => {
           <p className="text-sm uppercase tracking-[0.35em] text-black/45">Tienda</p>
           <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl space-y-3">
-              <TypewriterTitle as="h1" text="Colección Outlet" className="text-3xl font-semibold uppercase tracking-[0.18em] text-black sm:text-4xl" />
+              <TypewriterTitle as="h1" text="Outlet" className="text-3xl font-semibold uppercase tracking-[0.18em] text-black sm:text-4xl" />
               <p className="max-w-2xl text-sm leading-7 text-black/65 sm:text-base">
                 Explora piezas esenciales con una estética contemporánea y adaptada.
               </p>
@@ -658,106 +648,12 @@ export const StorePage = () => {
         </div>
       </div>
 
-      <AnimatePresence>
-        {quickCartProduct ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/55 px-4 py-4 backdrop-blur-sm sm:py-6"
-          >
-            <motion.div
-              initial={{ scale: 0.96, opacity: 0, y: 12 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.96, opacity: 0, y: 12 }}
-              className="my-auto w-full max-w-xl rounded-sm border border-black/10 bg-white p-4 shadow-[0_24px_70px_rgba(0,0,0,0.16)] sm:p-6"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-black sm:text-2xl">Añadir al carrito</h3>
-                  <p className="mt-2 text-sm text-black/65">{quickCartProduct.name}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeQuickCart}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-black/10 bg-white text-black transition duration-300 hover:border-orange-600 hover:text-orange-600"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-                <div className="overflow-hidden rounded-sm bg-zinc-50 h-64 sm:h-80 lg:h-auto">
-                  <img src={quickCartProduct.image} alt={quickCartProduct.name} className="h-full w-full object-cover" />
-                </div>
-                <div className="space-y-3 sm:space-y-4">
-                  <div>
-                    <p className="text-[0.68rem] uppercase tracking-[0.28em] text-black/45">Precio</p>
-                    <div>
-                      <PriceDisplay product={quickCartProduct} cantidad={quickCartQuantity} />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[0.68rem] uppercase tracking-[0.28em] text-black/45">Talla</label>
-                    <select
-                      value={quickCartSize}
-                      onChange={(event) => setQuickCartSize(event.target.value)}
-                      className="mt-2 w-full rounded-sm border border-black/10 bg-white px-4 py-3 text-sm outline-none transition duration-300 hover:border-black/25"
-                    >
-                      {sizeOptions.map((size) => (
-                        <option key={size} value={size} disabled={!quickCartProduct.sizes.includes(size)}>
-                          {quickCartProduct.sizes.includes(size) ? size : `${size} X`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <p className="text-[0.68rem] uppercase tracking-[0.28em] text-black/45">Cantidad</p>
-                    <div className="mt-2 flex items-center justify-center gap-3 sm:justify-start">
-                      <button
-                        type="button"
-                        onMouseDown={() => startQuickCartChange(-1)}
-                        onTouchStart={() => startQuickCartChange(-1)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-black/10 bg-white text-black transition duration-300 hover:border-black/25 hover:bg-black/5"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={quickCartQuantity}
-                        onChange={(e) => {
-                          const v = e.target.value.replace(/\D/g, '');
-                          setQuickCartQuantity(v === '' ? 1 : Number(v));
-                        }}
-                        className="w-16 rounded-sm border border-black/10 bg-white py-2.5 text-center text-lg font-semibold tracking-[-0.03em] text-black outline-none"
-                      />
-                      <button
-                        type="button"
-                        onMouseDown={() => startQuickCartChange(1)}
-                        onTouchStart={() => startQuickCartChange(1)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-black/10 bg-white text-black transition duration-300 hover:border-black/25 hover:bg-black/5"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  <PermissionGate permission={PERMISSIONS.salesCreate}>
-                  <button
-                    type="button"
-                    onClick={confirmQuickCart}
-                    className="mt-4 w-full rounded-sm bg-black px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition duration-300 hover:bg-orange-600"
-                  >
-                    Añadir al carrito
-                  </button>
-                  </PermissionGate>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      <QuickAddModal
+        product={quickCartProduct}
+        isOpen={Boolean(quickCartProduct)}
+        initialSize={quickCartProduct?.sizes?.[0]}
+        onClose={closeQuickCart}
+      />
     </section>
   );
 };

@@ -51,7 +51,7 @@ export const DashboardUsuarios = ({
                                     className="flex items-center justify-between border-b pb-2 last:border-none"
                                 >
                                     <div>
-                                        <p className="font-medium">{usuario.nombres} {usuario.apellidos}</p>
+                                        <p className="font-medium">{usuario.nombres}</p>
                                         <p className="text-sm text-zinc-500">@{usuario.usuario}</p>
                                     </div>
                                     <span className="text-sm text-zinc-500">

@@ -61,23 +61,6 @@ export const AboutPage = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        <div className="overflow-hidden rounded-[1.75rem] border border-black/10 bg-zinc-100 shadow-sm">
-          <img
-            src="https://3x100.pe/wp-content/uploads/2025/11/Polo-gargola-CRPT-1.jpg"
-            alt="Polo Gargola CRPT"
-            className="h-full w-full object-cover"
-          />
-        </div>
-        <div className="overflow-hidden rounded-[1.75rem] border border-black/10 bg-zinc-100 shadow-sm">
-          <img
-            src="https://3x100.pe/wp-content/uploads/2026/01/polo-negro-street-money-1.jpg"
-            alt="Polo Negro Street Money para Hombre"
-            className="h-full w-full object-cover"
-          />
-        </div>
-      </div>
-
       <div className="rounded-[2rem] border border-black/10 bg-white p-8 shadow-sm sm:p-10">
         <div className="max-w-4xl space-y-6">
           <h2 className="text-3xl font-bold uppercase tracking-[0.16em] text-orange-500">Acerca de Nosotros</h2>

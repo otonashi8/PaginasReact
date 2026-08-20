@@ -375,7 +375,7 @@ const buildPermissionsFromRole = (rol: Rol | undefined): Permission[] => {
 
 const buildProfileDataFromRole = (rol: Rol | undefined, usuario: Usuario): Record<string, unknown> => ({
   role: rol?.codigo?.toLowerCase() ?? 'admin',
-  display_name: `${usuario.nombres} ${usuario.apellidos}`,
+  display_name: `${usuario.nombres}`,
 });
 
 const arePasswordsEqual = (candidate: string, stored: string): boolean => {

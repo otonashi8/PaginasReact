@@ -347,7 +347,7 @@ export const ContactPage = () => {
           {/* IMAGEN */}
           <div className="relative min-h-[330px] overflow-hidden lg:min-h-[460px]">
             <img
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTU1agQ0JWH1FRSXAzg8c0EJ0q-w1lNc4P3IQQRrLw5lj_lD3Zl020i5S7A&s=10"
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSLD4p6JsvnptTssw8sGuAllRLWUs5em7lVEnf1EtDHmrzq030NOzhEsA&s=10"
               alt="Emprende con nosotros"
               className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
             />
@@ -387,7 +387,7 @@ export const ContactPage = () => {
                 <button
                   type="button"
                   onClick={() => setIsMembershipModalOpen(true)}
-                  className="inline-flex items-center justify-center rounded-xl border border-black/30 px-7 py-4 text-lg font-bold uppercase tracking-[0.18em] text-black transition-all hover:bg-black hover:text-white"
+                  className="inline-flex items-center justify-center rounded-xl border border-black/30 px-7 py-4 text-lg font-bold uppercase tracking-[0.18em] text-black transition-all bg-white hover:bg-red-500 hover:text-white"
                 >Benefíciate
                 </button>
               </PermissionGate>

@@ -53,7 +53,7 @@ export const calcularCostoEnvio = (params: {
   if (!departamentoTrim) {
     return {
       shippingAmount: null,
-      shippingLabel: 'Costo de envío por calcular',
+      shippingLabel: 'Seleccione Departamento de Envío',
       shippingCalculable: false,
       shippingNotConfigured: false,
       montoMinimoEnvioGratis,
@@ -72,7 +72,7 @@ export const calcularCostoEnvio = (params: {
 
   return {
     shippingAmount: null,
-    shippingLabel: 'Costo de envío por calcular',
+    shippingLabel: 'Seleccione Departamento de Envío',
     shippingCalculable: false,
     shippingNotConfigured: true,
     montoMinimoEnvioGratis,

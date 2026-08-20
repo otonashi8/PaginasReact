@@ -4,13 +4,13 @@ import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from "framer-motion";
 
 const aboutLinks = [
-  { label: 'Nosotros', href: '/nosotros' },
+  { label: 'Sobre Nosotros', href: '/nosotros' },
   { label: 'Contáctanos', href: '/contacto' },
 ];
 
 const companyLinks = [
-  { label: 'Políticas', href: '/politicas' },
-  { label: 'Términos', href: '/terminos' },
+  { label: 'Políticas de privacidad', href: '/politicas' },
+  { label: 'Términos y Condiciones', href: '/terminos' },
   { label: 'Libro de reclamaciones', href: '/reclamaciones' },
   { label: 'Forma parte de la comunidad', href: '/comunidad' },
 ];
@@ -99,17 +99,16 @@ export const Footer = () => {
 
             <div className="mt-6 flex justify-center lg:block">
               <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRtR0xkrj_2RuK9RzeXNqdSDl2boknRmgrjLLUMccTPnX6Z0K7mXfQJkg&s=10"
+                src="https://3x100.pe/wp-content/uploads/2026/01/LOGO-3X100.png"
                 alt="Logo"
                 className="h-40 w-75 rounded-xl"
               />
             </div>
 
-            {/* Mobile Accordion */}
+            {/* Mobile Acordion */}
             <div className="mt-10 space-y-5 lg:hidden">
 
               {/* Acerca de Nosotros */}
-
               <div className="border-t border-white/10 pt-4">
 
                 <button

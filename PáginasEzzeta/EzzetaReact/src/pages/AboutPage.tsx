@@ -23,7 +23,7 @@ export const AboutPage = () => {
 
       <div className="overflow-hidden rounded-[1.25rem] sm:rounded-[1.5rem] border border-black/10 bg-white py-3 shadow-sm">
         <div className="marquee-track flex w-max gap-6 px-2 text-xs uppercase tracking-[0.2em] text-black/70 sm:text-sm sm:tracking-[0.25em]">
-          {Array.from({ length: 12 }).map((_, index) => (
+          {Array.from({ length: 8 }).map((_, index) => (
             <span key={index} className="rounded-full border border-black/10 px-4 py-2">
               EZZETA STYLE · CALIDAD · IDENTIDAD · LOGISTICA · INNOVACION
             </span>

@@ -59,6 +59,10 @@ const rolesIniciales: Rol[] = [
             if (
                 permiso.modulo === "estadísticas" ||
                 permiso.modulo === "productos" ||
+                permiso.modulo === "categorias" ||
+                permiso.modulo === "subcategorias" ||
+                permiso.modulo === "beneficios" ||
+                permiso.modulo === "tallas" ||
                 permiso.modulo === "reglas"
             ) {
                 return {
@@ -100,15 +104,21 @@ const accionesTotales: Rol['permisos'][number]['acciones'] = [
 ];
 
 const migrarRol = (rol: Rol): Rol => {
+    // Limpiar módulos que no deberían estar
+    const modulosAEliminar = ['planes'];
+    const permisosFiltrados = rol.permisos.filter(
+        (permiso) => !modulosAEliminar.includes(normalizarModulo(permiso.modulo))
+    );
+
     const modulosExistentes = new Set(
-        rol.permisos.map((permiso) => normalizarModulo(permiso.modulo)),
+        permisosFiltrados.map((permiso) => normalizarModulo(permiso.modulo)),
     );
 
     const permisosFaltantes = generarPermisosVacios().filter(
         (permiso) => !modulosExistentes.has(normalizarModulo(permiso.modulo)),
     );
 
-    if (permisosFaltantes.length === 0) {
+    if (permisosFaltantes.length === 0 && permisosFiltrados.length === rol.permisos.length) {
         return rol;
     }
 
@@ -119,7 +129,7 @@ const migrarRol = (rol: Rol): Rol => {
 
     return {
         ...rol,
-        permisos: [...rol.permisos, ...permisosAdicionales],
+        permisos: [...permisosFiltrados, ...permisosAdicionales],
     };
 };
 

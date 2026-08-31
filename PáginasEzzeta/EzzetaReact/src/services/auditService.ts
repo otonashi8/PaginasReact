@@ -1,6 +1,6 @@
 import { storageManager } from '../storage';
-import type { LogSistema } from '../admin/Sistema/logs/TiposLogs';
-import { obtenerLogs as obtenerLogsIniciales } from '../admin/Sistema/logs/DatosLogs';
+// import type { LogSistema } from '../admin/Sistema/logs/TiposLogs';
+// import { obtenerLogs as obtenerLogsIniciales } from '../admin/Sistema/logs/DatosLogs';
 
 export type AuditLogInput = {
   modulo: string;
@@ -12,6 +12,23 @@ export type AuditLogInput = {
   ip?: string;
   fecha?: string;
   hora?: string;
+  datosAnteriores?: string | null;
+  datosNuevos?: string | null;
+  objetoAfectado?: string;
+  referencia?: string | null;
+};
+
+export type LogSistema = {
+  id: number;
+  fecha: string;
+  hora: string;
+  modulo: string;
+  submodulo: string;
+  accion: string;
+  descripcion: string;
+  usuario?: string;
+  rol?: string;
+  ip?: string;
   datosAnteriores?: string | null;
   datosNuevos?: string | null;
   objetoAfectado?: string;
@@ -65,15 +82,6 @@ const getCurrentIp = () => {
 const readLogs = (): LogSistema[] => {
   const stored = storageManager.get<string>(STORAGE_KEY);
   if (!stored) {
-    try {
-      const iniciales = obtenerLogsIniciales();
-      if (Array.isArray(iniciales) && iniciales.length > 0) {
-        writeLogs(iniciales);
-        return iniciales;
-      }
-    } catch {
-      // ignore
-    }
     return [];
   }
 
@@ -100,17 +108,25 @@ export const registrarLog = (input: AuditLogInput): LogSistema => {
     hora: input.hora ?? formatTime(now),
     usuario: input.usuario ?? getCurrentUser(),
     rol: input.rol ?? getCurrentRole(),
-    direccionIp: input.ip ?? getCurrentIp(),
+    ip: input.ip ?? getCurrentIp(),
     modulo: input.modulo,
     submodulo: input.submodulo,
     accion: input.accion,
-    mensajeCorto: input.descripcion,
-    mensajeDetallado: input.descripcion,
+    descripcion: input.descripcion,
     objetoAfectado: input.objetoAfectado ?? 'Sistema',
-    valorAnterior: input.datosAnteriores ?? null,
-    valorNuevo: input.datosNuevos ?? null,
+    datosAnteriores: input.datosAnteriores ?? null,
+    datosNuevos: input.datosNuevos ?? null,
     referencia: input.referencia ?? null,
   };
+
+  const esAccionDeCliente =
+    log.rol?.toLowerCase() === 'cliente' ||
+    log.referencia === 'auth.register' ||
+    log.referencia === 'orders.purchase';
+
+  if (esAccionDeCliente) {
+    return log;
+  }
 
   const nextLogs = [log, ...readLogs()];
   writeLogs(nextLogs);

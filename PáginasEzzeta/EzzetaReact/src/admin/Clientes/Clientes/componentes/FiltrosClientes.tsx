@@ -1,6 +1,5 @@
 import { Search } from "lucide-react";
 import type { EstadoCliente, OrdenClientes, TipoRegistroCliente } from "../TiposClientes";
-import { getPlanOptions } from "../../../../plans";
 type Props = {
     busqueda: string;
     onBusquedaChange: (valor: string) => void;
@@ -80,10 +79,9 @@ export const FiltrosClientes = ({
                     onChange={(e) => onPlanChange(e.target.value as string | "todos")}
                     className="rounded-lg border border-zinc-300 px-4 py-3"
                 >
-                    <option value="todos">Todos los planes</option>
-                    {getPlanOptions().map((p) => (
-                        <option key={p.id} value={p.id}>{p.nombre}</option>
-                    ))}
+                    <option value="todos">Tipo de cuenta</option>
+                    <option value="registrado">Registrado</option>
+                    <option value="guest">Guest</option>
                 </select>
         </div>
     );

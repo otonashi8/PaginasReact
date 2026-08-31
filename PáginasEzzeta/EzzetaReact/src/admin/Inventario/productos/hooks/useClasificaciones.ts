@@ -1,16 +1,22 @@
 import { useEffect, useState } from 'react';
 
-import type { ClasificacionesProductos } from '../DatosProductos';
+import type { ClasificacionesProductos, GuiaLavadoSubcategoria, GuiaTallasSubcategoria } from '../DatosProductos';
 import {
     obtenerClasificacionesProductos,
     agregarCategoria as agregarCategoriaPersistida,
     agregarSubcategoria as agregarSubcategoriaPersistida,
     agregarGenero as agregarGeneroPersistida,
+    agregarBeneficio as agregarBeneficioPersistida,
     agregarTalla as agregarTallaPersistida,
     eliminarCategoria as eliminarCategoriaPersistida,
     eliminarSubcategoria as eliminarSubcategoriaPersistida,
     eliminarGenero as eliminarGeneroPersistida,
+    eliminarBeneficio as eliminarBeneficioPersistida,
     eliminarTalla as eliminarTallaPersistida,
+    guardarSubcategoriaMetadata,
+    obtenerSubcategoriaMetadata,
+    crearGuiaTallasBase,
+    type TallaTipo,
 } from '../DatosProductos';
 
 export const useClasificaciones = () => {
@@ -41,8 +47,13 @@ export const useClasificaciones = () => {
         recargarClasificaciones();
     };
 
-    const agregarTalla = (talla: string) => {
-        agregarTallaPersistida(talla);
+    const agregarBeneficio = (beneficio: string) => {
+        agregarBeneficioPersistida(beneficio);
+        recargarClasificaciones();
+    };
+
+    const agregarTalla = (talla: string, tipo?: TallaTipo) => {
+        agregarTallaPersistida(talla, tipo);
         recargarClasificaciones();
     };
 
@@ -61,8 +72,27 @@ export const useClasificaciones = () => {
         recargarClasificaciones();
     };
 
+    const eliminarBeneficio = (beneficio: string) => {
+        eliminarBeneficioPersistida(beneficio);
+        recargarClasificaciones();
+    };
+
     const eliminarTalla = (talla: string) => {
         eliminarTallaPersistida(talla);
+        recargarClasificaciones();
+    };
+
+    const obtenerMetadataSubcategoria = (categoria: string, subcategoria: string) => {
+        return obtenerSubcategoriaMetadata(categoria, subcategoria);
+    };
+
+    const guardarGuiaLavadoSubcategoria = (categoria: string, subcategoria: string, guia: GuiaLavadoSubcategoria) => {
+        guardarSubcategoriaMetadata(categoria, subcategoria, { guiaLavado: guia });
+        recargarClasificaciones();
+    };
+
+    const guardarGuiaTallasSubcategoria = (categoria: string, subcategoria: string, guiaTallas: GuiaTallasSubcategoria) => {
+        guardarSubcategoriaMetadata(categoria, subcategoria, { guiaTallas });
         recargarClasificaciones();
     };
 
@@ -71,10 +101,16 @@ export const useClasificaciones = () => {
         agregarCategoria,
         agregarSubcategoria,
         agregarGenero,
+        agregarBeneficio,
         agregarTalla,
         eliminarCategoria,
         eliminarSubcategoria,
         eliminarGenero,
+        eliminarBeneficio,
         eliminarTalla,
+        obtenerMetadataSubcategoria,
+        guardarGuiaLavadoSubcategoria,
+        guardarGuiaTallasSubcategoria,
+        crearGuiaTallasBase,
     };
 };

@@ -1,15 +1,14 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Heart, ShoppingBag, ShieldCheck, RefreshCcw, Truck } from 'lucide-react';
+import { ArrowRight, Heart, ShieldCheck, RefreshCcw, Truck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ImagePlaceholder } from '../components/ImagePlaceholder';
+import ProductCard from '../components/common/ProductCard';
+import QuickAddModal from '../components/common/QuickAddModal';
 import { PermissionGate } from '../components/PermissionGate';
-import { ProductHoverImage } from '../components/ProductHoverImage';
 import { useWishlist } from '../context/WishlistContext';
-import { PriceDisplay } from '../components/PriceDisplay';
 import { useHoldNumber } from '../hooks/useHoldNumber';
 import { getHomeBannerRotationSeconds, getHomeProducts, getHomeSlides, getTopFeaturedProducts } from '../services/homeContentService';
-import { resolveProductPrice } from '../services/pricingService';
 import { PERMISSIONS } from '../utils/permissionCodes';
 
 type CollectionCategory = {
@@ -42,8 +41,7 @@ const newCollectionCategories: CollectionCategory[] = [
 ];
 
 export const HomePage = () => {
-  const navigate = useNavigate();
-  const { favorites, toggleFavorite, addToCart } = useWishlist();
+  const { toggleFavorite, addToCart } = useWishlist();
   const slides = getHomeSlides();
   const featuredProducts = getTopFeaturedProducts();
   const allProducts = (featuredProducts.length ? featuredProducts : getHomeProducts()).slice(0, 12);
@@ -193,73 +191,9 @@ export const HomePage = () => {
             transition={{ duration: 0.35, ease: 'easeOut' }}
             className="grid w-full max-w-none grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4"
           >
-            {visibleCarouselProducts.map((product) => {
-              const isFavorite = favorites.includes(product.id);
-              const resultadoPrecio = resolveProductPrice(product);
-              const precioOriginal = resultadoPrecio.precioOriginal;
-              const precioFinal = resultadoPrecio.precioFinal;
-              const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
-              const etiquetaDescuento = resultadoPrecio.etiquetaDescuento;
-
-              return (
-                <motion.article
-                  key={product.id}
-                  whileHover={{ y: -4, scale: 1.01 }}
-                  className="flex h-full flex-col border border-black/10 bg-white p-4 shadow-sm"
-                >
-                  <div
-                    onClick={() => navigate(`/producto/${product.slug}`)}
-                    className="group relative aspect-[4/5] cursor-pointer overflow-hidden bg-white"
-                  >
-                    {product.image ? (
-                      <ProductHoverImage
-                        product={product}
-                        alt={product.name}
-                        className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
-                      />
-                    ) : (
-                      <ImagePlaceholder label="Producto" className="h-full" />
-                    )}
-                    <PermissionGate permission={PERMISSIONS.productUpdate}>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          toggleFavorite(product.id);
-                        }}
-                        className={`absolute right-2 top-2 rounded-full border p-2 transition sm:right-3 sm:top-3 ${isFavorite ? 'border-red-600 bg-red-600 text-white' : 'border-black/10 bg-white/90 text-black hover:border-red-600 hover:text-red-600'}`}
-                      >
-                        <Heart size={16} />
-                      </button>
-                    </PermissionGate>
-                  </div>
-                  <div className="mt-4 flex flex-1 flex-col">
-                    <h3 className="text-base font-semibold text-black">{product.name}</h3>
-                    <div className="mt-auto flex items-center justify-between pt-4">
-                      <p className="text-2xl font-semibold tracking-[-0.04em] text-black"> 
-                      <PriceDisplay product={product}/>
-                      {hayDescuento && etiquetaDescuento ? (
-                      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
-                      {etiquetaDescuento}
-                      </span>
-                      ) : null}</p>
-                      <PermissionGate permission={PERMISSIONS.salesCreate}>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setSelectedProduct(product);
-                          }}
-                          className="inline-flex items-center justify-center rounded-full border border-black/10 bg-black p-2 text-white transition hover:bg-red-600"
-                        >
-                          <ShoppingBag size={16} />
-                        </button>
-                      </PermissionGate>
-                    </div>
-                  </div>
-                </motion.article>
-              );
-            })}
+            {visibleCarouselProducts.map((product) => (
+              <ProductCard key={product.id} product={product} onQuickAdd={setSelectedProduct} />
+            ))}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -294,107 +228,12 @@ export const HomePage = () => {
         </div>
       </div>
 
-      <AnimatePresence>
-        {selectedProduct ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 px-4 py-6 sm:items-center"
-            onClick={() => setSelectedProduct(null)}
-          >
-            <motion.div
-              initial={{ y: 24, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 24, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="w-full max-w-xl max-h-[90vh] overflow-y-auto border border-zinc-200 bg-white p-5 shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="grid gap-5 md:grid-cols-[0.95fr_1.05fr]">
-                <div className="aspect-[4/5] overflow-hidden bg-white">
-                  {selectedProduct?.image ? (
-                    <img src={selectedProduct.image} alt={selectedProduct.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <ImagePlaceholder label="Producto" className="h-full" />
-                  )}
-                </div>
-                <div className="space-y-3 sm:space-y-4">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.25em] text-black/60">Compra rápida</p>
-                    <h3 className="mt-2 text-xl font-semibold text-black">{selectedProduct.name}</h3>
-                  </div>
-                  <p className="text-2xl font-semibold text-red-600">S/{resolveProductPrice(selectedProduct).precioFinal.toFixed(2)}</p>
-                  <div>
-                    <label className="text-sm font-medium text-black">Talla</label>
-                    <select
-                      value={selectedSize}
-                      onChange={(event) => setSelectedSize(event.target.value)}
-                      className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none"
-                    >
-                      {selectedProduct.sizes.map((size) => (
-                        <option key={size} value={size}>{size}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-black">Cantidad</label>
-                    <div className="mt-2 flex items-center justify-center gap-3 sm:justify-start">
-                      <button
-                        type="button"
-                        onMouseDown={() => startQuantity(-1)}
-                        onTouchStart={() => startQuantity(-1)}
-                        className="rounded-full border border-black/10 px-3 py-2 text-lg"
-                      >
-                        −
-                      </button>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={quantity}
-                        onChange={(event) => {
-                          const value = event.target.value.replace(/\D/g, '');
-                          setQuantity(value === '' ? 1 : Number(value));
-                        }}
-                        className="w-16 rounded-full border border-black/10 bg-white py-2 text-center text-lg font-semibold text-black outline-none"
-                      />
-                      <button
-                        type="button"
-                        onMouseDown={() => startQuantity(1)}
-                        onTouchStart={() => startQuantity(1)}
-                        className="rounded-full border border-black/10 px-3 py-2 text-lg"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <PermissionGate permission={PERMISSIONS.salesCreate}>
-                      <button
-                        type="button"
-                        onClick={() => addToCart(selectedProduct.id, selectedSize, quantity)}
-                        className="flex-1 rounded-full bg-black px-4 py-3 text-sm font-medium text-white transition hover:bg-red-600"
-                      >
-                        Agregar al carrito
-                      </button>
-                    </PermissionGate>
-                    <PermissionGate permission={PERMISSIONS.productUpdate}>
-                      <button
-                        type="button"
-                        onClick={() => toggleFavorite(selectedProduct.id)}
-                        className="rounded-full border border-black/10 p-3 text-black transition hover:border-red-600 hover:text-red-600"
-                      >
-                        <Heart size={16} />
-                      </button>
-                    </PermissionGate>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      <QuickAddModal
+        product={selectedProduct ?? (allProducts[0] ?? null) as any}
+        isOpen={Boolean(selectedProduct)}
+        initialSize={selectedProduct?.sizes?.[0] || 'M'}
+        onClose={() => setSelectedProduct(null)}
+      />
     </section>
   );
 };

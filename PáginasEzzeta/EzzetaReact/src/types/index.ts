@@ -9,6 +9,7 @@ export interface Product {
   description: string;
   image: string;
   "mini-image"?: string[];
+  colors?: string[];
   sizes: string[];
   featured?: boolean;
   relatedIds?: number[];

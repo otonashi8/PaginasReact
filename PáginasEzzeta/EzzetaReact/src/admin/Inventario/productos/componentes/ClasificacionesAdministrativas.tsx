@@ -7,10 +7,12 @@ type Props = {
     agregarCategoria: (categoria: string) => void;
     agregarSubcategoria: (categoria: string, subcategoria: string) => void;
     agregarGenero: (genero: string) => void;
-    agregarTalla: (talla: string) => void;
+    agregarBeneficio: (beneficio: string) => void;
+    agregarTalla: (talla: string, tipo?: 'letras' | 'numeros') => void;
     eliminarCategoria: (categoria: string) => void;
     eliminarSubcategoria: (categoria: string, subcategoria: string) => void;
     eliminarGenero: (genero: string) => void;
+    eliminarBeneficio: (beneficio: string) => void;
     eliminarTalla: (talla: string) => void;
 };
 
@@ -19,22 +21,27 @@ export const ClasificacionesAdministrativas = ({
     agregarCategoria,
     agregarSubcategoria,
     agregarGenero,
+    agregarBeneficio,
     agregarTalla,
     eliminarCategoria,
     eliminarSubcategoria,
     eliminarGenero,
+    eliminarBeneficio,
     eliminarTalla,
 }: Props) => {
     const [expandido, setExpandido] = useState(false);
     const [categoriasExpandido, setCategoriasExpandido] = useState(true);
     const [subcategoriasExpandido, setSubcategoriasExpandido] = useState(true);
     const [generosExpandido, setGenerosExpandido] = useState(true);
+    const [beneficiosExpandido, setBeneficiosExpandido] = useState(true);
     const [tallasExpandido, setTallasExpandido] = useState(true);
     const [categoriaNueva, setCategoriaNueva] = useState('');
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
     const [subcategoriaNueva, setSubcategoriaNueva] = useState('');
     const [generoNuevo, setGeneroNuevo] = useState('');
+    const [beneficioNuevo, setBeneficioNuevo] = useState('');
     const [tallaNueva, setTallaNueva] = useState('');
+    const [tipoTallaNueva, setTipoTallaNueva] = useState<'letras' | 'numeros'>('letras');
 
     useEffect(() => {
         if (!categoriaSeleccionada) {
@@ -123,11 +130,19 @@ export const ClasificacionesAdministrativas = ({
         setGeneroNuevo('');
     };
 
+    const handleAgregarBeneficio = () => {
+        if (!beneficioNuevo.trim()) {
+            return;
+        }
+        agregarBeneficio(beneficioNuevo.trim());
+        setBeneficioNuevo('');
+    };
+
     const handleAgregarTalla = () => {
         if (!tallaNueva.trim()) {
             return;
         }
-        agregarTalla(tallaNueva.trim());
+        agregarTalla(tallaNueva.trim(), tipoTallaNueva);
         setTallaNueva('');
     };
 
@@ -321,8 +336,56 @@ export const ClasificacionesAdministrativas = ({
                         <div className="rounded-none border border-zinc-200 bg-zinc-50 p-4 h-fit">
                             <div className="flex items-center justify-between gap-4">
                                 <div>
+                                    <h4 className="font-medium text-zinc-950">Beneficios</h4>
+                                    <p className="mt-1 text-sm text-zinc-500">Registra beneficios que luego podrán agregarse a los productos.</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setBeneficiosExpandido((prev) => !prev)}
+                                    className="rounded-none border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
+                                >
+                                    {beneficiosExpandido ? 'Ocultar' : 'Mostrar'}
+                                </button>
+                            </div>
+
+                            {beneficiosExpandido ? (
+                                <>
+                                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                                        <input
+                                            type="text"
+                                            value={beneficioNuevo}
+                                            onChange={(event) => setBeneficioNuevo(event.target.value)}
+                                            placeholder="Nuevo beneficio"
+                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleAgregarBeneficio}
+                                            className="rounded-none bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 sm:whitespace-nowrap"
+                                        >Agregar</button>
+                                    </div>
+
+                                    <div className="mt-4 flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-1">
+                                        {clasificaciones.beneficiosDisponibles.map((beneficio) => (
+                                            <div key={beneficio} className="flex items-center gap-2 rounded-none border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-700">
+                                                <span>{beneficio}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => eliminarBeneficio(beneficio)}
+                                                    className="rounded-none border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+                                                >x</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : null}
+                        </div>
+
+                        <div className="rounded-none border border-zinc-200 bg-zinc-50 p-4 h-fit">
+                            <div className="flex items-center justify-between gap-4">
+                                <div>
                                     <h4 className="font-medium text-zinc-950">Tallas</h4>
-                                    <p className="mt-1 text-sm text-zinc-500">Agrega tallas disponibles para asignar productos y stock por talla.</p>
+                                    <p className="mt-1 text-sm text-zinc-500">Agrega tallas disponibles para asignar productos y stock por talla. Se dividen en letras y números.</p>
                                 </div>
                                 <button
                                     type="button"
@@ -335,7 +398,7 @@ export const ClasificacionesAdministrativas = ({
 
                             {tallasExpandido ? (
                                 <>
-                                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                                    <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_180px_auto]">
                                         <input
                                             type="text"
                                             value={tallaNueva}
@@ -343,6 +406,14 @@ export const ClasificacionesAdministrativas = ({
                                             placeholder="Nueva talla"
                                             className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
                                         />
+                                        <select
+                                            value={tipoTallaNueva}
+                                            onChange={(event) => setTipoTallaNueva(event.target.value as 'letras' | 'numeros')}
+                                            className="rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                        >
+                                            <option value="letras">Letras</option>
+                                            <option value="numeros">Números</option>
+                                        </select>
                                         <button
                                             type="button"
                                             onClick={handleAgregarTalla}
@@ -350,15 +421,24 @@ export const ClasificacionesAdministrativas = ({
                                         >Agregar</button>
                                     </div>
 
-                                    <div className="mt-4 flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-1">
-                                        {clasificaciones.tallasDisponibles.map((talla) => (
-                                            <div key={talla} className="flex items-center gap-2 rounded-none border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-700">
-                                                <span>{talla}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => eliminarTalla(talla)}
-                                                    className="rounded-none border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-                                                >x</button>
+                                    <div className="mt-5 space-y-4">
+                                        {(['letras', 'numeros'] as const).map((tipo) => (
+                                            <div key={tipo} className="rounded-none border border-zinc-200 bg-white p-3">
+                                                <h5 className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
+                                                    {tipo === 'letras' ? 'Letras' : 'Números'}
+                                                </h5>
+                                                <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto pr-1">
+                                                    {(clasificaciones.tallasPorTipo?.[tipo] ?? []).map((talla) => (
+                                                        <div key={talla} className="flex items-center gap-2 rounded-none border border-zinc-200 bg-zinc-50 px-3 py-1 text-sm text-zinc-700">
+                                                            <span>{talla}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => eliminarTalla(talla)}
+                                                                className="rounded-none border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+                                                            >x</button>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

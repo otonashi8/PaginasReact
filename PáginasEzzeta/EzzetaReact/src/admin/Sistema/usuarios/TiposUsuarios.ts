@@ -23,6 +23,10 @@ export type AccionPermiso =
 export type ModuloSistema =
     | "estadísticas"
     | "productos"
+    | "categorias"
+    | "subcategorias"
+    | "beneficios"
+    | "tallas"
     | "reglas"
     | "pedidos"
     | "ventas"
@@ -32,8 +36,10 @@ export type ModuloSistema =
     | "configuracion"
     | "envio"
     | "logs"
-    | "planes"
-    | "marketing";
+    | "marketing"
+    | "rrhh"
+    | "paginas-legales"
+    | "redes";
 
 /* PERMISO*/
 
@@ -107,6 +113,10 @@ export const estadosRol: {
 export const modulosSistema: ModuloSistema[] = [
     "estadísticas",
     "productos",
+    "categorias",
+    "subcategorias",
+    "beneficios",
+    "tallas",
     "reglas",
     "pedidos",
     "ventas",
@@ -116,7 +126,6 @@ export const modulosSistema: ModuloSistema[] = [
     "configuracion",
     "envio",
     "logs",
-    "planes",
     "marketing"
 ];
 

@@ -1,4 +1,3 @@
-import { getPlanById } from "../../../../plans";
 import { obtenerPedidos } from "../../../Ventas/pedidos/DatosPedidos";
 import type { Pedido } from "../../../Ventas/pedidos/TiposPedidos";
 import { AuthService } from "../../../../services/authService";
@@ -133,13 +132,12 @@ const mapUserToCliente = (
     const pedidos = pedidosVentas.length > 0 ? mapPedidosVentas(id, pedidosVentas) : mapPedidos(id, purchases);
     const pagos = pedidosVentas.length > 0 ? mapPagosVentas(id, pedidosVentas) : mapPagos(id, purchases);
     const names = buildNames(user.username);
-    const plan = getPlanById(user.plan);
     const totalGastado = pedidos.reduce((acumulado, pedido) => acumulado + Number(pedido.total ?? 0), 0);
 
     const explicitEstado = (user as any).estado as 'activo' | 'inactivo' | 'suspendido' | undefined;
     const suspendUntilRaw = (user as any).suspendUntil as string | undefined | null;
     let estado: import('../TiposClientes').EstadoCliente;
-    const planFin = formatDate(user.planEnd);
+    const planFin = formatDate(user.planEnd ?? undefined);
 
     if (explicitEstado === 'suspendido') {
         if (suspendUntilRaw) {
@@ -181,9 +179,9 @@ const mapUserToCliente = (
         carritoStorage: obtenerCarritoPorUsuario(user.id),
         wishlist: [],
         wishlistStorageIds: obtenerWishlistPorUsuario(user.id),
-        planActual: plan.id,
-        planNombre: plan.nombre,
-        planInicio: formatDate(user.planStart),
+        planActual: user.plan ?? undefined,
+        planNombre: user.plan ?? undefined,
+        planInicio: formatDate(user.planStart ?? undefined),
         planFin,
         suspendUntil: suspendUntilRaw ?? null,
     };

@@ -8,12 +8,46 @@ const STORAGE_KEY = StorageKeys.PRODUCTOS;
 const STORAGE_KEY_CLASIFICACIONES = StorageKeys.PRODUCTOS_CLASIFICACIONES;
 
 type ValidacionClasificacion = (valor: string) => string;
+export type TallaTipo = 'letras' | 'numeros';
+
+export type GuiaLavadoSubcategoria = {
+    url: string;
+    nombre: string;
+};
+
+export type FilaGuiaTallas = {
+    etiqueta: string;
+    valores: Record<string, string>;
+};
+
+export type GuiaTallasSubcategoria = {
+    columnas: string[];
+    filas: FilaGuiaTallas[];
+    mensajeSecundario: string;
+};
+
+export type MetaSubcategoria = {
+    guiaLavado?: GuiaLavadoSubcategoria;
+    guiaTallas?: GuiaTallasSubcategoria;
+};
 
 export type ClasificacionesProductos = {
     categorias: Record<string, string[]>;
     generosDisponibles: string[];
     tallasDisponibles: string[];
+    beneficiosDisponibles: string[];
+    tallasPorTipo: Record<TallaTipo, string[]>;
+    subcategoriasMetadata: Record<string, MetaSubcategoria>;
 };
+
+export const crearGuiaTallasBase = (): GuiaTallasSubcategoria => ({
+    columnas: ['S', 'M', 'L', 'XL'],
+    filas: [
+        { etiqueta: 'Ancho', valores: { S: '', M: '', L: '', XL: '' } },
+        { etiqueta: 'Largo', valores: { S: '', M: '', L: '', XL: '' } },
+    ],
+    mensajeSecundario: '',
+});
 
 const clasificacionesIniciales: ClasificacionesProductos = {
     categorias: {
@@ -24,11 +58,39 @@ const clasificacionesIniciales: ClasificacionesProductos = {
     },
     tallasDisponibles: ['S', 'M', 'L', 'XL', 'XXL', '26', '28', '30', '32', '34', '36'],
     generosDisponibles: ['Hombre', 'Unisex', 'Mujer'],
+    beneficiosDisponibles: [
+        'Pago seguro',
+        'Entrega en todo Perú',
+        'Envío gratis desde S/300',
+        'Devoluciones fáciles',
+        'Garantía de calidad',
+        'Stock disponible',
+    ],
+    tallasPorTipo: {
+        letras: ['S', 'M', 'L', 'XL', 'XXL'],
+        numeros: ['26', '28', '30', '32', '34', '36'],
+    },
+    subcategoriasMetadata: {},
 };
 
 export const categorias: Record<string, string[]> = { ...clasificacionesIniciales.categorias };
 export const tallasDisponibles: string[] = [...clasificacionesIniciales.tallasDisponibles];
 export const generosDisponibles: string[] = [...clasificacionesIniciales.generosDisponibles];
+export const beneficiosDisponibles: string[] = [...clasificacionesIniciales.beneficiosDisponibles];
+
+export const inferirTipoTalla = (valor: string): TallaTipo => {
+    const tallaNormalizada = normalizarTexto(String(valor ?? ''));
+    return tallaNormalizada !== '' && /^\d/.test(tallaNormalizada) ? 'numeros' : 'letras';
+};
+
+export const obtenerTallasPorTipo = (tipo?: TallaTipo): string[] => {
+    const clasificaciones = obtenerClasificacionesProductos();
+    if (!tipo) {
+        return [...clasificaciones.tallasDisponibles];
+    }
+
+    return [...(clasificaciones.tallasPorTipo?.[tipo] ?? [])];
+};
 
 const normalizarTexto: ValidacionClasificacion = (valor) => valor.trim();
 
@@ -86,17 +148,49 @@ const cargarClasificaciones = (): ClasificacionesProductos => {
             ].map(normalizarTexto).filter(Boolean)),
         );
 
-        const tallasCombinadas = Array.from(
+        const beneficiosCombinados = Array.from(
             new Set([
-                ...clasificacionesIniciales.tallasDisponibles,
-                ...(guardadas?.tallasDisponibles ?? []),
+                ...clasificacionesIniciales.beneficiosDisponibles,
+                ...(guardadas?.beneficiosDisponibles ?? []),
             ].map(normalizarTexto).filter(Boolean)),
         );
+
+        const metadataCombinada = {
+            ...(clasificacionesIniciales.subcategoriasMetadata ?? {}),
+            ...(guardadas?.subcategoriasMetadata ?? {}),
+        };
+
+        const letrasGuardadas = Array.isArray(guardadas?.tallasPorTipo?.letras)
+            ? guardadas.tallasPorTipo.letras
+            : [];
+        const numerosGuardados = Array.isArray(guardadas?.tallasPorTipo?.numeros)
+            ? guardadas.tallasPorTipo.numeros
+            : [];
+
+        const tallasLetras = Array.from(new Set([
+            ...clasificacionesIniciales.tallasPorTipo.letras,
+            ...(guardadas?.tallasDisponibles ?? []).filter((talla) => inferirTipoTalla(talla) === 'letras'),
+            ...letrasGuardadas,
+        ].map(normalizarTexto).filter(Boolean)));
+
+        const tallasNumeros = Array.from(new Set([
+            ...clasificacionesIniciales.tallasPorTipo.numeros,
+            ...(guardadas?.tallasDisponibles ?? []).filter((talla) => inferirTipoTalla(talla) === 'numeros'),
+            ...numerosGuardados,
+        ].map(normalizarTexto).filter(Boolean)));
+
+        const tallasCombinadas = Array.from(new Set([...tallasLetras, ...tallasNumeros]));
 
         return {
             categorias: categoriasCombinadas,
             generosDisponibles: generosCombinados,
             tallasDisponibles: tallasCombinadas,
+            beneficiosDisponibles: beneficiosCombinados,
+            tallasPorTipo: {
+                letras: tallasLetras,
+                numeros: tallasNumeros,
+            },
+            subcategoriasMetadata: metadataCombinada,
         };
     } catch {
         return { ...clasificacionesIniciales };
@@ -117,7 +211,49 @@ const sincronizarExportados = (clasificaciones: ClasificacionesProductos) => {
 
     generosDisponibles.length = 0;
     generosDisponibles.push(...clasificaciones.generosDisponibles);
+
+    beneficiosDisponibles.length = 0;
+    beneficiosDisponibles.push(...clasificaciones.beneficiosDisponibles);
 };
+
+const generarClaveSubcategoria = (categoria: string, subcategoria: string) => `${normalizarTexto(categoria).toLowerCase()}::${normalizarTexto(subcategoria).toLowerCase()}`;
+
+export function obtenerSubcategoriaMetadata(categoria: string, subcategoria: string): MetaSubcategoria {
+    const categoriaNormalizada = normalizarTexto(categoria);
+    const subcategoriaNormalizada = normalizarTexto(subcategoria);
+
+    if (!categoriaNormalizada || !subcategoriaNormalizada) {
+        return {};
+    }
+
+    const clasificaciones = obtenerClasificacionesProductos();
+    const clave = generarClaveSubcategoria(categoriaNormalizada, subcategoriaNormalizada);
+    return clasificaciones.subcategoriasMetadata?.[clave] ?? {};
+}
+
+export function guardarSubcategoriaMetadata(categoria: string, subcategoria: string, metadata: Partial<MetaSubcategoria>) {
+    const categoriaNormalizada = normalizarTexto(categoria);
+    const subcategoriaNormalizada = normalizarTexto(subcategoria);
+
+    if (!categoriaNormalizada || !subcategoriaNormalizada || !metadata || Object.keys(metadata).length === 0) {
+        return;
+    }
+
+    const clasificaciones = obtenerClasificacionesProductos();
+    const clave = generarClaveSubcategoria(categoriaNormalizada, subcategoriaNormalizada);
+    const metadataExistente = clasificaciones.subcategoriasMetadata?.[clave] ?? {};
+
+    clasificaciones.subcategoriasMetadata = {
+        ...(clasificaciones.subcategoriasMetadata ?? {}),
+        [clave]: {
+            ...metadataExistente,
+            ...(metadata.guiaLavado ? { guiaLavado: metadata.guiaLavado } : {}),
+            ...(metadata.guiaTallas ? { guiaTallas: metadata.guiaTallas } : {}),
+        },
+    };
+
+    guardarClasificacionesProductos(clasificaciones);
+}
 
 export function obtenerClasificacionesProductos(): ClasificacionesProductos {
     const clasificaciones = cargarClasificaciones();
@@ -126,8 +262,13 @@ export function obtenerClasificacionesProductos(): ClasificacionesProductos {
 }
 
 export function guardarClasificacionesProductos(clasificaciones: ClasificacionesProductos) {
-    storageManager.set(STORAGE_KEY_CLASIFICACIONES, JSON.stringify(clasificaciones));
-    sincronizarExportados(clasificaciones);
+    const datosGuardados = {
+        ...clasificaciones,
+        subcategoriasMetadata: clasificaciones.subcategoriasMetadata ?? {},
+    };
+
+    storageManager.set(STORAGE_KEY_CLASIFICACIONES, JSON.stringify(datosGuardados));
+    sincronizarExportados(datosGuardados);
 }
 
 if (typeof window !== 'undefined') {
@@ -253,7 +394,35 @@ export function eliminarGenero(genero: string) {
     guardarClasificacionesProductos(clasificaciones);
 }
 
-export function agregarTalla(talla: string) {
+export function agregarBeneficio(beneficio: string) {
+    const beneficioNormalizado = normalizarTexto(beneficio);
+    if (!beneficioNormalizado) {
+        return;
+    }
+
+    const clasificaciones = obtenerClasificacionesProductos();
+    if (clasificaciones.beneficiosDisponibles.some((beneficioActual) => beneficioActual.toLowerCase() === beneficioNormalizado.toLowerCase())) {
+        return;
+    }
+
+    clasificaciones.beneficiosDisponibles.push(beneficioNormalizado);
+    guardarClasificacionesProductos(clasificaciones);
+}
+
+export function eliminarBeneficio(beneficio: string) {
+    const beneficioNormalizado = normalizarTexto(beneficio);
+    if (!beneficioNormalizado) {
+        return;
+    }
+
+    const clasificaciones = obtenerClasificacionesProductos();
+    clasificaciones.beneficiosDisponibles = clasificaciones.beneficiosDisponibles.filter(
+        (beneficioActual) => beneficioActual.toLowerCase() !== beneficioNormalizado.toLowerCase(),
+    );
+    guardarClasificacionesProductos(clasificaciones);
+}
+
+export function agregarTalla(talla: string, tipo: TallaTipo = inferirTipoTalla(talla)) {
     const tallaNormalizada = normalizarTexto(talla);
     if (!tallaNormalizada) {
         return;
@@ -265,6 +434,16 @@ export function agregarTalla(talla: string) {
     }
 
     clasificaciones.tallasDisponibles.push(tallaNormalizada);
+
+    const tipoFinal = tipo === 'numeros' || (tipo !== 'letras' && inferirTipoTalla(tallaNormalizada) === 'numeros')
+        ? 'numeros'
+        : 'letras';
+
+    const tallasTipo = clasificaciones.tallasPorTipo[tipoFinal];
+    if (!tallasTipo.includes(tallaNormalizada)) {
+        tallasTipo.push(tallaNormalizada);
+    }
+
     guardarClasificacionesProductos(clasificaciones);
 }
 
@@ -275,8 +454,16 @@ export function eliminarTalla(talla: string) {
     }
 
     const clasificaciones = obtenerClasificacionesProductos();
+    const tipoTalla = inferirTipoTalla(tallaNormalizada);
+
     clasificaciones.tallasDisponibles = clasificaciones.tallasDisponibles.filter(
         (tallaActual) => tallaActual.toLowerCase() !== tallaNormalizada.toLowerCase(),
+    );
+    clasificaciones.tallasPorTipo.letras = clasificaciones.tallasPorTipo.letras.filter(
+        (tallaActual) => tallaActual.toLowerCase() !== tallaNormalizada.toLowerCase() || tipoTalla !== 'letras',
+    );
+    clasificaciones.tallasPorTipo.numeros = clasificaciones.tallasPorTipo.numeros.filter(
+        (tallaActual) => tallaActual.toLowerCase() !== tallaNormalizada.toLowerCase() || tipoTalla !== 'numeros',
     );
     guardarClasificacionesProductos(clasificaciones);
 }

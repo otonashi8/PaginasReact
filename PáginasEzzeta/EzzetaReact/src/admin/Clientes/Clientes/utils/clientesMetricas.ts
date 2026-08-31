@@ -1,29 +1,21 @@
-import { getPlanById, type WholesalePlanId } from "../../../../plans";
 import type { Cliente, ClientePedido, PlanCliente, TipoRegistroCliente } from "../TiposClientes";
-
-const PLAN_IDS: WholesalePlanId[] = ["bronze", "silver", "gold"];
 
 export const obtenerPlanCliente = (
     cliente: Cliente
 ): PlanCliente | undefined => {
-    if (!cliente.planActual) {
+    if (!cliente.planActual && !cliente.planNombre) {
         return undefined;
     }
 
-    const planId = cliente.planActual as WholesalePlanId;
-    const planData = PLAN_IDS.includes(planId)
-        ? getPlanById(planId)
-        : undefined;
-
     return {
         clienteId: cliente.id,
-        nombre: cliente.planNombre ?? planData?.nombre ?? cliente.planActual,
-        descripcion: "Plan asociado a la cuenta del cliente.",
-        precioMensual: planData ? `S/ ${planData.precio.toFixed(2)}` : "-",
-        descuento: planData ? `${planData.descuento}%` : "-",
+        nombre: cliente.planNombre ?? cliente.planActual ?? "Cuenta estándar",
+        descripcion: "Cuenta del cliente sin plan premium.",
+        precioMensual: "-",
+        descuento: "-",
         fechaInicio: cliente.planInicio ?? "-",
         fechaFin: cliente.planFin ?? "-",
-        beneficios: planData?.beneficios ?? [],
+        beneficios: [],
     };
 };
 

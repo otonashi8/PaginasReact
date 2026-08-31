@@ -1,5 +1,4 @@
-import { getPlanById } from '../plans';
-import type { AuthSession, LoginCredentials, Permission, PurchaseOrderInput, RegisterUserInput, SubscriptionUpdateInput, Warehouse, WholesaleUser } from '../types/auth';
+import type { AuthSession, LoginCredentials, Permission, PurchaseOrderInput, RegisterUserInput, Warehouse, WholesaleUser } from '../types/auth';
 import type { Rol, Usuario } from '../admin/Sistema/usuarios/TiposUsuarios';
 import { obtenerUsuarios as obtenerAdminUsuarios } from '../admin/Sistema/usuarios/DatosUsuarios';
 import { obtenerRolPorId } from '../admin/Sistema/usuarios/DatosRoles';
@@ -133,15 +132,10 @@ const buildWholesaleUserFromAdminUsuario = (usuario: Usuario): WholesaleUser => 
     email: usuario.correo,
     password: usuario.contraseña,
     phone: usuario.telefono || '000000000',
-    plan: 'gold',
     discount: 0,
-    planStart: formatDate(now),
-    planEnd: formatDate(now),
-    autoRenew: false,
     totalSpent: 0,
     purchaseCount: 0,
     purchases: [],
-    daysWithPlan: 0,
     createdAt: usuario.fechaCreacion || formatDate(now),
   };
 };
@@ -174,9 +168,17 @@ const getRolePermissionMetadata = (modulo: string) => {
 
   const map: Record<string, { label: string; path: string; codePrefix: string }> = {
     estadísticas: { label: 'Estadísticas', path: '/D-Admin', codePrefix: 'estadistics' },
-    productos: { label: 'Productos', path: '/D-Admin/productos', codePrefix: 'product' },
-    producto: { label: 'Productos', path: '/D-Admin/productos', codePrefix: 'product' },
-    inventario: { label: 'Inventario', path: '/D-Admin/productos', codePrefix: 'product' },
+    productos: { label: 'Productos', path: '/D-Admin/inventario/productos', codePrefix: 'product' },
+    producto: { label: 'Productos', path: '/D-Admin/inventario/productos', codePrefix: 'product' },
+    categorias: { label: 'Categorías', path: '/D-Admin/inventario/categorias', codePrefix: 'categories' },
+    categoria: { label: 'Categorías', path: '/D-Admin/inventario/categorias', codePrefix: 'categories' },
+    subcategorias: { label: 'Subcategorías', path: '/D-Admin/inventario/subcategorias', codePrefix: 'subcategories' },
+    subcategoria: { label: 'Subcategorías', path: '/D-Admin/inventario/subcategorias', codePrefix: 'subcategories' },
+    beneficios: { label: 'Beneficios', path: '/D-Admin/inventario/beneficios', codePrefix: 'benefits' },
+    beneficio: { label: 'Beneficios', path: '/D-Admin/inventario/beneficios', codePrefix: 'benefits' },
+    tallas: { label: 'Tallas', path: '/D-Admin/inventario/tallas', codePrefix: 'sizes' },
+    talla: { label: 'Tallas', path: '/D-Admin/inventario/tallas', codePrefix: 'sizes' },
+    inventario: { label: 'Inventario', path: '/D-Admin/inventario/productos', codePrefix: 'product' },
     reglas: { label: 'Reglas de precios', path: '/D-Admin/reglas-precios', codePrefix: 'pricing_rules' },
     pedidos: { label: 'Pedidos', path: '/D-Admin/pedidos', codePrefix: 'orders' },
     clientes: { label: 'Clientes', path: '/D-Admin/clientes/editar', codePrefix: 'customers' },
@@ -190,11 +192,15 @@ const getRolePermissionMetadata = (modulo: string) => {
     banners: { label: 'Banners', path: '/D-Admin/marketing/banners', codePrefix: 'marketing' },
     'pop-up': { label: 'Pop-Up', path: '/D-Admin/marketing/pop-up', codePrefix: 'marketing' },
     popup: { label: 'Pop-Up', path: '/D-Admin/marketing/pop-up', codePrefix: 'marketing' },
+    rrhh: { label: 'RR.HH', path: '/D-Admin/rrhh/trabajos', codePrefix: 'rrhh' },
+    recursos: { label: 'RR.HH', path: '/D-Admin/rrhh/trabajos', codePrefix: 'rrhh' },
+    personas: { label: 'RR.HH', path: '/D-Admin/rrhh/trabajos', codePrefix: 'rrhh' },
+    paginas: { label: 'Páginas', path: '/D-Admin/paginas/politica-privacidad', codePrefix: 'pages' },
+    'paginas-legales': { label: 'Páginas', path: '/D-Admin/paginas/politica-privacidad', codePrefix: 'pages' },
     envio: { label: 'Envío', path: '/D-Admin/envio', codePrefix: 'envio' },
     logs: { label: 'Logs', path: '/D-Admin/logs', codePrefix: 'logs' },
     auditoria: { label: 'Logs', path: '/D-Admin/logs', codePrefix: 'logs' },
-    almacenes: { label: 'Almacenes', path: '/D-Admin/almacenes', codePrefix: 'warehouse' },
-    planes: { label: 'Planes', path: '/D-Admin/planes', codePrefix: 'plans' },
+    almacenes: { label: 'Almacenes', path: '/D-Admin/almacenes', codePrefix: 'warehouse' }
   };
 
   return (
@@ -206,15 +212,17 @@ const getRolePermissionMetadata = (modulo: string) => {
   );
 };
 
-const buildPermissionsFromRole = (rol: Rol | undefined): Permission[] => {
+export const buildPermissionsFromRole = (rol: Rol | undefined): Permission[] => {
   if (!rol) {
     return [];
+  }
+
+  if (rol.codigo?.toUpperCase() === 'ADMIN' || rol.protegido) {
+    return buildFullDashboardPermissions();
   }
   const parentMap: Record<string, string> = {
     product: 'Inventario',
     warehouse: 'Inventario',
-    ordenes_req: 'Inventario',
-    ordenes_tras: 'Inventario',
     orders: 'Ventas',
     sales: 'Ventas',
     sales_pro: 'Ventas',
@@ -233,10 +241,16 @@ const buildPermissionsFromRole = (rol: Rol | undefined): Permission[] => {
     marketing: 'Marketing',
     banners: 'Marketing',
     productos: 'Inventario',
-    almacenes: 'Inventario',
+    categorias: 'Inventario',
+    categoria: 'Inventario',
+    subcategorias: 'Inventario',
+    subcategoria: 'Inventario',
+    beneficios: 'Inventario',
+    beneficio: 'Inventario',
+    tallas: 'Inventario',
+    talla: 'Inventario',
     pedidos: 'Ventas',
     ventas: 'Ventas',
-    plans: 'Sistema',
   };
 
   const groups: Record<string, { label: string; accesses: Record<string, unknown>[] }> = {};
@@ -382,11 +396,15 @@ const arePasswordsEqual = (candidate: string, stored: string): boolean => {
   return stored === candidate || compararPassword(candidate, stored);
 };
 
-const buildFullDashboardPermissions = (): Permission[] => [
+export const buildFullDashboardPermissions = (): Permission[] => [
   {
     label: 'Inventario',
     accesses: [
-      { label: 'Productos', path: '/D-Admin/productos', permission_code: 'product.manage' },
+      { label: 'Productos', path: '/D-Admin/inventario/productos', permission_code: 'product.manage' },
+      { label: 'Categorías', path: '/D-Admin/inventario/categorias', permission_code: 'categories.manage' },
+      { label: 'Subcategorías', path: '/D-Admin/inventario/subcategorias', permission_code: 'subcategories.manage' },
+      { label: 'Beneficios', path: '/D-Admin/inventario/beneficios', permission_code: 'benefits.manage' },
+      { label: 'Tallas', path: '/D-Admin/inventario/tallas', permission_code: 'sizes.manage' },
     ],
   },
   {
@@ -405,27 +423,35 @@ const buildFullDashboardPermissions = (): Permission[] => [
     ],
   },
   {
-    label: 'Negocio',
-    accesses: [
-      { label: 'Nuevo almacén', path: '/D-Admin/almacenes', permission_code: 'warehouse.manage' },
-      { label: 'Metodos Pago', path: '/D-Admin/metodos-pago', permission_code: 'payment_methods.manage' },
-    ],
-  },
-  {
     label: 'Sistema',
     accesses: [
-      {label: 'Reglas de precios',path: '/D-Admin/reglas-precios',permission_code: 'pricing_rules.manage'},
-      {label: 'Usuarios',path: '/D-Admin/usuarios',permission_code: 'user.manage'},
-      {label: 'Roles',path: '/D-Admin/roles',permission_code: 'roles.manage'},
-      {label: 'Logs',path: '/D-Admin/logs',permission_code: 'logs.manage'},
-      {label: 'Planes', path: '/D-Admin/planes', permission_code: 'plans.manage'},
-    ]
+      { label: 'Usuarios', path: '/D-Admin/usuarios', permission_code: 'user.manage' },
+      { label: 'Roles', path: '/D-Admin/roles', permission_code: 'roles.manage' },
+      { label: 'Reglas de precios', path: '/D-Admin/reglas-precios', permission_code: 'pricing_rules.manage' },
+      { label: 'Envío', path: '/D-Admin/envio', permission_code: 'envio.manage' },
+      { label: 'Redes Sociales', path: '/D-Admin/redes', permission_code: 'redes.manage' },
+      { label: 'Logs', path: '/D-Admin/logs', permission_code: 'logs.manage' },
+    ],
   },
   {
     label: 'Marketing',
     accesses: [
       { label: 'Banners', path: '/D-Admin/marketing/banners', permission_code: 'marketing.manage' },
       { label: 'Pop-Up', path: '/D-Admin/marketing/pop-up', permission_code: 'marketing.manage' },
+    ],
+  },
+  {
+    label: 'RR.HH',
+    accesses: [
+      { label: 'Trabajos', path: '/D-Admin/rrhh/trabajos', permission_code: 'rrhh.manage' },
+    ],
+  },
+  {
+    label: 'Páginas',
+    accesses: [
+      { label: 'Política de privacidad', path: '/D-Admin/paginas/politica-privacidad', permission_code: 'pages.manage' },
+      { label: 'Términos y condiciones', path: '/D-Admin/paginas/terminos', permission_code: 'pages.manage' },
+      { label: 'Visibilidad', path: '/D-Admin/paginas/visibilidad', permission_code: 'pages.manage' },
     ],
   },
 ];
@@ -529,15 +555,9 @@ const buildDashboardUser = (account: DashboardDemoAccount): WholesaleUser => {
     email: `${account.username}@ezzeta.local`,
     password: account.password,
     phone: '000000000',
-    plan: 'gold',
-    discount: 0,
-    planStart: formatDate(now),
-    planEnd: formatDate(now),
-    autoRenew: false,
     totalSpent: 0,
     purchaseCount: 0,
     purchases: [],
-    daysWithPlan: 0,
     createdAt: formatDate(now),
   };
 };
@@ -554,7 +574,6 @@ const buildSession = (user: WholesaleUser, overrides?: Partial<AuthSession>): Au
 
 const normalizeUser = (user: WholesaleUser): WholesaleUser => ({
   ...user,
-  discount: Number(user.discount ?? 0),
   totalSpent: roundCurrency(Number(user.totalSpent ?? 0)),
   purchaseCount: Number(user.purchaseCount ?? user.purchases?.length ?? 0),
   purchases: Array.isArray(user.purchases) ? user.purchases : [],
@@ -563,9 +582,6 @@ const normalizeUser = (user: WholesaleUser): WholesaleUser => ({
 
 const buildUser = (input: RegisterUserInput): WholesaleUser => {
   const now = new Date();
-  const planConfig = getPlanById(input.plan);
-  const planEnd = new Date(now);
-  planEnd.setDate(planEnd.getDate() + planConfig.durationDays);
 
   return {
     id: crypto.randomUUID(),
@@ -574,15 +590,9 @@ const buildUser = (input: RegisterUserInput): WholesaleUser => {
     password: input.password,
     phone: input.phone.trim(),
     ruc: input.ruc?.trim() || undefined,
-    plan: input.plan,
-    discount: input.discount ?? planConfig.descuento,
-    planStart: formatDate(now),
-    planEnd: formatDate(planEnd),
-    autoRenew: input.autoRenew ?? true,
     totalSpent: 0,
     purchaseCount: 0,
     purchases: [],
-    daysWithPlan: planConfig.durationDays,
     createdAt: formatDate(now),
   };
 };
@@ -948,17 +958,13 @@ export class AuthService {
     };
   }
 
-  static async updateSubscription(input: SubscriptionUpdateInput): Promise<AuthSession> {
+  static async updateSubscription(input: { plan?: string; discount?: number; autoRenew?: boolean; amount?: number }): Promise<AuthSession> {
     const currentSession = await this.me();
     if (!currentSession?.user) {
       throw new Error('No hay una sesión activa para actualizar la suscripción.');
     }
 
-    const planConfig = getPlanById(input.plan);
     const now = new Date();
-    const planEnd = new Date(now);
-    planEnd.setDate(planEnd.getDate() + planConfig.durationDays);
-
     const users = readUsers();
     const userIndex = users.findIndex((user) => user.id === currentSession.user.id);
 
@@ -968,13 +974,10 @@ export class AuthService {
 
     const updatedUser: WholesaleUser = {
       ...currentSession.user,
-      plan: input.plan,
-      discount: input.discount ?? planConfig.descuento,
-      autoRenew: input.autoRenew ?? currentSession.user.autoRenew,
-      planStart: formatDate(now),
-      planEnd: formatDate(planEnd),
-      daysWithPlan: planConfig.durationDays,
-      totalSpent: currentSession.user.totalSpent + (input.amount ?? planConfig.precio),
+      plan: input.plan ?? currentSession.user.plan,
+      discount: input.discount ?? currentSession.user.discount ?? 0,
+      autoRenew: input.autoRenew ?? currentSession.user.autoRenew ?? false,
+      totalSpent: currentSession.user.totalSpent + (input.amount ?? 0),
     };
 
     users[userIndex] = updatedUser;

@@ -6,6 +6,5 @@
   { "label": "Deseados", "href": "/deseados" },
   { "label": "Políticas", "href": "/politicas" },
   { "label": "Términos", "href": "/terminos" },
-  { "label": "Libro de Reclamos", "href": "/recomendaciones" },
-  { "label": "Beneficios", "href": "/beneficios" }
+  { "label": "Libro de Reclamos", "href": "/recomendaciones" }
 ]

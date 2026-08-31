@@ -1,16 +1,16 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Heart, Minus, Plus, ShoppingBag, SlidersHorizontal, X } from 'lucide-react';
+import { Minus, Plus, SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useHoldNumber } from '../hooks/useHoldNumber';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ProductHoverImage } from '../components/ProductHoverImage';
+import { useSearchParams } from 'react-router-dom';
 import PriceDisplay from '../components/PriceDisplay';
 import { PermissionGate } from '../components/PermissionGate';
 import { useWishlist } from '../context/WishlistContext';
-import { resolveProductPrice } from '../services/pricingService';
 import { useProductsCatalog } from '../services/contentService';
 import type { Product } from '../types';
 import { PERMISSIONS } from '../utils/permissionCodes';
+import ProductCard from '../components/common/ProductCard';
+import QuickAddModal from '../components/common/QuickAddModal';
 
 type FilterSection = 'categories' | 'subcategories' | 'price' | 'sizes';
 
@@ -40,8 +40,7 @@ const gridClassMap: Record<1 | 2 | 3 | 4, string> = {
 };
 
 export const StorePage = () => {
-  const navigate = useNavigate();
-  const { favorites, toggleFavorite, addToCart } = useWishlist();
+  const { addToCart } = useWishlist();
   const products = useProductsCatalog();
   const [searchParams] = useSearchParams();
   const search = searchParams.get('search') ?? '';
@@ -263,11 +262,6 @@ export const StorePage = () => {
     });
   };
 
-  const openProduct = (product: Product) => {
-    const slugBase = product.slug || `producto-${product.id}`;
-    navigate(`/producto/${encodeURIComponent(slugBase)}`);
-  };
-
   const openQuickCart = (product: Product) => {
     setQuickCartProduct(product);
     setQuickCartSize(product.sizes[0] ?? 'M');
@@ -389,103 +383,9 @@ export const StorePage = () => {
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                   className={`grid gap-4 sm:gap-5 ${gridClassMap[productsPerRow]}`}
                 >
-                  {paginatedProducts.map((product, index) => {
-                    const isFavorite = favorites.includes(product.id);
-                    const discountPercentage = product.previousPrice
-                      ? Math.max(1, Math.round((1 - product.price / product.previousPrice) * 100))
-                      : null;
-
-                    const resultadoPrecio = resolveProductPrice(product);
-                    const precioOriginal = resultadoPrecio.precioOriginal;
-                    const precioFinal = resultadoPrecio.precioFinal;
-                    const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
-                    const etiquetaDescuento = resultadoPrecio.etiquetaDescuento;
-
-                    return (
-                      <motion.article
-                        key={product.id}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.28, ease: 'easeOut', delay: index * 0.03 }}
-                        whileHover={{ y: -8 }}
-                        onClick={() => openProduct(product)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            openProduct(product);
-                          }
-                        }}
-                        role="button"
-                        tabIndex={0}
-                        className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-[1.8rem] border border-black/8 bg-white shadow-[0_12px_35px_rgba(0,0,0,0.04)] transition duration-300 hover:border-red-900/20 hover:shadow-[0_24px_60px_rgba(0,0,0,0.12)]"
-                      >
-                        <div className="flex flex-1 flex-col">
-                          <div className="relative aspect-[4/5] overflow-hidden bg-zinc-50">
-                            {discountPercentage ? (
-                              <span className="absolute left-4 top-4 z-10 rounded-full bg-black px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-white shadow-[0_10px_25px_rgba(0,0,0,0.16)]">
-                                -{discountPercentage}%
-                              </span>
-                            ) : null}
-                            <ProductHoverImage
-                              product={product}
-                              alt={product.name}
-                              className="h-full w-full object-contain p-5 transition duration-300 group-hover:scale-[1.02]"
-                            />
-                          </div>
-
-                          <div className="flex flex-1 flex-col gap-5 p-5">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="space-y-2">
-                                <p className="text-[0.68rem] uppercase tracking-[0.24em] text-black/45">{product.category}</p>
-                                <h3 className="text-lg font-semibold leading-snug text-black">{product.name}</h3>
-                              </div>
-                              <PermissionGate permission={PERMISSIONS.productUpdate}>
-                                <button
-                                  type="button"
-                                  onClick={(event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    toggleFavorite(product.id);
-                                  }}
-                                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition duration-300 ${isFavorite ? 'border-red-600 bg-red-600 text-white shadow-[0_10px_22px_rgba(193,18,31,0.18)]' : 'border-black/10 bg-white text-black hover:border-red-600/30 hover:bg-red-50 hover:text-red-600'}`}
-                                  aria-label={isFavorite ? 'Quitar de wishlist' : 'Agregar a wishlist'}
-                                >
-                                  <Heart size={15} />
-                                </button>
-                              </PermissionGate>
-                            </div>
-
-                            <div className="mt-auto flex flex-col gap-4 border-t border-black/6 pt-4 sm:flex-row sm:items-end sm:justify-between">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <p className="text-2xl font-semibold tracking-[-0.04em] text-black"> 
-                                    <PriceDisplay product={product}/>
-                                      {hayDescuento && etiquetaDescuento ? (
-                                        <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
-                                        {etiquetaDescuento}
-                                        </span>
-                                      ) : null}</p>
-                                </div>
-                              </div>
-                              <PermissionGate permission={PERMISSIONS.salesCreate}>
-                                <button
-                                  type="button"
-                                  onClick={(event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    openQuickCart(product);
-                                  }}
-                                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-black px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-white transition duration-300 hover:border-red-600 hover:bg-red-600 sm:w-auto"
-                                >
-                                  <ShoppingBag size={15} />
-                                </button>
-                              </PermissionGate>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.article>
-                    );
-                  })}
+                  {paginatedProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} onQuickAdd={openQuickCart} />
+                  ))}
                 </motion.div>
 
                 <div className="flex flex-col gap-3 rounded-[1.5rem] border border-black/10 bg-white px-4 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between">
@@ -518,6 +418,13 @@ export const StorePage = () => {
             )}
         </div>
       </div>
+
+      <QuickAddModal
+        product={quickCartProduct ?? (paginatedProducts[0] ?? null) as any}
+        isOpen={Boolean(quickCartProduct)}
+        initialSize={quickCartProduct?.sizes?.[0] || 'M'}
+        onClose={closeQuickCart}
+      />
 
       <AnimatePresence>
         {isFiltersModalOpen ? (
@@ -784,108 +691,6 @@ export const StorePage = () => {
         ) : null}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {quickCartProduct ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/55 px-4 py-4 backdrop-blur-sm sm:py-6"
-          >
-            <motion.div
-              initial={{ scale: 0.96, opacity: 0, y: 12 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.96, opacity: 0, y: 12 }}
-              className="my-auto w-full max-w-xl rounded-[1.75rem] border border-black/10 bg-white p-4 shadow-[0_24px_70px_rgba(0,0,0,0.16)] sm:p-6"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-black sm:text-2xl">Añadir al carrito</h3>
-                  <p className="mt-2 text-sm text-black/65">{quickCartProduct.name}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeQuickCart}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white text-black transition duration-300 hover:border-red-600 hover:text-red-600"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-                <div className="overflow-hidden rounded-[1.5rem] bg-zinc-50 h-64 sm:h-80 lg:h-auto">
-                  {quickCartProduct.image ? (
-                    <img src={quickCartProduct.image} alt={quickCartProduct.name} className="h-full w-full object-cover" />
-                  ) : null}
-                </div>
-                <div className="space-y-3 sm:space-y-4">
-                  <div>
-                    <p className="text-[0.68rem] uppercase tracking-[0.28em] text-black/45">Precio</p>
-                    <div>
-                      <PriceDisplay product={quickCartProduct} cantidad={quickCartQuantity} />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[0.68rem] uppercase tracking-[0.28em] text-black/45">Talla</label>
-                    <select
-                      value={quickCartSize}
-                      onChange={(event) => setQuickCartSize(event.target.value)}
-                      className="mt-2 w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition duration-300 hover:border-black/25"
-                    >
-                      {sizeOptions.map((size) => (
-                        <option key={size} value={size} disabled={!quickCartProduct.sizes.includes(size)}>
-                          {quickCartProduct.sizes.includes(size) ? size : `${size} X`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <p className="text-[0.68rem] uppercase tracking-[0.28em] text-black/45">Cantidad</p>
-                    <div className="mt-2 flex items-center justify-center gap-3 sm:justify-start">
-                      <button
-                        type="button"
-                        onMouseDown={() => startQuickCartChange(-1)}
-                        onTouchStart={() => startQuickCartChange(-1)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white text-black transition duration-300 hover:border-black/25 hover:bg-black/5"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={quickCartQuantity}
-                        onChange={(e) => {
-                          const v = e.target.value.replace(/\D/g, '');
-                          setQuickCartQuantity(v === '' ? 1 : Number(v));
-                        }}
-                        className="w-16 rounded-full border border-black/10 bg-white py-2.5 text-center text-lg font-semibold tracking-[-0.03em] text-black outline-none"
-                      />
-                      <button
-                        type="button"
-                        onMouseDown={() => startQuickCartChange(1)}
-                        onTouchStart={() => startQuickCartChange(1)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white text-black transition duration-300 hover:border-black/25 hover:bg-black/5"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  <PermissionGate permission={PERMISSIONS.salesCreate}>
-                    <button
-                      type="button"
-                      onClick={confirmQuickCart}
-                      className="mt-4 w-full rounded-full bg-black px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition duration-300 hover:bg-red-600"
-                    >
-                      Añadir al carrito
-                    </button>
-                  </PermissionGate>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
     </section>
   );
 };

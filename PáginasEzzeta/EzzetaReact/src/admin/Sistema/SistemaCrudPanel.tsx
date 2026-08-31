@@ -4,9 +4,10 @@ import { ReglasCrudPanel } from './reglas-precios';
 import { UsuariosCrudPanel } from './usuarios';
 import { RolesCrudPanel } from './usuarios/roles/RolesCrudPanel';
 import { CuponesCrudPanel } from './cupones/CuponesCrudPanel';
-import { LogsCrudPanel } from './logs';
 import { EnvioCrudPanel } from './envio/EnvioCrudPanel';
-import { PlanesCrudPanel } from './planes/PlanesCrudPanel';
+import { RedesCrudPanel } from './redes/RedesCrudPanel';
+import { isSistemaEnvioAccess, isSistemaRedesAccess } from './sistemaModuleMatcher';
+import { LogsCrudPanel } from './logs/LogsCrudPanel';
 
 type SistemaCrudPanelProps = {
   access: PermissionAccess;
@@ -28,10 +29,10 @@ export const SistemaCrudPanel = ({ access }: SistemaCrudPanelProps) => {
     .toLowerCase();
 
   const esModuloEnvio =
-    accessName === 'envio' ||
-    accessName === 'envios' ||
-    accessLabelNormalized.includes('envio') ||
-    access.path?.toLowerCase().endsWith('/envio');
+    isSistemaEnvioAccess(accessName, accessLabelNormalized, access.path);
+
+  const esModuloRedes =
+    isSistemaRedesAccess(accessName, accessLabelNormalized, access.path);
 
   switch (accessName) {
 
@@ -49,16 +50,23 @@ export const SistemaCrudPanel = ({ access }: SistemaCrudPanelProps) => {
 
     case 'logs':
     case 'auditoria':
-      return <LogsCrudPanel access={access} />;
-
-    case 'planes':
-      return <PlanesCrudPanel access={access} />;
+      return <LogsCrudPanel />;
 
     case 'envio':
     case 'envios':
       return <EnvioCrudPanel access={access} />;
 
+    case 'redes':
+    case 'redes sociales':
+    case 'redes-sociales':
+    case 'redessociales':
+      return <RedesCrudPanel />;
+
     default:
+      if (esModuloRedes) {
+        return <RedesCrudPanel />;
+      }
+
       if (esModuloEnvio) {
         return <EnvioCrudPanel access={access} />;
       }

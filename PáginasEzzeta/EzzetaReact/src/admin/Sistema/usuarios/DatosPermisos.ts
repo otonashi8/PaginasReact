@@ -19,6 +19,10 @@ export const accionesBase: AccionPermiso[] = [
 export const modulosBase: ModuloSistema[] = [
     "estadísticas",
     "productos",
+    "categorias",
+    "subcategorias",
+    "beneficios",
+    "tallas",
     "reglas",
     "pedidos",
     "ventas",
@@ -28,8 +32,10 @@ export const modulosBase: ModuloSistema[] = [
     "configuracion",
     "envio",
     "logs",
-    "planes",
-    "marketing"
+    "marketing",
+    "rrhh",
+    "paginas-legales",
+    "redes"
 ];
 
 /* GENERA LA MATRIZ COMPLETA DE PERMISOS*/

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from "framer-motion";
+import { useRedes } from '../admin/Sistema/redes/redesService';
 
 const aboutLinks = [
   { label: 'Nosotros', href: '/nosotros' },
@@ -12,11 +13,12 @@ const companyLinks = [
   { label: 'Políticas', href: '/politicas' },
   { label: 'Términos', href: '/terminos' },
   { label: 'Libro de reclamaciones', href: '/reclamaciones' },
-  { label: 'Forma parte de la comunidad', href: '/comunidad' },
+  { label: 'Trabaja con nosotros', href: '/trabajos' },
 ];
 
 export const Footer = () => {
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const redes = useRedes();
 
   const toggleSection = (section: string) => {
     setOpenSection((current) => (current === section ? null : section));
@@ -24,56 +26,40 @@ export const Footer = () => {
 
   const socialLinks = (
     <>
-      <a
-        href="https://www.tiktok.com/@ezzetacompany"
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-gray px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M9 3v10a4 4 0 1 0 4-4V5a6 6 0 1 1-4 1z" fill="white"/>
-        </svg>
-        TikTok
-      </a>
+      {redes
+        .filter((red) => red.activo && red.url)
+        .map((red) => {
+          const paletteByName: Record<string, string> = {
+            tiktok: 'bg-zinc-700',
+            instagram: 'bg-gradient-to-r from-[#f58529] via-[#dd2a7b] to-[#8134af]',
+            facebook: 'bg-[#1877F2]',
+            youtube: 'bg-[#FF0000]',
+            x: 'bg-black',
+            linkedin: 'bg-[#0A66C2]',
+          };
 
-      <a
-        href="https://www.instagram.com/ezzetacompany"
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-gradient-to-r from-[#f58529] via-[#dd2a7b] to-[#8134af] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <rect x="3" y="3" width="18" height="18" rx="5" stroke="white" strokeWidth="1.2"/>
-          <path d="M16 8h.01" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
-          <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" stroke="white" strokeWidth="1.2"/>
-        </svg>
-        Instagram
-      </a>
+          const label = red.nombre.toLowerCase();
+          const className = paletteByName[label] ?? 'bg-zinc-700';
 
-      <a
-        href="https://www.facebook.com/Ezzetacompany"
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-[#1877F2] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M18 2h-3a4 4 0 0 0-4 4v3H8v4h3v8h4v-8h3l1-4h-4V6a1 1 0 0 1 1-1h3V2z" fill="white"/>
-        </svg>
-        Facebook
-      </a>
-
-      <a
-        href="https://www.youtube.com/@Pabloezzeta"
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex w-full justify-center items-center gap-2 rounded-full bg-[#FF0000] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M22 7.5s-.2-1.5-.8-2.2c-.8-.9-1.7-.9-2.1-1C16.2 4 12 4 12 4s-4.2 0-7.1.3c-.4.1-1.3.1-2.1 1C2.2 6 2 7.5 2 7.5S1.8 9.2 1.8 10.8v1.4C1.8 13.8 2 15.5 2 15.5s.2 1.5.8 2.2c.8.9 1.8.9 2.3 1 1.7.2 6.9.3 6.9.3s4.2 0 7.1-.3c.4-.1 1.3-.1 2.1-1 .6-.7.8-2.2.8-2.2s.2-1.7.2-3.3v-1.4c0-1.6-.2-3.3-.2-3.3z" fill="white"/>
-          <path d="M10 9.5v5l4.5-2.5-4.5-2.5z" fill="#FF0000"/>
-        </svg>
-        YouTube
-      </a>
+          return (
+            <a
+              key={red.id ?? red.nombre}
+              href={red.url}
+              target="_blank"
+              rel="noreferrer"
+              className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 ${className}`}
+            >
+              {red.iconUrl ? (
+                <img src={red.iconUrl} alt={red.nombre} className="h-4 w-4 rounded-full object-cover" />
+              ) : (
+                <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-[10px] font-semibold">
+                  {red.nombre.charAt(0).toUpperCase()}
+                </span>
+              )}
+              {red.nombre}
+            </a>
+          );
+        })}
     </>
   );
 
@@ -212,26 +198,15 @@ export const Footer = () => {
                       }}
                       className="overflow-hidden mt-4 space-y-3 text-left text-sm text-white/80"
                     >
-                      <li>
-                        <a href="https://www.tiktok.com/@ezzetacompany" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
-                          TikTok
-                        </a>
-                      </li>
-                      <li>
-                        <a href="https://www.instagram.com/ezzetacompany" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
-                          Instagram
-                        </a>
-                      </li>
-                      <li>
-                        <a href="https://www.facebook.com/Ezzetacompany" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
-                          Facebook
-                        </a>
-                      </li>
-                      <li>
-                        <a href="https://www.youtube.com/@Pabloezzeta" target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
-                          YouTube
-                        </a>
-                      </li>
+                      {redes
+                        .filter((red) => red.activo && red.url)
+                        .map((red) => (
+                          <li key={red.id ?? red.nombre}>
+                            <a href={red.url} target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
+                              {red.nombre}
+                            </a>
+                          </li>
+                        ))}
                     </motion.ul>
                   )}
                 </AnimatePresence>

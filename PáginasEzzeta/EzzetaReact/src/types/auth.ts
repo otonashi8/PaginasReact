@@ -1,6 +1,28 @@
-import type { WholesalePlanId } from '../plans';
+export interface Address {
+  id: string;
+  label: string;
+  street: string;
+  number: string;
+  district: string;
+  province: string;
+  department: string;
+  postalCode?: string;
+  phone: string;
+  isDefault?: boolean;
+  createdAt: string;
+}
 
-export type WholesalePlan = WholesalePlanId;
+export interface PaymentMethod {
+  id: string;
+  label: string;
+  type: 'credit_card' | 'bank_transfer' | 'cash';
+  cardNumber?: string;
+  cardHolder?: string;
+  bankName?: string;
+  accountNumber?: string;
+  isDefault?: boolean;
+  createdAt: string;
+}
 
 export interface PurchaseItem {
   productId: number;
@@ -32,19 +54,20 @@ export interface WholesaleUser {
   password: string;
   phone: string;
   ruc?: string;
-  plan: WholesalePlan;
-  discount: number;
-  planStart: string;
-  planEnd: string;
-  autoRenew: boolean;
   totalSpent: number;
   purchaseCount: number;
   lastPurchaseAt?: string;
   purchases: PurchaseOrder[];
-  daysWithPlan: number;
   createdAt: string;
   estado?: 'activo' | 'inactivo' | 'suspendido';
   suspendUntil?: string | null;
+  addresses?: Address[];
+  paymentMethods?: PaymentMethod[];
+  plan?: string;
+  discount?: number;
+  planStart?: string;
+  planEnd?: string;
+  autoRenew?: boolean;
 }
 
 export interface Permission {
@@ -71,22 +94,11 @@ export interface RegisterUserInput {
   password: string;
   phone: string;
   ruc?: string;
-  plan: WholesalePlan;
-  discount?: number;
-  autoRenew?: boolean;
 }
 
 export interface LoginCredentials {
   identifier: string;
   password: string;
-}
-
-export interface SubscriptionUpdateInput {
-  plan: WholesalePlan;
-  discount?: number;
-  autoRenew?: boolean;
-  amount?: number;
-  paymentMethod?: string;
 }
 
 export interface PurchaseOrderInput {

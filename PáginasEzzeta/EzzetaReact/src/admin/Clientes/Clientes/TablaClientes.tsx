@@ -1,5 +1,4 @@
 import type { Cliente } from "./TiposClientes";
-import { subscriptionPlans } from "../../../plans";
 import { AccionesCliente } from "./componentes/AccionesCliente";
 import { pedidosClienteMock } from "./DatosClientes";
 import {
@@ -10,16 +9,7 @@ import {
 
 const obtenerPlanDisplay = (clientePlanId?: string, clientePlanNombre?: string): string | undefined => {
     if (!clientePlanId && !clientePlanNombre) return undefined;
-
-    const byId = clientePlanId ? subscriptionPlans.find((p) => p.id === clientePlanId) : undefined;
-    if (byId) return `${byId.icono}${byId.nombre}`;
-
-    const byName = clientePlanNombre
-        ? subscriptionPlans.find((p) => p.nombre.toLowerCase() === clientePlanNombre.toLowerCase())
-        : undefined;
-    if (byName) return `${byName.icono}${byName.nombre}`;
-
-    return clientePlanNombre ? clientePlanNombre : undefined;
+    return clientePlanNombre ?? clientePlanId ?? "Cuenta estándar";
 };
 
 type Props = {

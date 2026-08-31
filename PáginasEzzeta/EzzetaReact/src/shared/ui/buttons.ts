@@ -1,0 +1,1 @@
+export const BTN_SECUNDARIO_CLASS = 'inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600';

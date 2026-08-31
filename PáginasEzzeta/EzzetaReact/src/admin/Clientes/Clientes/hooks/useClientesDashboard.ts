@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { subscriptionPlans } from "../../../../plans";
 import { getProducts } from "../../../../services/contentService";
 import type { Cliente, ComparativaRegistro, KpiCliente, RankingCliente } from "../TiposClientes";
 import {
@@ -10,12 +9,6 @@ import {
 
 const formatoNumero = (valor: number): string => new Intl.NumberFormat("es-PE").format(Number(valor.toFixed(2)));
 const formatoMoneda = (valor: number): string => `S/ ${new Intl.NumberFormat("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valor)}`;
-
-const normalizarTexto = (valor: string): string =>
-    valor
-        .normalize("NFD")
-        .replace(/\p{Diacritic}/gu, "")
-        .toLowerCase();
 
 const nombreCliente = (cliente: Cliente): string =>
     `${cliente.nombres} ${cliente.apellidos}`.trim();
@@ -35,17 +28,11 @@ export const useClientesDashboard = (clientes: Cliente[]) => {
             return Number.isFinite(fecha.getTime()) && fecha >= hace30dias;
         });
 
-        const cantidadPlan = subscriptionPlans.reduce<Record<string, number>>((acumulado, plan) => {
-            acumulado[plan.id] = clientesRegistrados.filter((cliente) => {
-                const planId = (cliente as any).planActual as string | undefined;
-                const planNombre = (cliente as any).planNombre as string | undefined;
-
-                if (planId) return planId === plan.id;
-                if (planNombre) return normalizarTexto(planNombre) === normalizarTexto(plan.nombre);
-                return false;
-            }).length;
-            return acumulado;
-        }, {});
+        const cantidadPlan = {
+            bronze: clientesRegistrados.length,
+            silver: 0,
+            gold: 0,
+        };
 
         const totalesClientes = clientes.map((cliente) => {
             const pedidos = cliente.pedidos || [];
@@ -101,19 +88,14 @@ export const useClientesDashboard = (clientes: Cliente[]) => {
                 descripcion: "Clientes creados en los últimos 30 días."
             },
             {
-                titulo: "🥉 Bronce",
-                valor: formatoNumero(cantidadPlan.bronze || 0),
-                descripcion: "Clientes registrados con plan Bronce."
+                titulo: "Registrados",
+                valor: formatoNumero(clientesRegistrados.length),
+                descripcion: "Clientes con cuenta registrada."
             },
             {
-                titulo: "🥈 Plata",
-                valor: formatoNumero(cantidadPlan.silver || 0),
-                descripcion: "Clientes registrados con plan Plata."
-            },
-            {
-                titulo: "🥇 Oro",
-                valor: formatoNumero(cantidadPlan.gold || 0),
-                descripcion: "Clientes registrados con plan Oro."
+                titulo: "Guests",
+                valor: formatoNumero(clientesGuest.length),
+                descripcion: "Clientes sin cuenta registrada."
             },
             {
                 titulo: "Promedio de gasto",

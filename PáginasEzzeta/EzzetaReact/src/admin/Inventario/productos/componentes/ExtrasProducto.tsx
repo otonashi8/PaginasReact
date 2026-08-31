@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { obtenerClasificacionesProductos } from '../DatosProductos';
 
 type PropiedadesExtrasProducto = {
 	extras: string[];
 	actualizarExtras: (extras: string[]) => void;
 };
 
-const beneficiosSugeridos = [
+const beneficiosBase = [
 	'Pago seguro',
 	'Entrega en todo Perú',
 	'Envío gratis desde S/300',
@@ -20,6 +21,11 @@ export const ExtrasProducto = ({
 }: PropiedadesExtrasProducto) => {
 	const [nuevoBeneficio, setNuevoBeneficio] = useState('');
 	const [indiceEdicion, setIndiceEdicion] = useState<number | null>(null);
+	const { beneficiosDisponibles } = obtenerClasificacionesProductos();
+	const beneficiosSugeridos = useMemo(
+		() => Array.from(new Set([...beneficiosBase, ...beneficiosDisponibles])),
+		[beneficiosDisponibles],
+	);
 
 	const guardarBeneficio = () => {
 		const beneficioNormalizado = nuevoBeneficio.trim();

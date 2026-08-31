@@ -7,9 +7,11 @@ import { PermissionGate } from '../components/PermissionGate';
 import { useWishlist } from '../context/WishlistContext';
 import { resolveProductPrice } from '../services/pricingService';
 import PriceDisplay from '../components/PriceDisplay';
+import QuickAddModal from '../components/common/QuickAddModal';
 import { getProductBySlug, getProducts, getRelatedProducts } from '../services/contentService';
 import type { Product } from '../types';
 import { PERMISSIONS } from '../utils/permissionCodes';
+import { obtenerSubcategoriaMetadata } from '../admin/Inventario/productos/DatosProductos';
 
 const allSizeOptions = ['S', 'M', 'L', 'XL', '28', '30', '32', '34', '36'];
 
@@ -111,6 +113,9 @@ export const ProductPage = () => {
   const precioFinal = resultadoPrecio.precioFinal;
   const hayDescuento = resultadoPrecio.descuentoAplicado > 0 && precioFinal < precioOriginal;
   const etiquetaDescuento = resultadoPrecio.etiquetaDescuento;
+  const metadataSubcategoria = obtenerSubcategoriaMetadata(product.category, product.subcategory);
+  const guiaLavado = metadataSubcategoria.guiaLavado;
+  const guiaTallas = metadataSubcategoria.guiaTallas;
 
   const openQuickBuy = (item: Product) => {
     setQuickBuyProduct(item);
@@ -307,6 +312,48 @@ export const ProductPage = () => {
             <p className="mt-3 text-sm leading-relaxed text-black/70">{product.description}</p>
           </div>
 
+          {guiaLavado?.url ? (
+            <div className="mt-7 rounded-[1.4rem] border border-black/10 bg-white p-5">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-black">Guía de lavado</h3>
+              <a href={guiaLavado.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center rounded-xl border border-black/15 bg-white px-4 py-3 text-sm font-medium text-black transition-colors hover:border-red-600 hover:text-red-600">
+                Ver PDF de lavado
+              </a>
+            </div>
+          ) : null}
+
+          {guiaTallas && (guiaTallas.columnas.length > 0 || guiaTallas.filas.length > 0) ? (
+            <div className="mt-7 rounded-[1.4rem] border border-black/10 bg-white p-5">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-black">Guía de tallas</h3>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[360px] border border-black/10 text-left text-sm">
+                  <thead>
+                    <tr>
+                      <th className="border-b border-black/10 bg-black/[0.02] px-3 py-2 font-medium text-black/70">Medida</th>
+                      {guiaTallas.columnas.map((columna, index) => (
+                        <th key={`size-col-${columna}-${index}`} className="border-b border-black/10 bg-black/[0.02] px-3 py-2 font-medium text-black/70">{columna}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {guiaTallas.filas.map((fila, index) => (
+                      <tr key={`size-row-${fila.etiqueta}-${index}`}>
+                        <td className="border-b border-black/10 px-3 py-2 font-medium text-black/80">{fila.etiqueta}</td>
+                        {guiaTallas.columnas.map((columna, colIndex) => (
+                          <td key={`size-cell-${fila.etiqueta}-${columna}-${colIndex}`} className="border-b border-black/10 px-3 py-2 text-black/70">
+                            {fila.valores?.[columna] ?? ''}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {guiaTallas.mensajeSecundario ? (
+                <p className="mt-3 text-sm text-black/65">{guiaTallas.mensajeSecundario}</p>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="mt-7 grid gap-2.5 sm:grid-cols-3">
             {(product.extras ?? []).map((extra, index) => {
               const icons = [Truck, Shield, RotateCcw] as const;
@@ -412,109 +459,12 @@ export const ProductPage = () => {
         </div>
       </div>
 
-      <AnimatePresence>
-        {quickBuyProduct ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/55 px-4 py-4 backdrop-blur-[2px] sm:py-6"
-          >
-            <motion.div
-              initial={{ scale: 0.96, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.96, opacity: 0, y: 8 }}
-              transition={{ duration: 0.26 }}
-              className="my-auto w-full max-w-2xl rounded-[1.75rem] border border-black/15 bg-white p-4 shadow-[0_24px_70px_rgba(0,0,0,0.18)] sm:p-6"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-xl font-semibold uppercase tracking-[0.1em] text-black sm:text-2xl">Compra rapida</h3>
-                  <p className="mt-2 text-sm text-black/70">{quickBuyProduct.name}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeQuickBuy}
-                  className="rounded-xl border border-black/15 bg-white px-3 py-2 text-sm font-medium text-black transition-colors hover:border-red-600 hover:text-red-600"
-                >
-                  Cerrar
-                </button>
-              </div>
-
-              <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-                <div className="h-64 overflow-hidden rounded-[1.25rem] border border-black/10 bg-white sm:h-80 lg:h-auto">
-                  <img src={quickBuyProduct.image} alt={quickBuyProduct.name} className="h-full w-full object-cover" />
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-black/55">Precio</p>
-                    <p className="mt-2 text-3xl font-semibold text-red-600 sm:text-[2.1rem]">S/{resolveProductPrice(quickBuyProduct, { cantidad: quickBuyQuantity }).precioFinal.toFixed(2)}</p>
-                  </div>
-
-                  <div>
-                    <label className="text-xs uppercase tracking-[0.22em] text-black/55">Talla</label>
-                    <select
-                      value={quickBuySize}
-                      onChange={(event) => setQuickBuySize(event.target.value)}
-                      className="mt-2 w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-red-600"
-                    >
-                      {allSizeOptions.map((size) => (
-                        <option key={size} value={size} disabled={!quickBuyProduct.sizes.includes(size)}>
-                          {quickBuyProduct.sizes.includes(size) ? size : `${size} X`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-black/55">Cantidad</p>
-                    <div className="mt-2 inline-flex items-center gap-3 rounded-2xl border border-black/15 px-3 py-2">
-                      <button
-                        type="button"
-                        onMouseDown={() => startChanging(-1)}
-                        onTouchStart={() => startChanging(-1)}
-                        className="rounded-xl border border-black/15 p-2 transition-colors hover:border-red-600 hover:text-red-600"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={quantity}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, '');
-                          changeQuantity(value === '' ? 1 : Number(value));
-                        }}
-                        className="w-16 rounded-xl border border-black/10 bg-white py-2 text-center text-lg font-semibold text-black outline-none focus:border-red-600"
-                      />
-                      <button
-                        type="button"
-                        onMouseDown={() => startChanging(1)}
-                        onTouchStart={() => startChanging(1)}
-                        className="rounded-xl border border-black/15 p-2 transition-colors hover:border-red-600 hover:text-red-600"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <PermissionGate permission={PERMISSIONS.salesCreate}>
-                    <button
-                      type="button"
-                      onClick={handleQuickBuyConfirm}
-                      className="mt-3 w-full rounded-xl border border-black bg-black px-5 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:border-red-600 hover:bg-red-600"
-                    >
-                      Agregar al carrito
-                    </button>
-                  </PermissionGate>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      <QuickAddModal
+        product={quickBuyProduct ?? (relatedProducts[0] ?? product)}
+        isOpen={Boolean(quickBuyProduct)}
+        initialSize={quickBuyProduct?.sizes?.[0] || 'M'}
+        onClose={closeQuickBuy}
+      />
     </section>
   );
 };

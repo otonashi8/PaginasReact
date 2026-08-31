@@ -1,4 +1,4 @@
-import { categorias } from '../DatosProductos';
+import { obtenerClasificacionesProductos } from '../DatosProductos';
 
 type PropiedadesSelectorCategorias = {
 	categoria: string;
@@ -13,6 +13,7 @@ export const SelectorCategorias = ({
 	actualizarCategoria,
 	actualizarSubcategoria,
 }: PropiedadesSelectorCategorias) => {
+    const { categorias } = obtenerClasificacionesProductos();
 	const subcategoriasDisponibles = categoria ? categorias[categoria as keyof typeof categorias] ?? [] : [];
 
 	return (

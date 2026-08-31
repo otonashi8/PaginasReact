@@ -10,7 +10,7 @@ type Props = {
     planCounts?: Record<string, number>;
 };
 
-export const ClientesDashboard = ({ kpis, comparativa, rankings, planCounts }: Props) => {
+export const ClientesDashboard = ({ kpis, comparativa, rankings }: Props) => {
     const leftTitles = new Set([
         'Clientes nuevos (30 días)',
         'Promedio de gasto',
@@ -21,11 +21,6 @@ export const ClientesDashboard = ({ kpis, comparativa, rankings, planCounts }: P
     ]);
 
     const leftKpis = kpis.filter((k) => leftTitles.has(k.titulo));
-    const rightPlanCounts = {
-        gold: planCounts?.gold ?? 0,
-        silver: planCounts?.silver ?? 0,
-        bronze: planCounts?.bronze ?? 0,
-    };
 
     return (
         <section className="space-y-6">
@@ -45,29 +40,6 @@ export const ClientesDashboard = ({ kpis, comparativa, rankings, planCounts }: P
                         {Array.from({ length: Math.max(0, 6 - leftKpis.length) }).map((_, i) => (
                             <div key={i} />
                         ))}
-                    </div>
-                </div>
-
-                <div className="w-full max-w-xs shrink-0">
-                    <div className="rounded-none border border-zinc-200 bg-white p-6 shadow-sm">
-                        <h2 className="text-lg font-semibold text-zinc-900">Clientes x Plan</h2>
-                        <p className="mt-1 text-sm text-zinc-500">Distribución de clientes por plan.</p>
-                    </div>
-                    <div className="mt-4 rounded-none border border-zinc-200 bg-white p-6">
-                        <div className="space-y-2 text-sm">
-                            <div className="flex items-center justify-between">
-                                <div>Oro</div>
-                                <div className="font-medium">{rightPlanCounts.gold} <span className="ml-2">🥇</span></div>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <div>Plata</div>
-                                <div className="font-medium">{rightPlanCounts.silver} <span className="ml-2">🥈</span></div>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <div>Bronce</div>
-                                <div className="font-medium">{rightPlanCounts.bronze} <span className="ml-2">🥉</span></div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

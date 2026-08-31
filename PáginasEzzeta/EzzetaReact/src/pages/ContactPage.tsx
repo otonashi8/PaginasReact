@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Mail, Phone, Send, MessageSquare } from 'lucide-react';
-import { MembershipModal } from '../components/MembershipModal';
-import { PermissionGate } from '../components/PermissionGate';
-import { PERMISSIONS } from '../utils/permissionCodes';
 import { crearSolicitudAsistencia, type TipoSolicitudAsistencia } from '../admin/Clientes/Formularios/utils/solicitudesAsistencia';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,7 +7,6 @@ type TipoSolicitud = TipoSolicitudAsistencia;
 
 export const ContactPage = () => {
   const { user: authUser, isAuthenticated } = useAuth();
-  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [tipo, setTipo] = useState<TipoSolicitud>('Queja');
   const [nombre, setNombre] = useState('');
   const [correo, setCorreo] = useState('');
@@ -293,21 +289,8 @@ export const ContactPage = () => {
             rel="noopener noreferrer"
             className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-black bg-black px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors duration-200 hover:border-red-600 hover:bg-red-600"
           >Conoce el Club</a>
-          {/* MEMBRESÍA */}
-          <PermissionGate permission={PERMISSIONS.subscriptionCreate}>
-            <button
-              type="button"
-              onClick={() => setIsMembershipModalOpen(true)}
-              className="mt-3 w-full rounded-xl border border-black/20 bg-white px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-black transition-colors hover:border-red-600 hover:text-red-600"
-            >Benefíciate
-            </button>
-          </PermissionGate>
         </div>
       </div>
-      <MembershipModal
-        isOpen={isMembershipModalOpen}
-        onClose={() => setIsMembershipModalOpen(false)}
-      />
     </section>
   );
 };

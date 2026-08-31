@@ -2,21 +2,22 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { StorageKeys, storageManager } from '../storage';
 import { AuthService } from '../services/authService';
 import type {AuthSession,LoginCredentials,Permission,PurchaseOrderInput,
-  RegisterUserInput,SubscriptionUpdateInput,Warehouse,WholesaleUser,} from '../types/auth';
+  RegisterUserInput,Warehouse,WholesaleUser,} from '../types/auth';
 
 type AuthContextType = {
   user: WholesaleUser | null;
   profileData: Record<string, unknown> | null;
+  profile: Record<string, unknown> | null;
   permissions: Permission[];
   permissionCodes: string[];
   activeWarehouseId: string | number | null;
   availableWarehouses: Warehouse[];
   hasPermission: (permissionCode: string) => boolean;
   isAuthenticated: boolean;
+  isCustomer: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (input: RegisterUserInput) => Promise<void>;
-  updateSubscription: (input: SubscriptionUpdateInput) => Promise<void>;
   recordPurchase: (input: PurchaseOrderInput) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -88,11 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSession(nextSession);
   }, []);
 
-  const updateSubscription = useCallback(async (input: SubscriptionUpdateInput) => {
-    const nextSession = await AuthService.updateSubscription(input);
-    setSession(nextSession);
-  }, []);
-
   const recordPurchase = useCallback(async (input: PurchaseOrderInput) => {
     const nextSession = await AuthService.recordPurchase(input);
     setSession(nextSession);
@@ -123,16 +119,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       user: session?.user ?? null,
       profileData,
+      profile: profileData,
       permissions,
       permissionCodes,
       activeWarehouseId,
       availableWarehouses,
       hasPermission,
       isAuthenticated: Boolean(session?.user),
+      isCustomer: Boolean(session?.user),
       isLoading,
       login,
       register,
-      updateSubscription,
       recordPurchase,
       logout,
     }),
@@ -149,7 +146,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       recordPurchase,
       register,
       session?.user,
-      updateSubscription,
     ],
   );
 

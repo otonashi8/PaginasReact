@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ProductCard } from "../components/ProductCard";
+import { ProductCard } from "./common/ProductCard";
 import type { Product } from "../types";
 
 type Props = {
@@ -32,7 +32,6 @@ export const SearchDropdown = ({
                   <div key={product.id} onClick={onClose}>
                     <ProductCard
                       product={product}
-                      variant="search"
                     />
                   </div>
                 ))}

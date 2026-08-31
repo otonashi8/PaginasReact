@@ -1,19 +1,16 @@
-import { motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
-import { ArrowRight, Heart, ShoppingBag, Share2 } from 'lucide-react';
+import { ArrowRight, Share2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ImagePlaceholder } from '../components/ImagePlaceholder';
-import { ProductHoverImage } from '../components/ProductHoverImage';
-import QuickAddModal from '../components/QuickAddModal';
-import { resolveProductPrice } from '../services/pricingService';
+import ProductCard from '../components/common/ProductCard';
+import QuickAddModal from '../components/common/QuickAddModal';
 import { PermissionGate } from '../components/PermissionGate';
+import { resolveProductPrice } from '../services/pricingService';
 import { useWishlist } from '../context/WishlistContext';
 import { getProducts } from '../services/contentService';
 import { PERMISSIONS } from '../utils/permissionCodes';
-import PriceDisplay from '../components/PriceDisplay';
 
 export const WishlistPage = () => {
-  const { favorites, toggleFavorite} = useWishlist();
+  const { favorites } = useWishlist();
   const products = getProducts();
   const items = products.filter((product) => favorites.includes(product.id));
   const [currentPage, setCurrentPage] = useState(1);
@@ -95,56 +92,7 @@ export const WishlistPage = () => {
 
           <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
             {paginatedItems.map((product) => (
-              <motion.article
-                key={product.id}
-                whileHover={{ y: -4, scale: 1.01 }}
-                className="flex h-full flex-col border border-black/10 bg-white p-4 shadow-sm"
-              >
-                <div
-                  onClick={() => window.location.assign(`/producto/${product.slug}`)}
-                  className="group relative aspect-[4/5] overflow-hidden bg-white cursor-pointer"
-                >
-                  {product.image ? (
-                    <ProductHoverImage
-                      product={product}
-                      alt={product.name}
-                      className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
-                    />
-                  ) : (
-                    <ImagePlaceholder label="Producto" className="h-full" />
-                  )}
-                  <PermissionGate permission={PERMISSIONS.productUpdate}>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        toggleFavorite(product.id);
-                      }}
-                      className={`absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full border p-2 transition ${favorites.includes(product.id) ? 'border-red-600 bg-red-600 text-white' : 'border-black/10 bg-white/90 text-black hover:border-red-600 hover:text-red-600'}`}
-                    >
-                      <Heart size={16} />
-                    </button>
-                  </PermissionGate>
-                </div>
-                <div className="mt-4 flex flex-1 flex-col">
-                  <h3 className="text-lg font-semibold text-black">{product.name}</h3>
-                  <div className="mt-auto flex items-center justify-between pt-4">
-                    <PriceDisplay product={product} />
-                    <PermissionGate permission={PERMISSIONS.salesCreate}>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setSelectedQuickProduct(product);
-                        }}
-                        className="inline-flex items-center justify-center rounded-full border border-black/10 bg-black p-2 text-white transition hover:bg-red-600"
-                      >
-                        <ShoppingBag size={16} />
-                      </button>
-                    </PermissionGate>
-                  </div>
-                </div>
-              </motion.article>
+              <ProductCard key={product.id} product={product} onQuickAdd={setSelectedQuickProduct} />
             ))}
           </div>
 

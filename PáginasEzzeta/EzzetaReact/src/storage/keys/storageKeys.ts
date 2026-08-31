@@ -12,6 +12,7 @@ export const StorageKeys = {
 	CLASIFICACIONES_EXPANDIDO: 'maxeta.productos.clasificaciones.expandido',
 	CLASIFICACIONES_CATEGORIAS_EXPANDIDO: 'maxeta.productos.clasificaciones.categorias.expandido',
 	CLASIFICACIONES_SUBCATEGORIAS_EXPANDIDO: 'maxeta.productos.clasificaciones.subcategorias.expandido',
+	CLASIFICACIONES_SUBCATEGORIAS_METADATA: 'maxeta.productos.clasificaciones.subcategorias.metadata',
 	CLASIFICACIONES_GENEROS_EXPANDIDO: 'maxeta.productos.clasificaciones.generos.expandido',
 	CLASIFICACIONES_TALLAS_EXPANDIDO: 'maxeta.productos.clasificaciones.tallas.expandido',
 	REGLAS_PRECIOS: 'maxeta.reglas-precios',

@@ -5,7 +5,6 @@ import type {
     CarritoItem,
     WishlistItem,
     DireccionCliente,
-    PlanCliente,
     ComparativaRegistro,
     KpiCliente,
     RankingCliente
@@ -345,45 +344,3 @@ export const direccionesClienteMock: DireccionCliente[] = [
     }
 ];
 
-export const planesClienteMock: PlanCliente[] = [
-    {
-        clienteId: 1,
-        nombre: "Plan Oro",
-        descripcion: "Descuentos exclusivos y atención prioritaria.",
-        precioMensual: "S/ 149",
-        descuento: "20%",
-        fechaInicio: "2026-06-01",
-        fechaFin: "2026-08-01",
-        beneficios: [
-            "Acceso a ofertas exclusivas",
-            "Envío prioritario",
-            "Soporte premium"
-        ]
-    },
-    {
-        clienteId: 2,
-        nombre: "Plan Plata",
-        descripcion: "Mayor control y descuentos moderados.",
-        precioMensual: "S/ 79",
-        descuento: "12%",
-        fechaInicio: "2026-05-15",
-        fechaFin: "2026-07-15",
-        beneficios: [
-            "Descuentos exclusivos",
-            "Soporte estándar"
-        ]
-    },
-    {
-        clienteId: 4,
-        nombre: "Plan Bronce",
-        descripcion: "Beneficios básicos para clientes frecuentes.",
-        precioMensual: "S/ 29",
-        descuento: "5%",
-        fechaInicio: "2026-07-01",
-        fechaFin: "2026-08-01",
-        beneficios: [
-            "Acceso a ofertas especiales",
-            "Soporte básico"
-        ]
-    }
-];

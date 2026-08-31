@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import bannerVideo from '../assets/BANNER-WEB-FONDO_1.mp4';
 import { PermissionGate } from '../components/PermissionGate';
 import { ProductHoverImage } from '../components/ProductHoverImage';
-import QuickAddModal from '../components/QuickAddModal';
+import QuickAddModal from '../components/common/QuickAddModal';
 import { resolveProductPrice, usePricingRules } from '../services/pricingService';
 import { useWishlist } from '../context/WishlistContext';
 import { getProducts } from '../services/contentService';
@@ -62,7 +62,7 @@ const interleaveProducts = (groups: Product[][]) => {
   return result;
 };
 
-export const OutfitS200Page = () => {
+export const PacksPage = () => {
   const { favorites, toggleFavorite, addToCart } = useWishlist();
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [selectedPoloSlug, setSelectedPoloSlug] = useState('');
@@ -220,12 +220,12 @@ export const OutfitS200Page = () => {
 
       <div className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-black text-white">
         <div className="relative mx-auto h-[55vh] min-h-[320px] w-full max-w-[1920px]">
-          {coverImage ? <img src={coverImage} alt="Outfit S/200" className="h-full w-full object-cover" /> : null}
+          {coverImage ? <img src={coverImage} alt="Packs" className="h-full w-full object-cover" /> : null}
           <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/35" />
           <div className="absolute inset-0 flex items-center">
             <div className="px-6 sm:px-8 lg:px-12">
-              <p className="text-xs uppercase tracking-[0.3em] text-white/70">Outfit Curado</p>
-              <h1 className="mt-3 text-3xl font-semibold uppercase tracking-[0.18em] sm:text-4xl lg:text-5xl">Outfit S/200</h1>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/70">Pack curado</p>
+              <h1 className="mt-3 text-3xl font-semibold uppercase tracking-[0.18em] sm:text-4xl lg:text-5xl">Packs</h1>
               <p className="mt-4 max-w-2xl text-sm text-white/85 sm:text-base">
                 Combinaciones automáticas de Jean, Polo y Polera con total cercano a S/200 sin sobrepasarlo.
               </p>
@@ -243,7 +243,7 @@ export const OutfitS200Page = () => {
 
       <div className="space-y-4 border border-zinc-200 bg-white p-5 shadow-[0_12px_35px_rgba(0,0,0,0.04)] sm:p-6">
         <div>
-          <h2 className="text-xl font-semibold uppercase tracking-[0.16em] text-black">Arma tu Outfit</h2>
+          <h2 className="text-xl font-semibold uppercase tracking-[0.16em] text-black">Arma tu Pack</h2>
           <p className="mt-2 text-sm text-black/65">Selecciona 1 Polo, 1 Jean y 1 Polera para validar el total final.</p>
           {!poleraProducts.length ? <p className="mt-2 text-xs text-black/55">No hay productos de la categoría Polera disponibles.</p> : null}
         </div>
@@ -380,7 +380,7 @@ export const OutfitS200Page = () => {
 
         <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm uppercase tracking-[0.16em] text-black/65">Total del outfit</p>
+            <p className="text-sm uppercase tracking-[0.16em] text-black/65">Total del pack</p>
             <p className="text-2xl font-semibold text-red-600">S/{outfitTotal.toFixed(2)}</p>
           </div>
           <p className={`mt-2 text-sm ${isOutfitWithinBudget ? 'text-emerald-700' : 'text-red-600'}`}>
@@ -407,7 +407,7 @@ export const OutfitS200Page = () => {
 
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-2xl font-semibold uppercase tracking-[0.16em] text-black">Catálogo S/200</h2>
+          <h2 className="text-2xl font-semibold uppercase tracking-[0.16em] text-black">Catálogo de Packs</h2>
           <p className="text-sm text-black/60">{outfitProducts.length} productos disponibles</p>
         </div>
 

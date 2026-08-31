@@ -32,10 +32,12 @@ export const ProductosCrudPanel = ({ access }: ProductosCrudPanelProps) => {
         agregarCategoria,
         agregarSubcategoria,
         agregarGenero,
+        agregarBeneficio,
         agregarTalla,
         eliminarCategoria,
         eliminarSubcategoria,
         eliminarGenero,
+        eliminarBeneficio,
         eliminarTalla,
     } = useClasificaciones();
 
@@ -72,10 +74,12 @@ export const ProductosCrudPanel = ({ access }: ProductosCrudPanelProps) => {
                 agregarCategoria={agregarCategoria}
                 agregarSubcategoria={agregarSubcategoria}
                 agregarGenero={agregarGenero}
+                agregarBeneficio={agregarBeneficio}
                 agregarTalla={agregarTalla}
                 eliminarCategoria={eliminarCategoria}
                 eliminarSubcategoria={eliminarSubcategoria}
                 eliminarGenero={eliminarGenero}
+                eliminarBeneficio={eliminarBeneficio}
                 eliminarTalla={eliminarTalla}
             />
 

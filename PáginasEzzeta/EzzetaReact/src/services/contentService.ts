@@ -149,6 +149,12 @@ const mapearProductoPersistido = (producto: Record<string, unknown>): Product | 
       : Array.isArray(producto.miniImagenesPersistidas)
         ? (producto.miniImagenesPersistidas as string[]).filter(Boolean)
         : [];
+  const colors = Array.isArray(producto.colores)
+    ? (producto.colores as string[]).filter(Boolean)
+    : Array.isArray(producto.colors)
+      ? (producto.colors as string[]).filter(Boolean)
+      : [];
+
   const sizes = Array.isArray(producto.tallas)
     ? (producto.tallas as string[]).filter(Boolean)
     : Array.isArray(producto.sizes)
@@ -208,6 +214,7 @@ const mapearProductoPersistido = (producto: Record<string, unknown>): Product | 
     description,
     image,
     'mini-image': miniImage,
+    colors,
     sizes,
     stock,
     sizesStock: sizesStockValue,
@@ -267,6 +274,7 @@ const obtenerProductosCombinados = (): Product[] => {
         description: producto.description || productoBase.description,
         image: producto.image || productoBase.image,
         'mini-image': producto['mini-image']?.length ? producto['mini-image'] : productoBase['mini-image'],
+        colors: producto.colors?.length ? producto.colors : productoBase.colors,
         sizes: producto.sizes?.length ? producto.sizes : productoBase.sizes,
         featured: producto.featured ?? productoBase.featured,
         relatedIds: producto.relatedIds?.length ? producto.relatedIds : productoBase.relatedIds,

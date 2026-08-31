@@ -1,49 +1,23 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getDefaultPlanId, getPlanOptions } from '../plans';
 import type { RegisterUserInput } from '../types/auth';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { register } = useAuth();
-  const [form, setForm] = useState<RegisterUserInput>(() => {
-    const planParam = new URLSearchParams(location.search).get('plan');
-    const isValidPlan = planParam === 'bronze' || planParam === 'silver' || planParam === 'gold';
-
-    return {
-      username: '',
-      email: '',
-      password: '',
-      phone: '',
-      ruc: '',
-      plan: isValidPlan ? (planParam as RegisterUserInput['plan']) : getDefaultPlanId(),
-      autoRenew: true,
-    };
+  const [form, setForm] = useState<RegisterUserInput>({
+    username: '',
+    email: '',
+    password: '',
+    phone: '',
+    ruc: '',
   });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const planOptions = useMemo(() => getPlanOptions(), []);
-  const selectedPlan = useMemo(() => planOptions.find((plan) => plan.id === form.plan) ?? planOptions[0], [form.plan, planOptions]);
-
-  useEffect(() => {
-    const planParam = new URLSearchParams(location.search).get('plan');
-    const isValidPlan = planParam === 'bronze' || planParam === 'silver' || planParam === 'gold';
-
-    if (isValidPlan) {
-      setForm((current) => ({ ...current, plan: planParam as RegisterUserInput['plan'] }));
-    }
-  }, [location.search]);
-
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
-
-    if (name === 'autoRenew') {
-      setForm((current) => ({ ...current, autoRenew: value === 'true' }));
-      return;
-    }
 
     setForm((current) => ({
       ...current,
@@ -60,7 +34,6 @@ export const RegisterPage = () => {
       await register({
         ...form,
         ruc: form.ruc?.trim() || undefined,
-        discount: selectedPlan.descuento,
       });
       navigate('/');
     } catch (submitError) {
@@ -74,9 +47,9 @@ export const RegisterPage = () => {
     <section className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center px-4 py-10">
       <div className="w-full max-w-2xl rounded-3xl border border-black/10 bg-white p-8 shadow-sm">
         <div className="mb-5 text-center sm:mb-6 sm:text-left">
-          <p className="text-sm uppercase tracking-[0.3em] text-black/60">Registro mayorista</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-black/60">Registro de cuenta</p>
           <h1 className="mt-2 text-2xl font-semibold text-black sm:text-3xl">Crear cuenta</h1>
-          <p className="mt-3 text-sm text-black/70">Registra tu negocio y accede a descuentos especiales para compra mayorista.</p>
+          <p className="mt-3 text-sm text-black/70">Registra tu cuenta y disfruta de beneficios exclusivos como favoritos, libreta de direcciones y métodos de pago guardados.</p>
         </div>
 
         <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
@@ -100,31 +73,9 @@ export const RegisterPage = () => {
             <input id="phone" name="phone" value={form.phone} onChange={handleChange} className="w-full rounded-full border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black" placeholder="987654321" required />
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-medium text-black" htmlFor="ruc">RUC (opcional)</label>
             <input id="ruc" name="ruc" value={form.ruc} onChange={handleChange} className="w-full rounded-full border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black" placeholder="20600000000" />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-black" htmlFor="plan">Plan</label>
-            <select id="plan" name="plan" value={form.plan} onChange={handleChange} className="w-full rounded-full border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black">
-              {planOptions.map((plan) => (
-                <option key={plan.id} value={plan.id}>{plan.nombre}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="md:col-span-2 rounded-2xl border border-black/10 bg-white p-4 text-sm text-black/80">
-            <p className="font-medium">Plan seleccionado: {selectedPlan.nombre}</p>
-            <p className="mt-1">Descuento aplicado: {selectedPlan.descuento}%</p>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-black" htmlFor="autoRenew">Renovación automática</label>
-            <select id="autoRenew" name="autoRenew" value={String(form.autoRenew)} onChange={handleChange} className="w-full rounded-full border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black">
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </select>
           </div>
 
           {error ? <p className="md:col-span-2 text-sm text-red-600">{error}</p> : null}

@@ -8,7 +8,7 @@ export type SiteRouteOption = {
 export const siteRouteOptions: SiteRouteOption[] = [
   { label: 'Inicio', value: '/', allowRedirect: true },
   { label: 'Tienda', value: '/tienda', allowRedirect: true },
-  { label: 'Outfit S/200', value: '/outfit-s200', allowRedirect: true },
+  { label: 'Packs', value: '/packs', allowRedirect: true },
   { label: 'Producto', value: '/producto/:slug', allowRedirect: false, isDynamic: true },
   { label: 'Nosotros', value: '/nosotros', allowRedirect: true },
   { label: 'Contacto', value: '/contacto', allowRedirect: true },
@@ -17,5 +17,6 @@ export const siteRouteOptions: SiteRouteOption[] = [
   { label: 'Políticas', value: '/politicas', allowRedirect: true },
   { label: 'Términos', value: '/terminos', allowRedirect: true },
   { label: 'Libro de reclamaciones', value: '/reclamaciones', allowRedirect: true },
+  { label: 'Trabaja con nosotros', value: '/trabajos', allowRedirect: true },
   { label: 'Comunidad', value: '/comunidad', allowRedirect: true },
 ];

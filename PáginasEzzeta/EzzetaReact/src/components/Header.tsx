@@ -1,12 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Heart, Menu, Search, ShoppingBag, X } from 'lucide-react';
+import { Heart, LogOut, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
-import { getPlanById } from '../plans';
-import { CartDrawer } from './CartDrawer';
-import { MembershipModal } from './MembershipModal';
+import { CartDrawer } from './common/CartDrawer';
 import { SearchDropdown } from './SearchDropdown';
 import { getProducts } from '../services/contentService';
 
@@ -20,21 +18,21 @@ const navigationLinks: NavigationLink[] = [
   { label: 'Inicio', href: '/' },
   { label: '3x100', href: 'https://3x100.pe', external: true },
   { label: 'Tienda', href: '/tienda' },
-  { label: 'Outfit S/200', href: '/outfit-s200' },
+  { label: 'Packs', href: '/packs' },
   { label: 'Contacto', href: '/contacto' },
-  { label: 'Beneficios', href: '/beneficios' },
 ];
 
-export const Header = () => {
+export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
   const { favorites, cart, toggleCart } = useWishlist();
-  const { user, isAuthenticated, isLoading, logout, login } = useAuth();
+  const { user, isAuthenticated, logout, login } = useAuth();
   const navigate = useNavigate();
 
   const products = getProducts();
   const searchRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -61,6 +59,9 @@ export const Header = () => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setSearch('');
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -69,27 +70,6 @@ export const Header = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  const membership = useMemo(() => {
-    if (!isAuthenticated || !user || isLoading) {
-      return null;
-    }
-
-    const planEnd = new Date(user.planEnd);
-    const isActive = Number.isFinite(planEnd.getTime()) && planEnd.getTime() > Date.now();
-
-    if (!isActive) {
-      return null;
-    }
-
-    const plan = getPlanById(user.plan);
-    const daysRemaining = Math.max(0, Math.ceil((planEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-
-    return {
-      plan,
-      daysRemaining,
-    };
-  }, [isAuthenticated, isLoading, user]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -104,7 +84,7 @@ export const Header = () => {
   }, []);
 
   const headerTextClass = isScrolled ? 'text-white' : 'text-black';
-  const headerBackgroundClass = isScrolled ? 'border-white/10 bg-black' : 'border-zinc-200 bg-white/95';
+  const headerBackgroundClass = isScrolled ? 'border-white/10 bg-black' : 'border-zinc-200 bg-white/10';
   const headerButtonClass = isScrolled
     ? 'border-white/20 bg-white/10 text-white hover:border-red-500 hover:text-red-400'
     : 'border-black/10 bg-white text-black hover:border-red-600 hover:text-red-600';
@@ -121,7 +101,7 @@ export const Header = () => {
         : 'text-black'
       : isScrolled
       ? 'text-white/80 hover:text-red-400'
-      : 'text-black/80 hover:text-red-600';
+      : 'text-black/60 hover:text-red-600';
 
   const renderNavItem = (link: NavigationLink) => {
     const baseClassName = 'transition';
@@ -202,19 +182,6 @@ export const Header = () => {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {membership ? (
-              <button
-                type="button"
-                onClick={() => setIsMembershipModalOpen(true)}
-                className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
-              >
-                <span className="text-base leading-none" aria-hidden>
-                  {membership.plan.icono}
-                </span>
-                <span className="max-w-[10rem] truncate">{user?.username ?? 'Usuario'}</span>
-              </button>
-            ) : null}
-
             {!isAuthenticated ? (
               <button
                 type="button"
@@ -230,17 +197,52 @@ export const Header = () => {
               </button>
             ) : null}
 
-            {isAuthenticated ? (
-              <button
-                type="button"
-                onClick={async () => {
-                  await logout();
-                  navigate('/');
-                }}
-                className={`hidden rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
-              >
-                Cerrar sesión
-              </button>
+            {isAuthenticated && user ? (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
+                >
+                  Hola, {user.username}
+                </button>
+
+                <AnimatePresence>
+                  {isUserMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-48 rounded-xl border border-black/10 bg-white shadow-lg"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigate('/mis-datos');
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-black transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        <User size={16} />
+                        Mis Datos
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await logout();
+                          setIsUserMenuOpen(false);
+                          navigate('/');
+                        }}
+                        className="flex w-full items-center gap-2 border-t border-black/10 px-4 py-3 text-sm font-medium text-black transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        <LogOut size={16} />
+                        Cerrar sesión
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ) : null}
 
             <div className="relative hidden h-full sm:block" ref={searchRef}>
@@ -276,7 +278,12 @@ export const Header = () => {
               ) : null}
             </Link>
 
-            <button className={`relative rounded-full border p-2.5 ${headerIconButtonClass}`} type="button" onClick={toggleCart}>
+            <button
+              type="button"
+              aria-label="Carrito"
+              className={`relative rounded-full border p-2.5 ${headerIconButtonClass}`}
+              onClick={() => (onOpenCart ? onOpenCart() : toggleCart())}
+            >
               <ShoppingBag size={18} />
               {cart.length > 0 ? (
                 <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-semibold text-white">
@@ -314,32 +321,33 @@ export const Header = () => {
                 </form>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  {membership ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMembershipModalOpen(true);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
-                    >
-                      <span aria-hidden>{membership.plan.icono}</span>
-                      <span className="truncate">{user?.username ?? 'Usuario'}</span>
-                    </button>
+                  {isAuthenticated && user ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigate('/mis-datos');
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
+                      >
+                        <User size={16} />
+                        Mis Datos
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await logout();
+                          setIsMobileMenuOpen(false);
+                          navigate('/');
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
+                      >
+                        <LogOut size={16} />
+                        Cerrar sesión
+                      </button>
+                    </>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMembershipModalOpen(true);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
-                    >
-                      Ver planes
-                    </button>
-                  )}
-
-                  {!isAuthenticated ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -352,18 +360,6 @@ export const Header = () => {
                       className="flex-1 rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
                     >
                       Iniciar sesión
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await logout();
-                        setIsMobileMenuOpen(false);
-                        navigate('/login');
-                      }}
-                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
-                    >
-                      Cerrar sesión
                     </button>
                   )}
                 </div>
@@ -427,9 +423,9 @@ export const Header = () => {
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mb-5 text-center sm:mb-6 sm:text-left">
-                <p className="text-sm uppercase tracking-[0.3em] text-black/60">Acceso mayorista</p>
-                <h2 className="mt-2 text-2xl font-semibold text-black sm:text-3xl">Acceso Exclusivo para Mayoristas</h2>
-                <p className="mt-3 text-sm text-black/70">Inicia sesión para acceder a los beneficios exclusivos de tu membresía.</p>
+                <p className="text-sm uppercase tracking-[0.3em] text-black/60">Iniciar sesión</p>
+                <h2 className="mt-2 text-2xl font-semibold text-black sm:text-3xl">Acceso a tu cuenta</h2>
+                <p className="mt-3 text-sm text-black/70">Inicia sesión para acceder a tus favoritos, direcciones guardadas y métodos de pago.</p>
               </div>
 
               <form className="space-y-3 sm:space-y-4" onSubmit={handleLoginSubmit}>
@@ -480,39 +476,17 @@ export const Header = () => {
                 <div className="h-px flex-1 bg-black/10" />
               </div>
 
-              <p className="text-center text-sm text-black/70 sm:text-left">¿Aún no formas parte del programa mayorista?</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLoginModalOpen(false);
-                  setIsMembershipModalOpen(true);
-                }}
-                className="mt-4 w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600 sm:w-auto"
+              <p className="text-center text-sm text-black/70 sm:text-left">¿No tienes cuenta aún?</p>
+              <Link
+                to="/registro"
+                className="mt-4 w-full block rounded-full border border-black/10 bg-white px-4 py-3 text-center text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600 sm:w-auto"
               >
-                ✨ Lo que te pierdes
-              </button>
+                Crear cuenta
+              </Link>
             </motion.div>
           </motion.div>
         ) : null}
       </AnimatePresence>
-
-      <MembershipModal
-        isOpen={isMembershipModalOpen}
-        onClose={() => setIsMembershipModalOpen(false)}
-        mode={membership ? 'details' : 'select'}
-        user={membership ? {
-          name: user?.username,
-          email: user?.email,
-          plan: user?.plan,
-          discount: user?.discount,
-          renewalDate: new Date(user?.planEnd ?? Date.now()).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric',
-          }),
-          daysRemaining: membership.daysRemaining,
-        } : undefined}
-      />
     </>
   );
 };

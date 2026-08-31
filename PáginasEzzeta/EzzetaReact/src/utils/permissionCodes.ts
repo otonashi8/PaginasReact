@@ -9,8 +9,5 @@ export const PERMISSIONS = {
   customersUpdate: 'customers.update',
   wishlistShare: 'wishlist.share',
   promoApply: 'sales.promo.apply',
-  subscriptionCreate: 'subscription.create',
-  subscriptionUpdate: 'subscription.update',
   affiliateCreate: 'affiliate.create',
-  plansManage: 'plans.manage',
 } as const;

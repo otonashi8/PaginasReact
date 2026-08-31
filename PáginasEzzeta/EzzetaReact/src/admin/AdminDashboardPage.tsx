@@ -5,6 +5,8 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ClientesCrudPanel } from './Clientes/ClientesCrudPanel';
 import { InventarioCrudPanel } from './Inventario/InventarioCrudPanel';
 import { MarketingCrudPanel } from './Marketing/MarketingCrudPanel';
+import { PaginasCrudPanel } from './Paginas/PaginasCrudPanel';
+import { RRHHCrudPanel } from './RRHH/RRHHCrudPanel';
 import { SistemaCrudPanel } from './Sistema/SistemaCrudPanel';
 import { PedidosCrudPanel } from './Ventas/pedidos/PedidosCrudPanel';
 import { CarritosPerdidosCrudPanel } from './Ventas/carritos-perdidos';
@@ -26,43 +28,59 @@ const getModulePanel = (module: PermissionModule | null, access: PermissionAcces
   const accessLabel = normalizeModuleName(access.label);
 
   if (normalized === 'inventario') {
-    return <InventarioCrudPanel access={access} />;
+    return <InventarioCrudPanel key={access.path ?? access.id} access={access} />;
   }
 
   if (normalized === 'negocio') {
-    return <GenericCrudPanel access={access} />;
+    return <GenericCrudPanel key={access.path ?? access.id} access={access} />;
   }
 
   if (
     normalized === 'sistema' ||
     accessLabel === 'logs' ||
     accessLabel === 'auditoria' ||
+    accessLabel === 'redes' ||
+    accessLabel === 'redessociales' ||
+    accessLabel === 'envio' ||
+    accessLabel === 'envios' ||
     normalized === 'logs' ||
-    normalized === 'auditoria' ||
-    normalized === 'planes' ||
-    accessLabel === 'planes'
+    normalized === 'auditoria'
   ) {
-    return <SistemaCrudPanel access={access} />;
+    return <SistemaCrudPanel key={access.path ?? access.id} access={access} />;
   }
 
   if (normalized === 'ventas' && accessLabel === 'pedidos') {
-    return <PedidosCrudPanel access={access} />;
+    return <PedidosCrudPanel key={access.path ?? access.id} access={access} />;
   }
 
   if (normalized === 'ventas' && accessLabel === 'carritos perdidos') {
-    return <CarritosPerdidosCrudPanel access={access} />;
+    return <CarritosPerdidosCrudPanel key={access.path ?? access.id} access={access} />;
   }
 
   if (normalized === 'ventas' && accessLabel === 'productos') {
-    return <ProductosAnalyticsPanel />;
+    return <ProductosAnalyticsPanel key={access.path ?? access.id} />;
   }
 
   if (normalized === 'clientes') {
-    return <ClientesCrudPanel />;
+    return <ClientesCrudPanel key={access.path ?? access.id} />;
   }
 
   if (normalized === 'marketing' || accessLabel === 'banners') {
-    return <MarketingCrudPanel access={access} />;
+    return <MarketingCrudPanel key={access.path ?? access.id} access={access} />;
+  }
+
+  if (normalized === 'rrhh' || normalized === 'recursoshumanos' || accessLabel.includes('trabajo') || accessLabel.includes('rrhh')) {
+    return <RRHHCrudPanel key={access.path ?? access.id} access={access} />;
+  }
+
+  if (
+    normalized === 'paginas' ||
+    normalized === 'paginas-legales' ||
+    accessLabel.includes('politica') ||
+    accessLabel.includes('termino') ||
+    accessLabel.includes('visibilidad')
+  ) {
+    return <PaginasCrudPanel key={access.path ?? access.id} access={access} />;
   }
 
   return <GenericCrudPanel access={access} />;
@@ -216,7 +234,7 @@ export const AdminDashboardPage = () => {
                         [module.id]: !isOpen,
                       }))
                     }
-                    className="flex w-full items-center justify-between rounded-none px-3 py-3 text-left text-sm font-semibold uppercase tracking-[0.14em] text-zinc-700 transition hover:bg-red-50 hover:text-red-600"
+                    className="flex w-full items-center justify-between rounded-none px-1 py-1 text-left text-sm font-semibold uppercase tracking-[0.14em] text-zinc-700 transition hover:bg-red-50 hover:text-red-600"
                   >
                     <span>{module.label}</span>
                     <ChevronDown size={16} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -238,7 +256,7 @@ export const AdminDashboardPage = () => {
                                 key={access.id}
                                 to={access.path}
                                 className={({ isActive }) =>
-                                  `rounded-none px-3 py-2.5 text-sm font-medium transition ${
+                                  `rounded-none px-1 py-1 text-sm font-medium transition ${
                                     isActive ? 'bg-zinc-900 text-white' : 'text-zinc-700 hover:bg-red-50 hover:text-red-600'
                                   }`
                                 }

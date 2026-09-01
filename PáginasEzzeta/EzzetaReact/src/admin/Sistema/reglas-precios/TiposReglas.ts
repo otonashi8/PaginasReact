@@ -63,6 +63,7 @@ export interface ConfiguracionRegla {
     acumulable?: boolean;
     elementos?: ElementoCombo[];
     precioCombo?: number;
+    imagenCombo?: string; // URL o data URI representativa del combo
 }
 
 export interface ReglaPrecio {

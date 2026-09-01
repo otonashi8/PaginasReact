@@ -60,8 +60,8 @@ export const validarProducto = (
 		errores.push('El stock por talla no puede contener valores negativos.');
 	}
 
-	if (producto.miniImagenes.length !== 3) {
-		errores.push('El producto debe tener exactamente 3 mini imagenes.');
+	if (producto.miniImagenes.length === 0) {
+		errores.push('Agregue al menos una mini imagen para el producto.');
 	}
 
 	if (!producto.tallas.length) {

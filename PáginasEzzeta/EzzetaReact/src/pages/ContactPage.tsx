@@ -66,231 +66,249 @@ export const ContactPage = () => {
   };
 
   return (
-    <section className="space-y-10 sm:space-y-12">
-      {/* ENCABEZADO */}
-      <div className="rounded-[2rem] border border-black/10 bg-white p-5 shadow-[0_14px_42px_rgba(0,0,0,0.05)] sm:p-8 lg:p-10">
-        <p className="text-xs uppercase tracking-[0.28em] text-black/55">
-          Atención personalizada
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold uppercase tracking-[0.14em] text-black sm:text-4xl">
-          Contacto y soporte
-        </h1>
-        <p className="mt-4 max-w-3xl text-sm leading-relaxed text-black/70 sm:text-base">
-          Estamos aquí para ayudarte con tus pedidos, envíos,
-          devoluciones, cambios y cualquier inconveniente relacionado
-          con tu compra.
-        </p>
-      </div>
-      {/* FAQ + ASISTENCIA */}
-      <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:gap-6">
-        {/* FAQ */}
-        <div className="rounded-[1.8rem] border border-black/10 bg-white p-5 shadow-[0_12px_34px_rgba(0,0,0,0.05)] sm:p-7">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold uppercase tracking-[0.16em] text-black sm:text-2xl">FAQ</h2>
-            <span className="text-xs uppercase tracking-[0.22em] text-black/45">Respuestas rápidas</span>
-          </div>
-          <div className="mt-6 space-y-3 text-sm text-black/70">
-            <div className="rounded-[1.1rem] border border-black/10 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-red-600/40 hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
-              <p className="font-semibold text-black">¿Cuánto tarda el envío?</p>
-              <p className="mt-2">El tiempo estimado suele ser de 2 a 5 días hábiles.</p>
-            </div>
-            <div className="rounded-[1.1rem] border border-black/10 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-red-600/40 hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
-              <p className="font-semibold text-black">¿Puedo devolver una prenda?</p>
-              <p className="mt-2">Sí, puedes solicitar devolución dentro de los 14 días posteriores a la entrega.</p>
-            </div>
-            <div className="rounded-[1.1rem] border border-black/10 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-red-600/40 hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
-              <p className="font-semibold text-black">¿Ofrecen asesoría personalizada?</p>
-              <p className="mt-2">Claro, nuestro equipo puede ayudarte con recomendaciones de estilo.</p>
-            </div>
-          </div>
-        </div>
-        {/* ASISTENCIA */}
-        <div className="rounded-[1.8rem] border border-black/10 bg-white p-5 shadow-[0_12px_34px_rgba(0,0,0,0.05)] sm:p-7">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black text-white">
-              <MessageSquare size={20} />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold uppercase tracking-[0.16em] text-black sm:text-2xl">Asistencia</h2>
-              <p className="mt-1 text-sm text-black/60">¿Tienes algún problema? Déjanos tu solicitud.</p>
-            </div>
-          </div>
-
-          {enviado ? (
-            <div className="mt-6 rounded-[1.3rem] border border-green-600/20 bg-green-50 p-6 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-700">✓</div>
-              <h3 className="mt-4 text-lg font-semibold text-green-800">Solicitud enviada correctamente</h3>
-              <p className="mt-2 text-sm leading-relaxed text-green-700">
-                Hemos recibido tu solicitud. Nuestro equipo la revisará
-                y se pondrá en contacto contigo.
-              </p>
-              <button
-                type="button"
-                onClick={() => setEnviado(false)}
-                className="mt-5 rounded-xl border border-green-700 bg-white px-5 py-3 text-sm font-semibold text-green-700 transition-colors hover:bg-green-700 hover:text-white"
-              >Enviar otra solicitud</button>
-            </div>
-          ) : (
-            <div className="mt-6 space-y-4">
-              {/* TIPO */}
-              <label className="block">
-                <span className="mb-1.5 block text-sm font-semibold text-black">
-                  Motivo de la solicitud <b className="text-red-600">*</b>
-                </span>
-                <select
-                  value={tipo}
-                  onChange={(event) =>
-                    setTipo(event.target.value as TipoSolicitud)
-                  }
-                  className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-red-600"
-                >
-                  <option value="Queja">Queja</option>
-                  <option value="Problema con pedido">Problema con pedido</option>
-                  <option value="Devolución">Devolución</option>
-                  <option value="Cambio">Cambio</option>
-                  <option value="Envío">Envío</option>
-                  <option value="Otro">Otro</option>
-                </select>
-              </label>
-              {/* NOMBRE + CORREO */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-black">
-                    Nombre <b className="text-red-600">*</b>
-                  </span>
-                  <input
-                    value={nombre}
-                    onChange={(event) =>
-                      setNombre(event.target.value)
-                    }
-                    placeholder="Tu nombre completo"
-                    className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-red-600"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-black">
-                    Correo <b className="text-red-600">*</b>
-                  </span>
-                  <input
-                    type="email"
-                    value={correo}
-                    onChange={(event) =>
-                      setCorreo(event.target.value)
-                    }
-                    placeholder="ejemplo@mail.com"
-                    className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-red-600"
-                  />
-                </label>
-              </div>
-              {/* PEDIDO + TELÉFONO */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-black">
-                    N.º de pedido
-                  </span>
-
-                  <input
-                    value={pedido}
-                    onChange={(event) =>
-                      setPedido(event.target.value)
-                    }
-                    placeholder="Ej. PED-000123"
-                    className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-red-600"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-black">
-                    Teléfono <b className="text-red-600">*</b>
-                  </span>
-                  <input
-                    type="tel"
-                    value={telefono}
-                    onChange={(event) =>
-                      setTelefono(event.target.value)
-                    }
-                    placeholder="+51 9XXXXXXXX"
-                    className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-red-600"
-                  />
-                </label>
-              </div>
-              {/* MENSAJE */}
-              <label className="block">
-                <span className="mb-1.5 block text-sm font-semibold text-black">
-                  Describe tu problema o queja{' '}
-                  <b className="text-red-600">*</b>
-                </span>
-                <textarea
-                  value={mensaje}
-                  onChange={(event) =>
-                    setMensaje(event.target.value)
-                  }
-                  placeholder="Cuéntanos qué ocurrió..."
-                  rows={5}
-                  className="w-full resize-none rounded-xl border border-black/15 bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-red-600"
-                />
-              </label>
-              {error && (
-                <p className="rounded-xl border border-red-600/20 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {error}
+    <div className="mx-auto w-full max-w-7xl">
+      <section className="space-y-6 sm:space-y-8">
+        {/* HEADER */}
+        <div className="border-b border-zinc-200 pb-6 sm:pb-8">
+            <div className="max-w-3xl">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">Atención personalizada</p>
+                <h1 className="text-2xl font-semibold tracking-[-0.03em] text-zinc-950 sm:text-3xl lg:text-4xl">Contacto y soporte</h1>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-500 sm:text-[15px]">
+                    Estamos aquí para ayudarte con tus pedidos, envíos,
+                    devoluciones, cambios y cualquier inconveniente relacionado
+                    con tu compra.
                 </p>
-              )}
-              <button
-                type="button"
-                onClick={enviarSolicitud}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-black bg-black px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors duration-200 hover:border-red-600 hover:bg-red-600"
-              ><Send size={16} />Enviar solicitud
-              </button>
-              <div className="grid gap-3 pt-2 sm:grid-cols-2">
-                <a
-                  href="tel:+51929370461"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-black/15 bg-white px-4 py-3 text-sm font-medium text-black transition-colors hover:border-red-600 hover:text-red-600"
-                ><Phone size={16} />+51 929370461
-                </a>
-                <a
-                  href="mailto:contacto@ezzeta.com"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-black/15 bg-white px-4 py-3 text-sm font-medium text-black transition-colors hover:border-red-600 hover:text-red-600"
-                ><Mail size={16} />contacto@ezzeta.com
-                </a>
-              </div>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* EMPRENDE CON NOSOTROS */}
-      <div className="grid gap-5 lg:grid-cols-2 lg:gap-6">
-        {/* IMAGEN */}
-        <div className="relative overflow-hidden rounded-[1.8rem] border border-black/10 bg-white shadow-[0_12px_34px_rgba(0,0,0,0.05)]">
-          <img
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTU1agQ0JWH1FRSXAzg8c0EJ0q-w1lNc4P3IQQRrLw5lj_lD3Zl020i5S7A&s=10"
-            alt="Emprende con nosotros"
-            className="h-64 w-full object-cover transition-transform duration-500 hover:scale-[1.03] sm:h-80 lg:h-full"
-          />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
         </div>
 
-        {/* CONTENIDO */}
-        <div className="rounded-[1.8rem] border border-black/10 bg-white p-5 shadow-[0_12px_34px_rgba(0,0,0,0.05)] sm:p-7">
-          <p className="text-xs uppercase tracking-[0.25em] text-black/50">
-            Emprende con nosotros</p>
-          <h2 className="mt-3 text-xl font-semibold uppercase tracking-[0.16em] text-black sm:text-2xl">
-            ¿Quieres ser como Pablo Ezzeta?</h2>
-          <p className="mt-4 text-sm leading-relaxed text-black/70">
-            Forma parte de una comunidad pensada para quienes quieren crecer,
-            emprender y llevar su proyecto al siguiente nivel. Descubre nuevas
-            oportunidades, aprende y conecta con personas que comparten tu misma
-            visión.</p>
-          <p className="mt-3 text-sm leading-relaxed text-black/70">
-            Conoce el Club Pablo Ezzeta y descubre todo lo que tiene preparado
-            para ti.</p>
-          <a
-            href="https://pabloezzeta.pe/club/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-black bg-black px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors duration-200 hover:border-red-600 hover:bg-red-600"
-          >Conoce el Club</a>
-        </div>
+      {/* FAQ + ASISTENCIA */}
+      <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+          {/* FAQ */}
+          <div className="border border-zinc-200 bg-white">
+              <div className="border-b border-zinc-200 px-5 py-4 sm:px-6">
+                  <div className="flex items-center justify-between gap-4">
+                      <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Soporte</p>
+                          <h2 className="mt-1 text-lg font-semibold tracking-tight text-zinc-950">Preguntas frecuentes</h2>
+                      </div>
+                      <span className="hidden text-[10px] uppercase tracking-[0.18em] text-zinc-400 sm:block">FAQ</span>
+                  </div>
+              </div>
+
+              <div className="divide-y divide-zinc-100">
+                  <div className="px-5 py-5 transition-colors hover:bg-zinc-50 sm:px-6">
+                      <div className="flex gap-4">
+                          <span className="text-xs font-semibold text-zinc-300">01</span>
+                          <div>
+                              <p className="text-sm font-semibold text-zinc-950">¿Cuánto tarda el envío?</p>
+                              <p className="mt-1.5 text-sm leading-5 text-zinc-500">El tiempo estimado suele ser de 2 a 5 días hábiles.</p>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="px-5 py-5 transition-colors hover:bg-zinc-50 sm:px-6">
+                      <div className="flex gap-4">
+                          <span className="text-xs font-semibold text-zinc-300">02</span>
+                          <div>
+                              <p className="text-sm font-semibold text-zinc-950">¿Puedo devolver una prenda?</p>
+                              <p className="mt-1.5 text-sm leading-5 text-zinc-500">Sí, puedes solicitar devolución dentro de los 14 días posteriores a la entrega.</p>
+                          </div>
+                      </div>
+                  </div>
+                  <div className="px-5 py-5 transition-colors hover:bg-zinc-50 sm:px-6">
+                      <div className="flex gap-4">
+                          <span className="text-xs font-semibold text-zinc-300">03</span>
+                          <div>
+                              <p className="text-sm font-semibold text-zinc-950">¿Ofrecen asesoría personalizada?</p>
+                              <p className="mt-1.5 text-sm leading-5 text-zinc-500">Claro, nuestro equipo puede ayudarte con recomendaciones de estilo.</p>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+          {/* ASISTENCIA */}
+          <div className="border border-zinc-200 bg-white">
+              <div className="border-b border-zinc-200 px-5 py-4 sm:px-6">
+                  <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center bg-zinc-950 text-white"><MessageSquare size={17} strokeWidth={1.8} /></div>
+                      <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Atención directa</p>
+                          <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-zinc-950">Asistencia</h2>
+                      </div>
+                  </div>
+              </div>
+              {enviado ? (
+                  <div className="flex min-h-[420px] items-center justify-center px-5 py-10 sm:px-8">
+                      <div className="max-w-md text-center">
+                          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">✓</div>
+                          <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-600">Solicitud registrada</p>
+                          <h3 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">Solicitud enviada correctamente</h3>
+                          <p className="mt-3 text-sm leading-6 text-zinc-500">Hemos recibido tu solicitud. Nuestro equipo la revisará y se pondrá en contacto contigo.</p>
+                          <button
+                              type="button"
+                              onClick={() => setEnviado(false)}
+                              className="mt-6 border border-zinc-900 bg-zinc-950 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-red-600 hover:border-red-600"
+                          >Enviar otra solicitud
+                          </button>
+                      </div>
+                  </div>
+              ) : (
+                  <div className="space-y-4 p-5 sm:p-6">
+                      <label className="block">
+                          <span className="mb-1.5 block text-xs font-semibold text-zinc-800">
+                              Motivo de la solicitud
+                              <b className="ml-1 text-red-600">*</b>
+                          </span>
+
+                          <select
+                              value={tipo}
+                              onChange={(event) =>
+                                  setTipo(event.target.value as TipoSolicitud)
+                              }
+                              className="h-10 w-full border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-900"
+                          >
+                              <option value="Queja">Queja</option>
+                              <option value="Problema con pedido">Problema con pedido</option>
+                              <option value="Devolución">Devolución</option>
+                              <option value="Cambio">Cambio</option>
+                              <option value="Envío">Envío</option>
+                              <option value="Otro">Otro</option>
+                          </select>
+                      </label>
+
+                      {/* NOMBRE + CORREO */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                          <label className="block">
+                              <span className="mb-1.5 block text-xs font-semibold text-zinc-800">
+                                  Nombre
+                                  <b className="ml-1 text-red-600">*</b>
+                              </span>
+                              <input
+                                  value={nombre}
+                                  onChange={(event) =>
+                                      setNombre(event.target.value)
+                                  }
+                                  placeholder="Tu nombre completo"
+                                  className="h-10 w-full border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-zinc-900"
+                              />
+                          </label>
+                          <label className="block">
+                              <span className="mb-1.5 block text-xs font-semibold text-zinc-800">
+                                  Correo
+                                  <b className="ml-1 text-red-600">*</b>
+                              </span>
+                              <input
+                                  type="email"
+                                  value={correo}
+                                  onChange={(event) =>
+                                      setCorreo(event.target.value)
+                                  }
+                                  placeholder="ejemplo@mail.com"
+                                  className="h-10 w-full border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-zinc-900"
+                              />
+                          </label>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                          <label className="block">
+                              <span className="mb-1.5 block text-xs font-semibold text-zinc-800">N.º de pedido</span>
+                              <input
+                                  value={pedido}
+                                  onChange={(event) =>
+                                      setPedido(event.target.value)
+                                  }
+                                  placeholder="Ej. PED-000123"
+                                  className="h-10 w-full border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-zinc-900"
+                              />
+                          </label>
+                          <label className="block">
+                              <span className="mb-1.5 block text-xs font-semibold text-zinc-800">
+                                  Teléfono
+                                  <b className="ml-1 text-red-600">*</b>
+                              </span>
+                              <input
+                                  type="tel"
+                                  value={telefono}
+                                  onChange={(event) =>
+                                      setTelefono(event.target.value)
+                                  }
+                                  placeholder="+51 9XXXXXXXX"
+                                  className="h-10 w-full border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-zinc-900"
+                              />
+                          </label>
+                      </div>
+                      <label className="block">
+                          <span className="mb-1.5 block text-xs font-semibold text-zinc-800">
+                              Describe tu problema o queja
+                              <b className="ml-1 text-red-600">*</b>
+                          </span>
+                          <textarea
+                              value={mensaje}
+                              onChange={(event) =>
+                                  setMensaje(event.target.value)
+                              }
+                              placeholder="Cuéntanos qué ocurrió..."
+                              rows={4}
+                              className="w-full resize-none border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 transition focus:border-zinc-900"
+                          />
+                      </label>
+                      {error && (
+                          <div className="border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
+                              {error}
+                          </div>
+                      )}
+                      <button
+                          type="button"
+                          onClick={enviarSolicitud}
+                          className="inline-flex h-10 w-full items-center justify-center gap-2 border border-zinc-950 bg-zinc-950 px-5 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600"
+                      ><Send size={15} />Enviar solicitud
+                      </button>
+                      <div className="grid gap-2 pt-1 sm:grid-cols-2">
+                          <a
+                              href="tel:+51929370461"
+                              className="inline-flex h-10 items-center justify-center gap-2 border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-700 transition hover:border-zinc-900 hover:text-zinc-950"
+                          ><Phone size={15} />+51 929 370 461
+                          </a>
+                          <a
+                              href="mailto:contacto@ezzeta.com"
+                              className="inline-flex h-10 items-center justify-center gap-2 border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-700 transition hover:border-zinc-900 hover:text-zinc-950"
+                          ><Mail size={15} />contacto@ezzeta.com
+                          </a>
+                      </div>
+                  </div>
+              )}
+          </div>
       </div>
-    </section>
+      <div className="grid overflow-hidden border border-zinc-200 bg-white lg:grid-cols-2">
+          <div className="relative min-h-[280px] overflow-hidden bg-zinc-100 lg:min-h-[360px]">
+              <img
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTU1agQ0JWH1FRSXAzg8c0EJ0q-w1lNc4P3IQQRrLw5lj_lD3Zl020i5S7A&s=10"
+                  alt="Emprende con nosotros"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 hover:scale-[1.03]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+              <div className="absolute bottom-5 left-5 sm:bottom-7 sm:left-7">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/70">Comunidad</p>
+                  <p className="mt-1 text-xl font-semibold tracking-tight text-white">Crece con nosotros.</p>
+              </div>
+          </div>
+          <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-zinc-400">Emprende con nosotros</p>
+              <h2 className="mt-3 max-w-lg text-2xl font-semibold tracking-[-0.03em] text-zinc-950 sm:text-3xl">¿Quieres ser como Pablo Ezzeta?</h2>
+              <div className="mt-4 max-w-xl space-y-3 text-sm leading-6 text-zinc-500">
+                  <p>Forma parte de una comunidad pensada para quienes quieren crecer, emprender y llevar su proyecto al siguiente nivel.</p>
+                  <p>Conoce el Club Pablo Ezzeta y descubre nuevas oportunidades, aprende y conecta con personas que comparten tu misma visión.</p>
+              </div>
+              <a
+                  href="https://pabloezzeta.pe/club/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 inline-flex h-10 w-full items-center justify-center border border-zinc-950 bg-zinc-950 px-5 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600 sm:w-fit"
+              >Conoce el Club
+              </a>
+          </div>
+      </div>
+      </section>
+    </div>
   );
 };

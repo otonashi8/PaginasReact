@@ -27,6 +27,7 @@ export const ReglasCombo = ({
     const configuracion = regla.configuracion ?? {};
     const elementos = (configuracion.elementos ?? []) as ElementoCombo[];
     const precioCombo = configuracion.precioCombo ?? 0;
+    const imagenCombo = configuracion.imagenCombo ?? '';
 
     const productos = useMemo(() => getProducts(), []);
     const subcategorias = useMemo(() => {
@@ -221,6 +222,47 @@ export const ReglasCombo = ({
                     <p className="mt-2 text-sm text-zinc-500">
                         El precio final que el cliente pagará por este combo.
                     </p>
+                </div>
+            </div>
+
+            <hr className="border-zinc-200" />
+
+            {/* Imagen representativa del Combo */}
+            <div>
+                <h4 className="text-base font-semibold mb-3">Imagen representativa</h4>
+                <p className="text-sm text-zinc-500">Sube una imagen o pega una URL para representar el combo en la tienda.</p>
+                <div className="mt-3 flex flex-col gap-3">
+                    <input
+                        type="text"
+                        placeholder="URL de la imagen (http://... o data:...)"
+                        value={String(imagenCombo)}
+                        onChange={(e) => actualizarConfiguracion('imagenCombo', e.target.value)}
+                        className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                    />
+
+                    <div>
+                        <label className="mb-2 block text-sm font-medium">O subir archivo</label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                                const file = e.target.files && e.target.files[0];
+                                if (!file) return;
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                    const result = reader.result as string;
+                                    actualizarConfiguracion('imagenCombo', result);
+                                };
+                                reader.readAsDataURL(file);
+                            }}
+                        />
+                    </div>
+
+                    {imagenCombo ? (
+                        <div className="mt-2 w-48 rounded-lg border border-zinc-200 overflow-hidden">
+                            <img src={String(imagenCombo)} alt="Preview combo" className="h-32 w-full object-cover" />
+                        </div>
+                    ) : null}
                 </div>
             </div>
         </section>

@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import type { PermissionAccess } from "../../hooks/usePermissions";
 import { useUsuarios } from "./hooks/useUsuarios";
@@ -6,6 +7,7 @@ import { ModalUsuario } from "./usuarios/ModalUsuario";
 import { FiltrosUsuarios } from "./usuarios/FiltrosUsuarios";
 import { Permiso } from "../../componentes/Permiso";
 import { ResumenUsuarios } from "./usuarios/ResumenUsuarios";
+import { PaginacionClientes } from "../../componentes/Paginacion";
 
 type Props = {
     access: PermissionAccess;
@@ -14,6 +16,8 @@ type Props = {
 export const UsuariosCrudPanel = ({
     access
 }: Props) => {
+    const [paginaActual, setPaginaActual] = useState(1);
+    const elementosPorPagina = 10;
 
     const {
         usuariosFiltrados,
@@ -33,6 +37,17 @@ export const UsuariosCrudPanel = ({
         estadoFiltro,
         setEstadoFiltro
     } = useUsuarios();
+
+    useEffect(() => {
+        setPaginaActual(1);
+    }, [busqueda, estadoFiltro, usuariosFiltrados.length]);
+
+    const paginaUsuarios = useMemo(() => {
+        const inicio = (paginaActual - 1) * elementosPorPagina;
+        return usuariosFiltrados.slice(inicio, inicio + elementosPorPagina);
+    }, [paginaActual, usuariosFiltrados]);
+
+    const paginaTope = Math.max(1, Math.ceil(usuariosFiltrados.length / elementosPorPagina));
 
     const puedeGuardar =
         modoEdicion
@@ -69,12 +84,17 @@ export const UsuariosCrudPanel = ({
                 onEstadoChange={setEstadoFiltro}
             />
             <TablaUsuarios
-                usuarios={usuariosFiltrados}
+                usuarios={paginaUsuarios}
                 roles={roles}
                 access={access}
                 editar={abrirEdicion}
                 eliminar={borrarUsuario}
                 cambiarEstado={cambiarEstadoUsuario}
+            />
+            <PaginacionClientes
+                paginaActual={paginaActual}
+                paginaTope={paginaTope}
+                onPaginaChange={setPaginaActual}
             />
             <ModalUsuario
                 abierto={modalAbierto}

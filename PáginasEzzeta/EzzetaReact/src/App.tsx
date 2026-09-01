@@ -39,7 +39,7 @@ function PageVisibilityGate({ pageKey, children, fallback }: { pageKey: 'home' |
 const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })));
 const StorePage = lazy(() => import('./pages/StorePage').then((module) => ({ default: module.StorePage })));
 const ProductPage = lazy(() => import('./pages/ProductPage').then((module) => ({ default: module.ProductPage })));
-const PacksPage = lazy(() => import('./pages/OutfitS200Page').then((module) => ({ default: module.PacksPage })));
+const PacksPage = lazy(() => import('./pages/PackPage').then((module) => ({ default: module.PacksPage })));
 const AboutPage = lazy(() => import('./pages/AboutPage').then((module) => ({ default: module.AboutPage })));
 const ContactPage = lazy(() => import('./pages/ContactPage').then((module) => ({ default: module.ContactPage })));
 const WishlistPage = lazy(() => import('./pages/WishlistPage').then((module) => ({ default: module.WishlistPage })));
@@ -93,3 +93,4 @@ function App() {
 }
 
 export default App;
+

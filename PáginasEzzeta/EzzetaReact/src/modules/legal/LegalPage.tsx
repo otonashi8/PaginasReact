@@ -23,7 +23,7 @@ export const LegalPage = ({ pageKey }: { pageKey: LegalPageKey }) => {
 
   return (
     <main className="bg-crema">
-      <section className={`relative overflow-hidden px-5 pb-15 pt-15 ${isPrivacy ? 'bg-dorado text-vino-oscuro' : 'bg-vino-luz text-crema'}`}>
+      <section className={`relative overflow-hidden px-5 pb-10 pt-10 ${isPrivacy ? 'bg-dorado text-black' : 'bg-white text-black'}`}>
         <div className="mx-auto w-[min(1000px,92%)]">
           <span className="inline-flex items-center gap-2 text-[0.7rem] font-bold uppercase tracking-[0.2em] text-dorado-suave">
             {isPrivacy ? <LockKeyhole className="size-4" /> : <FileText className="size-4" />}
@@ -34,7 +34,7 @@ export const LegalPage = ({ pageKey }: { pageKey: LegalPageKey }) => {
           <div className="mt-10 text-[0.7rem] font-semibold uppercase tracking-[0.16em] opacity-60">Ezzeta · Última actualización · {content.updatedAt}</div>
         </div>
       </section>
-      <section className="mx-auto w-[min(1000px,92%)] py-14 sm:py-20">
+      <section className="mx-auto w-[min(1000px,92%)] py-10 sm:py-10">
         <div className="overflow-hidden rounded-[28px] border border-vino/10 bg-blanco shadow-[0_25px_60px_-40px_rgba(76,21,38,0.5)]">
           <div className="border-b border-vino/10 bg-vino-suave/20 px-6 py-7 sm:px-10">
             <div className="flex items-center gap-4">

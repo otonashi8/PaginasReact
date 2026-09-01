@@ -40,7 +40,7 @@ export default function TrabajosSection() {
   });
 
   return (
-    <section className="bg-vino-claro py-14 text-white md:py-20">
+    <section className="bg-vino-claro py-10 text-white md:py-10">
         <div className="mx-auto w-[min(1280px,92%)]">
         {/* ENCABEZADO */}
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

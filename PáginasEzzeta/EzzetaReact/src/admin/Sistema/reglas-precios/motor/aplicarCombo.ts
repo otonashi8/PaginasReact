@@ -17,6 +17,13 @@ interface ComboDetection {
   mensajeOportunidad: string;
 }
 
+const normalizeText = (value: string) => value
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]/g, '')
+  .trim();
+
 /**
  * Verifica si un producto coincide con un elemento del combo
  */
@@ -30,9 +37,9 @@ const productoCoincideConElemento = (
   if (tipo === 'producto') {
     return String(producto.id) === valor;
   } else if (tipo === 'categoria') {
-    return producto.category === valor;
+    return normalizeText(producto.category) === normalizeText(valor);
   } else if (tipo === 'subcategoria') {
-    return producto.subcategory === valor;
+    return normalizeText(producto.subcategory) === normalizeText(valor);
   }
 
   return false;
@@ -74,7 +81,8 @@ const generarMensajeOportunidad = (
  */
 export const detectarCombo = (
   cartItems: CartItem[],
-  regla: ReglaPrecio
+  regla: ReglaPrecio,
+  productosOverride?: Product[]
 ): ComboDetection | null => {
   if (!esReglaVigente(regla) || regla.tipo !== 'combo') {
     return null;
@@ -88,7 +96,7 @@ export const detectarCombo = (
     return null;
   }
 
-  const productos = getProducts();
+  const productos = productosOverride ?? getProducts();
 
   // Mapear items del carrito a productos
   const productosEnCarrito: Array<{ producto: Product; cantidad: number }> = cartItems
@@ -166,13 +174,14 @@ export const detectarCombo = (
  */
 export const detectarTodosLosCombos = (
   cartItems: CartItem[],
-  reglas: ReglaPrecio[]
+  reglas: ReglaPrecio[],
+  productosOverride?: Product[]
 ): ComboDetection[] => {
   const comboRules = reglas.filter(r => r.tipo === 'combo');
   const combosDetectados: ComboDetection[] = [];
 
   for (const regla of comboRules) {
-    const deteccion = detectarCombo(cartItems, regla);
+    const deteccion = detectarCombo(cartItems, regla, productosOverride);
     if (deteccion && deteccion.instancias > 0) {
       combosDetectados.push(deteccion);
     }
@@ -189,7 +198,7 @@ export const aplicarCombos = (
   reglas: ReglaPrecio[],
   productosMap: Map<number, Product>
 ): TipoMotorResultado & { combosAplicados: ComboDetection[] } => {
-  const combos = detectarTodosLosCombos(cartItems, reglas);
+  const combos = detectarTodosLosCombos(cartItems, reglas, Array.from(productosMap.values()));
 
   if (combos.length === 0) {
     return {
@@ -214,15 +223,18 @@ export const aplicarCombos = (
       let precioNormal = 0;
 
       for (const elemento of elementos) {
+        let cantidadPendiente = elemento.cantidad;
         for (const item of cartItems) {
           const producto = productosMap.get(item.productId);
           if (!producto) continue;
 
           if (productoCoincideConElemento(producto, elemento)) {
-            // Tomar la cantidad requerida del elemento
-            const cantidadAUsar = Math.min(item.quantity, elemento.cantidad);
+            const cantidadAUsar = Math.min(item.quantity, cantidadPendiente);
             precioNormal += producto.price * cantidadAUsar;
-            break;
+            cantidadPendiente -= cantidadAUsar;
+            if (cantidadPendiente <= 0) {
+              break;
+            }
           }
         }
       }

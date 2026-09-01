@@ -1,8 +1,12 @@
+import { useEffect, useMemo, useState } from "react";
 import { useReglas } from "./hooks/useReglas";
 import { TablaReglas } from "./componentes/TablaReglas";
 import { ModalRegla } from "./componentes/ModalRegla";
+import { PaginacionClientes } from "../../componentes/Paginacion";
 
 export const ReglasCrudPanel = () => {
+    const [paginaActual, setPaginaActual] = useState(1);
+    const elementosPorPagina = 10;
 
     const {
         reglasFiltradas,
@@ -22,6 +26,17 @@ export const ReglasCrudPanel = () => {
         cambiarFechaFinRegla,
         borrarRegla
     } = useReglas();
+
+    useEffect(() => {
+        setPaginaActual(1);
+    }, [busqueda, reglasFiltradas.length]);
+
+    const paginaReglas = useMemo(() => {
+        const inicio = (paginaActual - 1) * elementosPorPagina;
+        return reglasFiltradas.slice(inicio, inicio + elementosPorPagina);
+    }, [paginaActual, reglasFiltradas]);
+
+    const paginaTope = Math.max(1, Math.ceil(reglasFiltradas.length / elementosPorPagina));
 
     return (
         <div className="space-y-4">
@@ -52,13 +67,18 @@ export const ReglasCrudPanel = () => {
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2"
             />
             <TablaReglas
-                reglas={reglasFiltradas}
+                reglas={paginaReglas}
                 editar={abrirEdicion}
                 cambiarEstado={cambiarEstadoRegla}
                 cambiarPrioridad={cambiarPrioridadRegla}
                 cambiarFechaInicio={cambiarFechaInicioRegla}
                 cambiarFechaFin={cambiarFechaFinRegla}
                 eliminar={borrarRegla}
+            />
+            <PaginacionClientes
+                paginaActual={paginaActual}
+                paginaTope={paginaTope}
+                onPaginaChange={setPaginaActual}
             />
             <ModalRegla
                 abierto={modalAbierto}

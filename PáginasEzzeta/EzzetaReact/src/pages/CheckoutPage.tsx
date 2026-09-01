@@ -6,9 +6,14 @@ import useCart from '@/hooks/useCart'
 import { guardarCliente } from '@/services/formSubmissionService'
 import { StorageKeys } from '@/storage'
 import { useAuth } from '@/context/AuthContext'
+import { guardarPedidos, obtenerPedidos } from '@/admin/Ventas/pedidos/DatosPedidos'
+import type { Pedido } from '@/admin/Ventas/pedidos/TiposPedidos'
 import { getPeruDepartments } from '@/services/peruUbigeoService'
 import { calcularCostoEnvio, obtenerConfiguracionEnvioActual } from '@/utils/envioHelpers'
 import { SHIPPING_CONFIG_EVENT } from '@/admin/Sistema/envio/DatosEnvio'
+import { detectarCombosEnCarrito, usePricingRules } from '@/services/pricingService'
+import { getProducts } from '@/services/contentService'
+import ubigeoPeru from 'ubigeo-peru'
 
 const BTN_PRIMARIO_CLASS = 'inline-flex items-center justify-center gap-2 rounded-full bg-vino px-4 py-2.5 text-sm font-semibold text-crema transition hover:bg-vino-oscuro disabled:cursor-not-allowed disabled:opacity-60'
 
@@ -17,6 +22,50 @@ const DEPARTAMENTOS = getPeruDepartments().map((item) => ({
   nombre: item.name,
 }))
 
+export const formatUbigeoCodeName = (departmentCode?: string, provinceCode?: string, districtCode?: string) => {
+  if (!departmentCode) return ''
+
+  if (!provinceCode && !districtCode) {
+    const department = UBIGEOS.find((item) => item.departamento === departmentCode && item.provincia === '00' && item.distrito === '00')
+    return department?.nombre ?? departmentCode
+  }
+
+  if (provinceCode && !districtCode) {
+    const province = UBIGEOS.find((item) => item.departamento === departmentCode && item.provincia === provinceCode && item.distrito === '00')
+    return province?.nombre ?? provinceCode
+  }
+
+  if (provinceCode && districtCode) {
+    const district = UBIGEOS.find((item) => item.departamento === departmentCode && item.provincia === provinceCode && item.distrito === districtCode)
+    return district?.nombre ?? districtCode
+  }
+
+  return departmentCode
+}
+
+export const getSavedAddressData = (address: Record<string, unknown>) => {
+  const departmentCode = String(address.departamentoCode ?? address.departmentCode ?? '').trim()
+  const provinceCode = String(address.provinciaCode ?? address.provinceCode ?? '').trim()
+  const districtCode = String(address.distritoCode ?? address.districtCode ?? '').trim()
+
+  const resolvedDepartment = departmentCode ? formatUbigeoCodeName(departmentCode) : String(address.departamento ?? '').trim()
+  const resolvedProvince = provinceCode ? formatUbigeoCodeName(departmentCode || String(address.departamento ?? ''), provinceCode) : String(address.provincia ?? '').trim()
+  const resolvedDistrict = districtCode ? formatUbigeoCodeName(departmentCode || String(address.departamento ?? ''), provinceCode || String(address.provincia ?? ''), districtCode) : String(address.distrito ?? '').trim()
+
+  return {
+    department: departmentCode || String(address.departamentoCode ?? address.departmentCode ?? address.departamento ?? '').trim(),
+    province: provinceCode || String(address.provinciaCode ?? address.provinceCode ?? address.provincia ?? '').trim(),
+    district: districtCode || String(address.distritoCode ?? address.districtCode ?? address.distrito ?? '').trim(),
+    departmentName: resolvedDepartment,
+    provinceName: resolvedProvince,
+    districtName: resolvedDistrict,
+    locationText: String(address.direccion ?? address.locationText ?? '').trim(),
+    locationName: String(address.nombre ?? address.locationName ?? '').trim(),
+    postalCode: String(address.codigo_postal ?? address.postalCode ?? '').trim(),
+    reference: String(address.referencia ?? address.reference ?? '').trim(),
+  }
+}
+
 type UbigeoItem = {
   departamento: string
   provincia: string
@@ -24,15 +73,7 @@ type UbigeoItem = {
   nombre: string
 }
 
-const UBIGEOS: UbigeoItem[] = [
-  { departamento: '15', provincia: '01', distrito: '01', nombre: 'Lima' },
-  { departamento: '15', provincia: '01', distrito: '02', nombre: 'San Isidro' },
-  { departamento: '15', provincia: '01', distrito: '03', nombre: 'Miraflores' },
-  { departamento: '15', provincia: '02', distrito: '01', nombre: 'Arequipa' },
-  { departamento: '15', provincia: '02', distrito: '02', nombre: 'Cercado' },
-  { departamento: '14', provincia: '01', distrito: '01', nombre: 'Trujillo' },
-  { departamento: '13', provincia: '01', distrito: '01', nombre: 'Huancayo' },
-]
+const UBIGEOS: UbigeoItem[] = ((ubigeoPeru as { reniec?: UbigeoItem[] }).reniec ?? []) as UbigeoItem[]
 
 const PAYMENT_METHODS = [
   { value: 'tarjeta', label: 'Tarjeta', icon: Check },
@@ -120,74 +161,189 @@ const getStoredProfileData = () => {
   try {
     const raw = window.localStorage.getItem(StorageKeys.USERS)
     if (!raw) return { direcciones: [], metodosPago: [] }
+
     const users = JSON.parse(raw) as Array<Record<string, unknown>>
     if (!Array.isArray(users) || users.length === 0) return { direcciones: [], metodosPago: [] }
 
+    const currentEmail = (window.localStorage.getItem('ezzeta.checkout.lastEmail') ?? '').trim().toLowerCase()
+    const currentPhone = (window.localStorage.getItem('ezzeta.checkout.lastPhone') ?? '').trim()
+    const authRaw = window.localStorage.getItem(StorageKeys.AUTH)
+    const authUser = authRaw ? (() => {
+      try {
+        const auth = JSON.parse(authRaw) as Record<string, unknown>
+        return (auth?.user ?? null) as Record<string, unknown> | null
+      } catch {
+        return null
+      }
+    })() : null
+
+    const authId = String(authUser?.id ?? '').trim()
+    const authEmail = typeof authUser?.email === 'string' ? authUser.email.toLowerCase() : ''
+    const authUsername = typeof authUser?.username === 'string' ? authUser.username.toLowerCase() : ''
+    const authPhone = typeof authUser?.phone === 'string' ? authUser.phone : ''
+
     const matches = users.filter((entry) => {
+      const id = String(entry.id ?? '').trim()
       const email = typeof entry.email === 'string' ? entry.email.toLowerCase() : ''
+      const username = typeof entry.username === 'string' ? entry.username.toLowerCase() : ''
       const phone = typeof entry.phone === 'string' ? entry.phone : ''
-      return email === String(window.localStorage.getItem('ezzeta.checkout.lastEmail') ?? '').toLowerCase() || phone === String(window.localStorage.getItem('ezzeta.checkout.lastPhone') ?? '')
+      return (
+        (authId && id === authId) ||
+        (currentEmail && (email === currentEmail || username === currentEmail)) ||
+        (authEmail && (email === authEmail || username === authEmail)) ||
+        (authUsername && (email === authUsername || username === authUsername)) ||
+        (currentPhone && phone === currentPhone) ||
+        (authPhone && phone === authPhone)
+      )
     })
 
-    const firstUser = matches[0] ?? users[0]
-    const direcciones = Array.isArray(firstUser.direcciones) ? firstUser.direcciones : []
-    const metodosPago = Array.isArray(firstUser.metodosPago) ? firstUser.metodosPago : []
-    return { direcciones, metodosPago }
+    const candidateUsers = matches.length > 0 ? matches : users.slice(0, 1)
+    const mergeSavedData = (key: 'direcciones' | 'metodosPago') => {
+      const collected = candidateUsers.flatMap((entry) => Array.isArray(entry[key]) ? (entry[key] as Array<Record<string, unknown>>) : [])
+      const seen = new Map<string, Record<string, unknown>>()
+      collected.forEach((item) => {
+        const itemId = String((item as { id?: string | number }).id ?? '')
+        if (itemId) {
+          seen.set(itemId, item)
+        } else {
+          seen.set(`fallback-${seen.size}`, item)
+        }
+      })
+      return Array.from(seen.values())
+    }
+
+    return {
+      direcciones: mergeSavedData('direcciones'),
+      metodosPago: mergeSavedData('metodosPago'),
+    }
   } catch {
     return { direcciones: [], metodosPago: [] }
   }
 }
 
 const saveStoredProfileData = (key: 'direcciones' | 'metodosPago', value: Record<string, unknown>) => {
-  const current = getStoredProfileData()
   const usersRaw = window.localStorage.getItem(StorageKeys.USERS)
   const users = usersRaw ? JSON.parse(usersRaw) as Array<Record<string, unknown>> : []
-  const emailKey = window.localStorage.getItem('ezzeta.checkout.lastEmail') ?? ''
-  const phoneKey = window.localStorage.getItem('ezzeta.checkout.lastPhone') ?? ''
+  const normalizedUsers = Array.isArray(users) ? users : []
+  const emailKey = (window.localStorage.getItem('ezzeta.checkout.lastEmail') ?? '').trim().toLowerCase()
+  const phoneKey = (window.localStorage.getItem('ezzeta.checkout.lastPhone') ?? '').trim()
 
-  const nextUsers = Array.isArray(users) && users.length > 0
-    ? users.map((user) => {
-        const matchesEmail = String(user.email ?? '').toLowerCase() === emailKey.toLowerCase()
-        const matchesPhone = String(user.phone ?? '') === phoneKey
-        if (!matchesEmail && !matchesPhone) return user
+  const authRaw = window.localStorage.getItem(StorageKeys.AUTH)
+  const activeUser = authRaw ? (() => {
+    try {
+      const auth = JSON.parse(authRaw) as Record<string, unknown>
+      return (auth?.user ?? null) as Record<string, unknown> | null
+    } catch {
+      return null
+    }
+  })() : null
 
-        const existing = Array.isArray(user[key]) ? user[key] : []
-        return {
-          ...user,
-          [key]: [value, ...existing],
-        }
-      })
-    : [{
-        id: `guest-${Date.now()}`,
-        email: emailKey || `guest-${Date.now()}@local.test`,
-        phone: phoneKey || '',
-        [key]: [value],
-      }]
+  const authId = String(activeUser?.id ?? '').trim()
+  const authEmail = typeof activeUser?.email === 'string' ? activeUser.email.toLowerCase() : ''
+  const authUsername = typeof activeUser?.username === 'string' ? activeUser.username.toLowerCase() : ''
+  const authPhone = typeof activeUser?.phone === 'string' ? activeUser.phone : ''
+
+  const targetIndex = normalizedUsers.findIndex((user) => {
+    const id = String(user.id ?? '').trim()
+    const email = typeof user.email === 'string' ? user.email.toLowerCase() : ''
+    const username = typeof user.username === 'string' ? user.username.toLowerCase() : ''
+    const phone = typeof user.phone === 'string' ? user.phone : ''
+    return (
+      (authId && id === authId) ||
+      (authEmail && (email === authEmail || username === authEmail)) ||
+      (authUsername && (email === authUsername || username === authUsername)) ||
+      (emailKey && (email === emailKey || username === emailKey)) ||
+      (phoneKey && phone === phoneKey) ||
+      (authPhone && phone === authPhone)
+    )
+  })
+
+  const nextUsers = [...normalizedUsers]
+  if (targetIndex === -1) {
+    const guestUser = {
+      id: String(activeUser?.id ?? `guest-${Date.now()}`),
+      username: activeUser?.username ?? 'guest',
+      email: emailKey || authEmail || `${Date.now()}@local.test`,
+      phone: phoneKey || authPhone || '',
+      [key]: [value],
+    }
+    nextUsers.push(guestUser)
+  } else {
+    const existing = Array.isArray(nextUsers[targetIndex][key]) ? nextUsers[targetIndex][key] as Array<Record<string, unknown>> : []
+    const nextValue = { ...value }
+    const nextList = existing.some((item) => String((item as { id?: string | number }).id ?? '') === String((nextValue as { id?: string | number }).id ?? ''))
+      ? existing.map((item) => String((item as { id?: string | number }).id ?? '') === String((nextValue as { id?: string | number }).id ?? '') ? { ...item, ...nextValue } : item)
+      : [nextValue, ...existing]
+
+    nextUsers[targetIndex] = {
+      ...nextUsers[targetIndex],
+      [key]: nextList,
+    }
+  }
+
+  const snapshot = getStoredProfileData()
+  window.localStorage.setItem(StorageKeys.USERS, JSON.stringify(nextUsers))
+  window.dispatchEvent(new Event('ezzeta:account-data-changed'))
+  return {
+    ...snapshot,
+    [key]: Array.isArray(snapshot[key]) ? snapshot[key] : [value],
+  }
+}
+
+const updateStoredProfileDataEntry = (key: 'direcciones' | 'metodosPago', id: string | number, nextValue: Record<string, unknown>) => {
+  const usersRaw = window.localStorage.getItem(StorageKeys.USERS)
+  const users = usersRaw ? JSON.parse(usersRaw) as Array<Record<string, unknown>> : []
+  const normalizedUsers = Array.isArray(users) ? users : []
+  const nextUsers = normalizedUsers.map((user) => {
+    const items = Array.isArray(user[key]) ? (user[key] as Array<Record<string, unknown>>) : []
+    const updatedItems = items.map((item) => String((item as { id?: string | number }).id ?? '') === String(id) ? { ...item, ...nextValue, id } : item)
+    return { ...user, [key]: updatedItems }
+  })
 
   window.localStorage.setItem(StorageKeys.USERS, JSON.stringify(nextUsers))
-  return { ...current, [key]: [value, ...(Array.isArray(current[key]) ? current[key] : [])] }
+  window.dispatchEvent(new Event('ezzeta:account-data-changed'))
+}
+
+const deleteStoredProfileDataEntry = (key: 'direcciones' | 'metodosPago', id: string | number) => {
+  const usersRaw = window.localStorage.getItem(StorageKeys.USERS)
+  const users = usersRaw ? JSON.parse(usersRaw) as Array<Record<string, unknown>> : []
+  const normalizedUsers = Array.isArray(users) ? users : []
+  const nextUsers = normalizedUsers.map((user) => {
+    const items = Array.isArray(user[key]) ? (user[key] as Array<Record<string, unknown>>) : []
+    return { ...user, [key]: items.filter((item) => String((item as { id?: string | number }).id ?? '') !== String(id)) }
+  })
+
+  window.localStorage.setItem(StorageKeys.USERS, JSON.stringify(nextUsers))
+  window.dispatchEvent(new Event('ezzeta:account-data-changed'))
 }
 
 const buildProvincias = (department: string) => {
+  if (!department) return []
+
   const seen = new Map<string, { departamento: string; provincia: string; nombre: string }>()
-  UBIGEOS.filter((item) => item.departamento === department && item.distrito === '01').forEach((item) => {
+  UBIGEOS.filter((item) => item.departamento === department && item.provincia !== '00' && item.distrito === '00').forEach((item) => {
     if (!seen.has(item.provincia)) seen.set(item.provincia, { departamento: item.departamento, provincia: item.provincia, nombre: item.nombre })
   })
-  return Array.from(seen.values())
+
+  return Array.from(seen.values()).sort((a, b) => a.nombre.localeCompare(b.nombre))
 }
 
 const buildDistritos = (department: string, province: string) => {
+  if (!department || !province) return []
+
   const seen = new Map<string, { departamento: string; provincia: string; distrito: string; nombre: string }>()
-  UBIGEOS.filter((item) => item.departamento === department && item.provincia === province).forEach((item) => {
+  UBIGEOS.filter((item) => item.departamento === department && item.provincia === province && item.distrito !== '00').forEach((item) => {
     if (!seen.has(item.distrito)) seen.set(item.distrito, item)
   })
-  return Array.from(seen.values())
+
+  return Array.from(seen.values()).sort((a, b) => a.nombre.localeCompare(b.nombre))
 }
 
 function CheckoutPage() {
   const navigate = useNavigate()
   const { items, clearCart, totalPrice } = useCart()
   const { isCustomer, profile } = useAuth()
+  const pricingRules = usePricingRules()
   const [form, setForm] = useState<FormValues>({ ...DEFAULT_VALUES, ...parseStoredCheckout() })
   const [contactSaved, setContactSaved] = useState(false)
   const [paymentSaved, setPaymentSaved] = useState(false)
@@ -250,8 +406,19 @@ function CheckoutPage() {
     }
   }, [appliedCouponCode, form.department, selectedDepartmentName, shippingConfig, totalPrice])
 
+  const comboDiscount = useMemo(() => {
+    const cartItems = items.map((item) => ({
+      productId: Number(item.id),
+      quantity: item.quantity,
+      size: String(item.size || 'Única'),
+    }))
+
+    const comboInfo = detectarCombosEnCarrito(cartItems, getProducts(), pricingRules)
+    return comboInfo.descuentoTotalCombos
+  }, [items, pricingRules])
+
   const shippingCost = shippingResult.shippingAmount ?? 0
-  const subtotalConDescuento = Math.max(0, Number((totalPrice - couponDiscount).toFixed(2)))
+  const subtotalConDescuento = Math.max(0, Number((totalPrice - couponDiscount - comboDiscount).toFixed(2)))
   const checkoutTotal = Number((subtotalConDescuento + shippingCost).toFixed(2))
   const etiquetaEnvio = shippingResult.shippingLabel || (shippingCost === 0 ? 'Gratis' : `S/ ${shippingCost.toFixed(2)}`)
 
@@ -342,9 +509,12 @@ function CheckoutPage() {
       const addressPayload = {
         id: Date.now(),
         nombre: form.locationName || 'Ubicación guardada',
-        departamento: form.department,
-        provincia: form.province,
-        distrito: form.district,
+        departamento: selectedDepartmentName,
+        departamentoCode: form.department,
+        provincia: formatUbigeoCodeName(form.department, form.province),
+        provinciaCode: form.province,
+        distrito: formatUbigeoCodeName(form.department, form.province, form.district),
+        distritoCode: form.district,
         direccion: form.locationText,
         codigo_postal: form.postalCode,
         referencia: form.reference,
@@ -359,6 +529,7 @@ function CheckoutPage() {
     }
 
     setContactSaved(true)
+    setConfirmError('')
   }
 
   const handleSavePayment = () => {
@@ -372,6 +543,7 @@ function CheckoutPage() {
         type: form.paymentMethod,
         ownerName: form.cardOwner,
         cardNumber: form.cardNumber,
+        cardExpiry: form.cardExpiry,
         yapeNumber: form.yapePhone,
         last4: form.cardNumber.replace(/\s/g, '').slice(-4) || '0000',
       }
@@ -384,6 +556,7 @@ function CheckoutPage() {
     }
 
     setPaymentSaved(true)
+    setConfirmError('')
   }
 
   const handleApplyCoupon = () => {
@@ -435,82 +608,82 @@ function CheckoutPage() {
           reference: form.reference,
         })
       }
+
+      const orders = obtenerPedidos()
+      const nextId = orders.reduce((max, order) => Math.max(max, Number(order.id) || 0), 0) + 1
+      const now = new Date().toISOString()
+      const pedido: Pedido = {
+        id: nextId,
+        numeroPedido: `VE-${String(nextId).padStart(6, '0')}`,
+        carritoId: null,
+        cliente: {
+          id: 0,
+          nombre: form.fullName,
+          correo: form.email,
+          telefono: form.phone,
+        },
+        direccion: {
+          departamento: selectedDepartmentName,
+          provincia: formatUbigeoCodeName(form.department, form.province),
+          codigoPostal: form.postalCode,
+          distrito: formatUbigeoCodeName(form.department, form.province, form.district),
+          direccion: form.locationText,
+          referencia: form.reference,
+        },
+        productos: items.map((item) => ({
+          productoId: Number(item.id),
+          slug: String(item.id),
+          nombre: item.name,
+          imagen: item.image,
+          categoria: '',
+          subcategoria: '',
+          talla: item.size || 'Única',
+          cantidad: item.quantity,
+          precioUnitario: item.unitPrice,
+          subtotal: item.unitPrice * item.quantity,
+        })),
+        descuentos: [],
+        subtotal: totalPrice,
+        descuentoTotal: couponDiscount,
+        costoEnvio: shippingCost,
+        total: checkoutTotal,
+        metodoPago: form.paymentMethod,
+        estado: 'pagado',
+        historial: [{ estado: 'pagado', fecha: now }],
+        fechaPedido: now,
+        fechaActualizacion: now,
+      }
+
+      guardarPedidos([...orders, pedido])
+      window.localStorage.setItem(StorageKeys.CHECKOUT, JSON.stringify({
+        name: form.fullName,
+        email: form.email,
+        phone: form.phone,
+        document: form.document,
+        departmentCode: form.department,
+        provinceCode: form.province,
+        districtCode: form.district,
+        address: form.locationText,
+        postalCode: form.postalCode,
+        reference: form.reference,
+        paymentMethod: form.paymentMethod,
+        couponCode: appliedCouponCode,
+        updatedAt: now,
+      }))
+      window.dispatchEvent(new Event('maxeta:pedidos-changed'))
+      clearCart()
+      navigate('/', { state: { purchaseSuccess: true } })
     } catch (error) {
       setConfirmError(error instanceof Error ? error.message : 'No se pudo guardar tus datos.')
+    } finally {
       setConfirmingOrder(false)
-      return
     }
-
-    const storedOrders = window.localStorage.getItem(StorageKeys.PEDIDOS)
-    const orders = storedOrders ? JSON.parse(storedOrders) : []
-    const nextId = Math.max(0, ...orders.map((order: { id?: number }) => Number(order.id) || 0)) + 1
-    const now = new Date().toISOString()
-    const pedido = {
-      id: nextId,
-      numeroPedido: `VE-${String(nextId).padStart(6, '0')}`,
-      carritoId: null,
-      cliente: {
-        id: 0,
-        nombre: form.fullName,
-        correo: form.email,
-        telefono: form.phone,
-        documento: form.document,
-      },
-      direccion: {
-        departamento: selectedDepartmentName,
-        provincia: form.province,
-        codigoPostal: form.postalCode,
-        distrito: form.district,
-        direccion: form.locationText,
-        referencia: form.reference,
-      },
-      productos: items.map((item) => ({
-        productoId: Number(item.id),
-        slug: String(item.id),
-        nombre: item.name,
-        imagen: item.image,
-        categoria: '',
-        subcategoria: '',
-        talla: item.size || 'Única',
-        cantidad: item.quantity,
-        precioUnitario: item.unitPrice,
-        subtotal: item.unitPrice * item.quantity,
-      })),
-      descuentos: [],
-      subtotal: totalPrice,
-      descuentoTotal: couponDiscount,
-      costoEnvio: shippingCost,
-      total: checkoutTotal,
-      metodoPago: form.paymentMethod,
-      estado: 'pagado',
-      historial: [{ estado: 'pagado', fecha: now }],
-      fechaPedido: now,
-      fechaActualizacion: now,
-    }
-
-    window.localStorage.setItem(StorageKeys.PEDIDOS, JSON.stringify([...orders, pedido]))
-    window.localStorage.setItem(StorageKeys.CHECKOUT, JSON.stringify({
-      name: form.fullName,
-      email: form.email,
-      phone: form.phone,
-      document: form.document,
-      departmentCode: form.department,
-      provinceCode: form.province,
-      districtCode: form.district,
-      address: form.locationText,
-      postalCode: form.postalCode,
-      reference: form.reference,
-      paymentMethod: form.paymentMethod,
-      couponCode: appliedCouponCode,
-      updatedAt: now,
-    }))
-    window.dispatchEvent(new Event('maxeta:pedidos-changed'))
-    setConfirmingOrder(false)
-    clearCart()
-    navigate('/', { state: { purchaseSuccess: true } })
   }
 
   const paymentSummary = paymentSaved ? (form.paymentMethod === 'tarjeta' ? `Tarjeta •••• ${form.cardNumber.replace(/\s/g, '').slice(-4) || '0000'}` : `Yape · ${form.yapePhone}`) : undefined
+  const locationLabel = form.department && form.province && form.district
+    ? `${formatUbigeoCodeName(form.department)} / ${formatUbigeoCodeName(form.department, form.province)} / ${formatUbigeoCodeName(form.department, form.province, form.district)}`
+    : `${selectedDepartmentName || form.department} / ${form.province || ''} / ${form.district || ''}`
   const contactSummary = contactSaved ? `${form.fullName} · ${form.locationText} · Ref.: ${form.reference}` : undefined
 
   if (items.length === 0) {
@@ -574,106 +747,146 @@ function CheckoutPage() {
                 </div>
                 <button type="button" onClick={() => setContactSaved(false)} className="text-xs font-bold uppercase tracking-[0.12em] text-vino hover:text-vino-oscuro">Editar</button>
               </div>
-              <div className="grid gap-4 p-5">
-                <div>
-                  <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Nombre completo</label>
-                  <input value={form.fullName} onChange={(event) => updateField('fullName', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.fullName ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Tu nombre" />
-                  {errors.fullName ? <p className="mt-1 text-xs text-red-600">{errors.fullName}</p> : null}
-                </div>
-                <div>
-                  <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Correo electrónico</label>
-                  <input type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.email ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="ejemplo@mail.com" />
-                  {errors.email ? <p className="mt-1 text-xs text-red-600">{errors.email}</p> : null}
-                </div>
-                <div>
-                  <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Teléfono</label>
-                  <input value={form.phone} onChange={(event) => updateField('phone', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.phone ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="+51 9XXXXXXXX" />
-                  {errors.phone ? <p className="mt-1 text-xs text-red-600">{errors.phone}</p> : null}
-                </div>
-                <div>
-                  <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">DNI / RUC / CE</label>
-                  <input value={form.document} onChange={(event) => updateField('document', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.document ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Número de documento" />
-                  {errors.document ? <p className="mt-1 text-xs text-red-600">{errors.document}</p> : null}
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="min-w-0">
-                    <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Departamento</label>
-                    <select value={form.department} onChange={(event) => {
-                      updateField('department', event.target.value)
-                      updateField('province', '')
-                      updateField('district', '')
-                    }} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.department ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
-                      <option value="">Selecciona</option>
-                      {DEPARTAMENTOS.map((item) => (
-                        <option key={item.departamento} value={item.departamento}>{item.nombre}</option>
-                      ))}
-                    </select>
-                    {errors.department ? <p className="mt-1 text-xs text-red-600">{errors.department}</p> : null}
-                  </div>
-
-                  <div className="min-w-0">
-                    <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Provincia</label>
-                    <select value={form.province} onChange={(event) => {
-                      updateField('province', event.target.value)
-                      updateField('district', '')
-                    }} disabled={!form.department} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60 ${errors.province ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
-                      <option value="">Selecciona</option>
-                      {provincias.map((item) => (
-                        <option key={`${item.departamento}-${item.provincia}`} value={item.provincia}>{item.nombre}</option>
-                      ))}
-                    </select>
-                    {errors.province ? <p className="mt-1 text-xs text-red-600">{errors.province}</p> : null}
-                  </div>
-
-                  <div className="min-w-0">
-                    <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Distrito</label>
-                    <select value={form.district} onChange={(event) => updateField('district', event.target.value)} disabled={!form.province} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60 ${errors.district ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
-                      <option value="">Selecciona</option>
-                      {distritos.map((item) => (
-                        <option key={`${item.departamento}-${item.provincia}-${item.distrito}`} value={item.distrito}>{item.nombre}</option>
-                      ))}
-                    </select>
-                    {errors.district ? <p className="mt-1 text-xs text-red-600">{errors.district}</p> : null}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Dirección</label>
-                  <input value={form.locationText} onChange={(event) => updateField('locationText', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.locationText ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Av., jr., calle, número, referencia o interior" />
-                  {errors.locationText ? <p className="mt-1 text-xs text-red-600">{errors.locationText}</p> : null}
-                </div>
-
-                <div className="flex justify-end">
-                  <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-[rgba(125,36,56,0.18)] px-3 py-2.5 text-sm font-semibold text-vino-oscuro">
-                    <input type="checkbox" checked={saveLocation} onChange={(event) => setSaveLocation(event.target.checked)} className="size-4 accent-vino" />
-                    Guardar ubicación
-                  </label>
-                </div>
-
-                {saveLocation ? (
+              {!contactSaved ? (
+                <div className="grid gap-4 p-5">
                   <div>
-                    <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Nombre de la ubicación</label>
-                    <input value={form.locationName} onChange={(event) => updateField('locationName', event.target.value)} className="h-11 w-full rounded-xl border border-[rgba(125,36,56,0.18)] bg-white px-3.5 text-sm outline-none focus:border-vino" placeholder="Ej. Casa o trabajo" />
-                  </div>
-                ) : null}
-
-                {locationMessage ? <p className="text-sm font-semibold text-verde">{locationMessage}</p> : null}
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Código postal</label>
-                    <input value={form.postalCode} onChange={(event) => updateField('postalCode', event.target.value)} className="h-11 w-full rounded-xl border border-[rgba(125,36,56,0.18)] bg-white px-3.5 text-sm outline-none focus:border-vino" placeholder="Ej. 15001" />
+                    <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Nombre completo</label>
+                    <input value={form.fullName} onChange={(event) => updateField('fullName', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.fullName ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Tu nombre" />
+                    {errors.fullName ? <p className="mt-1 text-xs text-red-600">{errors.fullName}</p> : null}
                   </div>
                   <div>
-                    <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Referencia</label>
-                    <input value={form.reference} onChange={(event) => updateField('reference', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.reference ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Ej. frente al parque" />
-                    {errors.reference ? <p className="mt-1 text-xs text-red-600">{errors.reference}</p> : null}
+                    <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Correo electrónico</label>
+                    <input type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.email ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="ejemplo@mail.com" />
+                    {errors.email ? <p className="mt-1 text-xs text-red-600">{errors.email}</p> : null}
                   </div>
-                </div>
+                  <div>
+                    <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Teléfono</label>
+                    <input value={form.phone} onChange={(event) => updateField('phone', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.phone ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="+51 9XXXXXXXX" />
+                    {errors.phone ? <p className="mt-1 text-xs text-red-600">{errors.phone}</p> : null}
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">DNI / RUC / CE</label>
+                    <input value={form.document} onChange={(event) => updateField('document', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.document ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Número de documento" />
+                    {errors.document ? <p className="mt-1 text-xs text-red-600">{errors.document}</p> : null}
+                  </div>
 
-                <Button className={`${BTN_PRIMARIO_CLASS} w-full justify-center sm:w-auto`} onClick={handleSaveContact}>Guardar y continuar</Button>
-              </div>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="min-w-0">
+                      <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Departamento</label>
+                      <select value={form.department} onChange={(event) => {
+                        updateField('department', event.target.value)
+                        updateField('province', '')
+                        updateField('district', '')
+                      }} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.department ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
+                        <option value="">Selecciona</option>
+                        {DEPARTAMENTOS.map((item) => (
+                          <option key={item.departamento} value={item.departamento}>{item.nombre}</option>
+                        ))}
+                      </select>
+                      {errors.department ? <p className="mt-1 text-xs text-red-600">{errors.department}</p> : null}
+                    </div>
+
+                    <div className="min-w-0">
+                      <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Provincia</label>
+                      <select value={form.province} onChange={(event) => {
+                        updateField('province', event.target.value)
+                        updateField('district', '')
+                      }} disabled={!form.department} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60 ${errors.province ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
+                        <option value="">Selecciona</option>
+                        {provincias.map((item) => (
+                          <option key={`${item.departamento}-${item.provincia}`} value={item.provincia}>{item.nombre}</option>
+                        ))}
+                      </select>
+                      {errors.province ? <p className="mt-1 text-xs text-red-600">{errors.province}</p> : null}
+                    </div>
+
+                    <div className="min-w-0">
+                      <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Distrito</label>
+                      <select value={form.district} onChange={(event) => updateField('district', event.target.value)} disabled={!form.province} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60 ${errors.district ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
+                        <option value="">Selecciona</option>
+                        {distritos.map((item) => (
+                          <option key={`${item.departamento}-${item.provincia}-${item.distrito}`} value={item.distrito}>{item.nombre}</option>
+                        ))}
+                      </select>
+                      {errors.district ? <p className="mt-1 text-xs text-red-600">{errors.district}</p> : null}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Dirección</label>
+                    <input value={form.locationText} onChange={(event) => updateField('locationText', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.locationText ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Av., jr., calle, número, referencia o interior" />
+                    {errors.locationText ? <p className="mt-1 text-xs text-red-600">{errors.locationText}</p> : null}
+                  </div>
+
+                  <div className="flex justify-end">
+                    <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-[rgba(125,36,56,0.18)] px-3 py-2.5 text-sm font-semibold text-vino-oscuro">
+                      <input type="checkbox" checked={saveLocation} onChange={(event) => setSaveLocation(event.target.checked)} className="size-4 accent-vino" />
+                      Guardar ubicación
+                    </label>
+                  </div>
+
+                  {saveLocation ? (
+                    <div>
+                      <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Nombre de la ubicación</label>
+                      <input value={form.locationName} onChange={(event) => updateField('locationName', event.target.value)} className="h-11 w-full rounded-xl border border-[rgba(125,36,56,0.18)] bg-white px-3.5 text-sm outline-none focus:border-vino" placeholder="Ej. Casa o trabajo" />
+                    </div>
+                  ) : null}
+
+                  {isCustomer && savedAccount.direcciones.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-vino">Usar dirección guardada</p>
+                      <div className="flex flex-wrap gap-2">
+                        {savedAccount.direcciones.map((direccion, index) => {
+                          const data = getSavedAddressData(direccion as Record<string, unknown>)
+                          return (
+                            <button
+                              key={`${data.locationName || 'direccion'}-${index}`}
+                              type="button"
+                              onClick={() => {
+                                updateField('department', data.department)
+                                updateField('province', data.province)
+                                updateField('district', data.district)
+                                updateField('locationText', data.locationText)
+                                updateField('locationName', data.locationName)
+                                updateField('postalCode', data.postalCode)
+                                updateField('reference', data.reference)
+                                setContactSaved(false)
+                              }}
+                              className="rounded-full border border-vino px-3 py-2 text-xs font-semibold text-vino hover:bg-vino hover:text-crema"
+                            >
+                              {data.locationName || `Dirección ${index + 1}`}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {locationMessage ? <p className="text-sm font-semibold text-verde">{locationMessage}</p> : null}
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Código postal</label>
+                      <input value={form.postalCode} onChange={(event) => updateField('postalCode', event.target.value)} className="h-11 w-full rounded-xl border border-[rgba(125,36,56,0.18)] bg-white px-3.5 text-sm outline-none focus:border-vino" placeholder="Ej. 15001" />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Referencia</label>
+                      <input value={form.reference} onChange={(event) => updateField('reference', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.reference ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Ej. frente al parque" />
+                      {errors.reference ? <p className="mt-1 text-xs text-red-600">{errors.reference}</p> : null}
+                    </div>
+                  </div>
+
+                  <Button className={`${BTN_PRIMARIO_CLASS} w-full justify-center sm:w-auto`} onClick={handleSaveContact}>Guardar y continuar</Button>
+                </div>
+              ) : (
+                <div className="p-5 text-sm text-[#6b4750]">
+                  <p className="font-semibold text-vino-oscuro">Datos de envío guardados</p>
+                  <p className="mt-2">{form.fullName}</p>
+                  <p>{form.locationText}</p>
+                  <p>{locationLabel}</p>
+                  <p className="mt-3 text-xs text-[#7b5e63]">Referencia: {form.reference || 'Sin referencia'}</p>
+                </div>
+              )}
             </section>
 
             <section className="overflow-hidden rounded-[28px] border border-[rgba(125,36,56,0.15)] bg-[#fffdfd] shadow-[0_18px_60px_rgba(80,26,34,0.06)]">
@@ -687,92 +900,106 @@ function CheckoutPage() {
                 </div>
                 <button type="button" onClick={() => setPaymentSaved(false)} className="text-xs font-bold uppercase tracking-[0.12em] text-vino hover:text-vino-oscuro">Editar</button>
               </div>
-              <div className="grid gap-4 p-5">
-                <div className="grid grid-cols-2 gap-3">
-                  {PAYMENT_METHODS.map((method) => {
-                    const active = form.paymentMethod === method.value
-                    const Icon = method.icon
-                    return (
-                      <label key={method.value} className={`flex cursor-pointer flex-col items-center gap-2 rounded-[18px] border px-4 py-5 text-black transition ${active ? 'border-dorado bg-[rgba(247, 57, 57, 0.53)]' : 'border-[rgba(125,36,56,0.16)] bg-[rgb(255, 255, 255)]'}`}>
-                        <Icon className="h-5 w-5" />
-                        <span className="flex items-center gap-2 text-[0.9rem] font-semibold">
-                          <input type="radio" name="paymentMethod" checked={active} onChange={() => updateField('paymentMethod', method.value)} className="accent-vino" />
-                          {method.label}
-                        </span>
-                      </label>
-                    )
-                  })}
+              {!paymentSaved ? (
+                <div className="grid gap-4 p-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    {PAYMENT_METHODS.map((method) => {
+                      const active = form.paymentMethod === method.value
+                      const Icon = method.icon
+                      return (
+                        <label key={method.value} className={`flex cursor-pointer flex-col items-center gap-2 rounded-[18px] border px-4 py-5 text-black transition ${active ? 'border-dorado bg-[rgba(247, 57, 57, 0.53)]' : 'border-[rgba(125,36,56,0.16)] bg-[rgb(255, 255, 255)]'}`}>
+                          <Icon className="h-5 w-5" />
+                          <span className="flex items-center gap-2 text-[0.9rem] font-semibold">
+                            <input type="radio" name="paymentMethod" checked={active} onChange={() => updateField('paymentMethod', method.value)} className="accent-vino" />
+                            {method.label}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+
+                  {isCustomer && savedAccount.metodosPago.length > 0 ? (
+                    <div>
+                      <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-vino">Usar método guardado</p>
+                      <div className="flex flex-wrap gap-2">
+                        {savedAccount.metodosPago.map((method, index) => (
+                          <button type="button" key={`${String(method.type ?? 'pago')}-${index}`} onClick={() => {
+                            if (method.type === 'yape' || method.yapeNumber) {
+                              updateField('paymentMethod', 'yape')
+                              updateField('yapePhone', String(method.yapeNumber ?? ''))
+                              updateField('cardNumber', '')
+                              updateField('cardOwner', '')
+                              updateField('cardExpiry', '')
+                              updateField('cardCvv', '')
+                              return
+                            }
+                            updateField('paymentMethod', 'tarjeta')
+                            updateField('cardOwner', String(method.ownerName ?? ''))
+                            updateField('cardNumber', String(method.cardNumber ?? ''))
+                            updateField('cardExpiry', String(method.cardExpiry ?? ''))
+                            updateField('cardCvv', '')
+                            updateField('yapePhone', '')
+                          }} className="rounded-full border border-vino px-3 py-2 text-xs font-semibold text-vino hover:bg-vino hover:text-crema">
+                            {method.type === 'yape' || method.yapeNumber ? `Yape ${method.yapeNumber ?? ''}` : `Tarjeta •••• ${String(method.last4 ?? '')}`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {isCustomer ? (
+                    <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-vino-oscuro">
+                      <input type="checkbox" checked={savePayment} onChange={(event) => setSavePayment(event.target.checked)} className="size-4 accent-vino" />
+                      Guardar {form.paymentMethod === 'tarjeta' ? 'tarjeta' : 'número de Yape'}
+                    </label>
+                  ) : null}
+
+                  {paymentMessage ? <p className="text-sm font-semibold text-verde">{paymentMessage}</p> : null}
+
+                  {form.paymentMethod === 'tarjeta' ? (
+                    <div className="grid gap-4.5">
+                      <div>
+                        <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Nombre del propietario</label>
+                        <input value={form.cardOwner} onChange={(event) => updateField('cardOwner', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardOwner ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Nombre en la tarjeta" />
+                        {errors.cardOwner ? <p className="mt-1 text-xs text-red-600">{errors.cardOwner}</p> : null}
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Número de tarjeta</label>
+                        <input value={form.cardNumber} onChange={(event) => updateField('cardNumber', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardNumber ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="0000 0000 0000 0000" />
+                        {errors.cardNumber ? <p className="mt-1 text-xs text-red-600">{errors.cardNumber}</p> : null}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Expiración</label>
+                          <input value={form.cardExpiry} onChange={(event) => updateField('cardExpiry', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardExpiry ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="MM/AA" />
+                          {errors.cardExpiry ? <p className="mt-1 text-xs text-red-600">{errors.cardExpiry}</p> : null}
+                        </div>
+                        <div>
+                          <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">CVV</label>
+                          <input value={form.cardCvv} onChange={(event) => updateField('cardCvv', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardCvv ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="123" />
+                          {errors.cardCvv ? <p className="mt-1 text-xs text-red-600">{errors.cardCvv}</p> : null}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4.5">
+                      <div>
+                        <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Número de Yape</label>
+                        <input value={form.yapePhone} onChange={(event) => updateField('yapePhone', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.yapePhone ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="+51 9XXXXXXXX" />
+                        {errors.yapePhone ? <p className="mt-1 text-xs text-red-600">{errors.yapePhone}</p> : null}
+                      </div>
+                      <p className="text-[0.9rem] text-[#7a5560]">En este flujo simulado, recibirás la confirmación por WhatsApp.</p>
+                    </div>
+                  )}
+
+                  <Button className={`${BTN_PRIMARIO_CLASS} w-full justify-center sm:w-auto`} onClick={handleSavePayment}>Guardar método de pago</Button>
                 </div>
-
-                {isCustomer && savedAccount.metodosPago.length > 0 ? (
-                  <div>
-                    <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-vino">Usar método guardado</p>
-                    <div className="flex flex-wrap gap-2">
-                      {savedAccount.metodosPago.map((method, index) => (
-                        <button type="button" key={`${String(method.type ?? 'pago')}-${index}`} onClick={() => {
-                          if (method.type === 'yape' || method.yapeNumber) {
-                            updateField('paymentMethod', 'yape')
-                            updateField('yapePhone', String(method.yapeNumber ?? ''))
-                            return
-                          }
-                          updateField('paymentMethod', 'tarjeta')
-                          updateField('cardOwner', String(method.ownerName ?? ''))
-                          updateField('cardNumber', String(method.cardNumber ?? ''))
-                        }} className="rounded-full border border-vino px-3 py-2 text-xs font-semibold text-vino hover:bg-vino hover:text-crema">
-                          {method.type === 'yape' || method.yapeNumber ? `Yape ${method.yapeNumber ?? ''}` : `Tarjeta •••• ${String(method.last4 ?? '')}`}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {isCustomer ? (
-                  <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-vino-oscuro">
-                    <input type="checkbox" checked={savePayment} onChange={(event) => setSavePayment(event.target.checked)} className="size-4 accent-vino" />
-                    Guardar {form.paymentMethod === 'tarjeta' ? 'tarjeta' : 'número de Yape'}
-                  </label>
-                ) : null}
-
-                {paymentMessage ? <p className="text-sm font-semibold text-verde">{paymentMessage}</p> : null}
-
-                {form.paymentMethod === 'tarjeta' ? (
-                  <div className="grid gap-4.5">
-                    <div>
-                      <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Nombre del propietario</label>
-                      <input value={form.cardOwner} onChange={(event) => updateField('cardOwner', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardOwner ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Nombre en la tarjeta" />
-                      {errors.cardOwner ? <p className="mt-1 text-xs text-red-600">{errors.cardOwner}</p> : null}
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Número de tarjeta</label>
-                      <input value={form.cardNumber} onChange={(event) => updateField('cardNumber', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardNumber ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="0000 0000 0000 0000" />
-                      {errors.cardNumber ? <p className="mt-1 text-xs text-red-600">{errors.cardNumber}</p> : null}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Expiración</label>
-                        <input value={form.cardExpiry} onChange={(event) => updateField('cardExpiry', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardExpiry ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="MM/AA" />
-                        {errors.cardExpiry ? <p className="mt-1 text-xs text-red-600">{errors.cardExpiry}</p> : null}
-                      </div>
-                      <div>
-                        <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">CVV</label>
-                        <input value={form.cardCvv} onChange={(event) => updateField('cardCvv', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardCvv ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="123" />
-                        {errors.cardCvv ? <p className="mt-1 text-xs text-red-600">{errors.cardCvv}</p> : null}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid gap-4.5">
-                    <div>
-                      <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Número de Yape</label>
-                      <input value={form.yapePhone} onChange={(event) => updateField('yapePhone', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.yapePhone ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="+51 9XXXXXXXX" />
-                      {errors.yapePhone ? <p className="mt-1 text-xs text-red-600">{errors.yapePhone}</p> : null}
-                    </div>
-                    <p className="text-[0.9rem] text-[#7a5560]">En este flujo simulado, recibirás la confirmación por WhatsApp.</p>
-                  </div>
-                )}
-
-                <Button className={`${BTN_PRIMARIO_CLASS} w-full justify-center sm:w-auto`} onClick={handleSavePayment}>Guardar método de pago</Button>
-              </div>
+              ) : (
+                <div className="p-5 text-sm text-[#6b4750]">
+                  <p className="font-semibold text-vino-oscuro">Método de pago guardado</p>
+                  <p className="mt-2">{form.paymentMethod === 'tarjeta' ? `Tarjeta •••• ${form.cardNumber.replace(/\s/g, '').slice(-4) || '0000'}` : `Yape · ${form.yapePhone}`}</p>
+                </div>
+              )}
             </section>
           </div>
 
@@ -820,7 +1047,8 @@ function CheckoutPage() {
 
             <div className="mt-5 space-y-3 text-sm text-[#6b4750]">
               <div className="flex justify-between"><span>Subtotal</span><span>S/ {totalPrice.toFixed(2)}</span></div>
-              {couponDiscount > 0 ? <div className="flex justify-between text-green-600"><span>Descuento</span><span>-S/ {couponDiscount.toFixed(2)}</span></div> : null}
+              {couponDiscount > 0 ? <div className="flex justify-between text-green-600"><span>Descuento cupón</span><span>-S/ {couponDiscount.toFixed(2)}</span></div> : null}
+              {comboDiscount > 0 ? <div className="flex justify-between text-green-600"><span>Descuento combo</span><span>-S/ {comboDiscount.toFixed(2)}</span></div> : null}
               <div className="flex justify-between"><span>Envío</span><span>{etiquetaEnvio}</span></div>
               <div className="flex justify-between"><span>Departamento</span><span>{selectedDepartmentName || 'Sin seleccionar'}</span></div>
             </div>

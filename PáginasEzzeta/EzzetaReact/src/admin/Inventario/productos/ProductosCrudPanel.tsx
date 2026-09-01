@@ -1,15 +1,19 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useProductos } from './hooks/useProductos';
 import { useClasificaciones } from './hooks/useClasificaciones';
 import { TablaProductos } from './componentes/TablaProductos';
 import { ModalProducto } from './ModalProducto';
 import { ClasificacionesAdministrativas } from './componentes/ClasificacionesAdministrativas';
 import type { PermissionAccess } from '../../hooks/usePermissions';
+import { PaginacionClientes } from '../../componentes/Paginacion';
 
 type ProductosCrudPanelProps = {
     access: PermissionAccess;
 };
 
 export const ProductosCrudPanel = ({ access }: ProductosCrudPanelProps) => {
+    const [paginaActual, setPaginaActual] = useState(1);
+    const elementosPorPagina = 10;
     const {
         productos,
         productosFiltrados,
@@ -40,6 +44,17 @@ export const ProductosCrudPanel = ({ access }: ProductosCrudPanelProps) => {
         eliminarBeneficio,
         eliminarTalla,
     } = useClasificaciones();
+
+    useEffect(() => {
+        setPaginaActual(1);
+    }, [busqueda, productosFiltrados.length]);
+
+    const paginaProductos = useMemo(() => {
+        const inicio = (paginaActual - 1) * elementosPorPagina;
+        return productosFiltrados.slice(inicio, inicio + elementosPorPagina);
+    }, [paginaActual, productosFiltrados]);
+
+    const paginaTope = Math.max(1, Math.ceil(productosFiltrados.length / elementosPorPagina));
 
     return (
         <section className="mx-auto max-w-7xl space-y-3">
@@ -85,10 +100,16 @@ export const ProductosCrudPanel = ({ access }: ProductosCrudPanelProps) => {
 
             <TablaProductos
                 productosTotales={productos}
-                productos={productosFiltrados}
+                productos={paginaProductos}
                 editar={abrirEdicion}
                 cambiarEstado={cambiarEstadoProducto}
                 eliminar={borrarProducto}
+            />
+
+            <PaginacionClientes
+                paginaActual={paginaActual}
+                paginaTope={paginaTope}
+                onPaginaChange={setPaginaActual}
             />
 
             {

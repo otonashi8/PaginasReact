@@ -41,10 +41,30 @@ export type ClasificacionesProductos = {
 };
 
 export const crearGuiaTallasBase = (): GuiaTallasSubcategoria => ({
-    columnas: ['S', 'M', 'L', 'XL'],
+    columnas: ['Talla', 'Largo', 'Ancho', 'Ancho hombro', 'Hombro a hombro', 'Diámetro manga'],
     filas: [
-        { etiqueta: 'Ancho', valores: { S: '', M: '', L: '', XL: '' } },
-        { etiqueta: 'Largo', valores: { S: '', M: '', L: '', XL: '' } },
+        {
+            etiqueta: 'S',
+            valores: {
+                Talla: 'S',
+                Largo: '',
+                Ancho: '',
+                'Ancho hombro': '',
+                'Hombro a hombro': '',
+                'Diámetro manga': '',
+            },
+        },
+        {
+            etiqueta: 'M',
+            valores: {
+                Talla: 'M',
+                Largo: '',
+                Ancho: '',
+                'Ancho hombro': '',
+                'Hombro a hombro': '',
+                'Diámetro manga': '',
+            },
+        },
     ],
     mensajeSecundario: '',
 });
@@ -81,6 +101,11 @@ export const beneficiosDisponibles: string[] = [...clasificacionesIniciales.bene
 export const inferirTipoTalla = (valor: string): TallaTipo => {
     const tallaNormalizada = normalizarTexto(String(valor ?? ''));
     return tallaNormalizada !== '' && /^\d/.test(tallaNormalizada) ? 'numeros' : 'letras';
+};
+
+export const estaTallaAgotada = (talla: string, tallasStock?: Partial<Record<string, number>>): boolean => {
+    const cantidad = Number(tallasStock?.[talla] ?? 0);
+    return !Number.isFinite(cantidad) || cantidad <= 0;
 };
 
 export const obtenerTallasPorTipo = (tipo?: TallaTipo): string[] => {
@@ -480,6 +505,7 @@ export const productoVacio:Producto={
     precioAnterior:0,
     imagen:'',
     miniImagenes:[],
+    colores:[],
     stock:0,
     tallas:[],
     tallasStock:{},
@@ -523,6 +549,7 @@ const mapearProductoCatalogo = (producto: ReturnType<typeof getProducts>[number]
         destacado: Boolean(producto.featured),
         relacionados: Array.isArray(producto.relatedIds) ? (producto.relatedIds as number[]).filter((id) => Number.isFinite(id)) : [],
         extras: Array.isArray(producto.extras) ? (producto.extras as string[]).filter(Boolean) : [],
+        colores: Array.isArray(producto.colors) ? (producto.colors as string[]).filter(Boolean) : [],
         activo: producto.activo !== false,
         fechaCreacion: '',
         fechaActualizacion: '',
@@ -557,6 +584,7 @@ export function obtenerProductos():Producto[]{
                 precioAnterior: Number.isFinite(producto.precioAnterior) ? producto.precioAnterior : productoBase.precioAnterior,
                 imagen: producto.imagen || productoBase.imagen,
                 miniImagenes: producto.miniImagenes?.length ? producto.miniImagenes : productoBase.miniImagenes,
+                colores: producto.colores?.length ? producto.colores : productoBase.colores,
                 tallas: producto.tallas?.length ? producto.tallas : productoBase.tallas,
                 tallasStock: Object.keys(producto.tallasStock ?? {}).length ? producto.tallasStock : productoBase.tallasStock,
                 destacado: producto.destacado ?? productoBase.destacado,
@@ -570,7 +598,31 @@ export function obtenerProductos():Producto[]{
         mapa.set(producto.id, producto);
     });
 
-    return Array.from(mapa.values()).map(normalizarProducto);
+    const productosFinal = Array.from(mapa.values()).map(normalizarProducto);
+
+    // Migración: si algún producto no tiene colores persistidos, copiar desde el catálogo
+    try {
+        const catalog = getProducts();
+        const catalogMap = new Map<number, string[]>(catalog.map((p) => [Number(p.id), Array.isArray((p as any).colors) ? ((p as any).colors as string[]).filter(Boolean) : []]));
+        let changed = false;
+
+        productosFinal.forEach((p) => {
+            const hasColors = Array.isArray(p.colores) && p.colores.length > 0;
+            const catalogColors = catalogMap.get(p.id) ?? [];
+            if (!hasColors && catalogColors.length) {
+                p.colores = catalogColors;
+                changed = true;
+            }
+        });
+
+        if (changed) {
+            guardarProductos(productosFinal);
+        }
+    } catch {
+        // ignore migration errors
+    }
+
+    return productosFinal;
 }
 
 export function guardarProductos(productos:Producto[]){

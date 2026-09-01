@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { PermissionAccess } from '../../hooks/usePermissions';
+import { PaginacionClientes } from '../../componentes/Paginacion';
 import type { ConfiguracionEnvio, TarifaEnvio } from './TiposEnvio';
 import {
   crearTarifaEnvio,
@@ -141,6 +142,8 @@ const useEnvioCrud = () => {
 };
 
 export const EnvioCrudPanel = ({ access }: { access: PermissionAccess }) => {
+  const [paginaActual, setPaginaActual] = useState(1);
+  const elementosPorPagina = 10;
   const {
     configuracion,
     tarifasOrdenadas,
@@ -157,6 +160,13 @@ export const EnvioCrudPanel = ({ access }: { access: PermissionAccess }) => {
     comenzarEdicion,
     borrarTarifa,
   } = useEnvioCrud();
+
+  const paginaTarifas = useMemo(() => {
+    const inicio = (paginaActual - 1) * elementosPorPagina;
+    return tarifasOrdenadas.slice(inicio, inicio + elementosPorPagina);
+  }, [paginaActual, tarifasOrdenadas]);
+
+  const paginaTope = Math.max(1, Math.ceil(tarifasOrdenadas.length / elementosPorPagina));
 
   const puedeEditar = Boolean(access.actions.update);
   const puedeCrear = Boolean(access.actions.create);
@@ -297,12 +307,12 @@ export const EnvioCrudPanel = ({ access }: { access: PermissionAccess }) => {
                 </tr>
               </thead>
               <tbody>
-                {tarifasOrdenadas.length === 0 ? (
+                {paginaTarifas.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="px-4 py-8 text-center text-zinc-500">No hay tarifas registradas.</td>
                   </tr>
                 ) : (
-                  tarifasOrdenadas.map((tarifa) => (
+                  paginaTarifas.map((tarifa) => (
                     <tr key={tarifa.id} className="border-t border-zinc-200 hover:bg-zinc-50">
                       <td className="px-4 py-3 font-semibold tracking-[0.01em]">{tarifa.ubicacion}</td>
                       <td className="px-4 py-3">{formatoMoneda(tarifa.costo)}</td>
@@ -333,6 +343,11 @@ export const EnvioCrudPanel = ({ access }: { access: PermissionAccess }) => {
           </div>
         </div>
       </div>
+      <PaginacionClientes
+        paginaActual={paginaActual}
+        paginaTope={paginaTope}
+        onPaginaChange={setPaginaActual}
+      />
     </div>
   );
 };

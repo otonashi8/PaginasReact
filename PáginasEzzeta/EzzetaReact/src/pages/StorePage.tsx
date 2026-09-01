@@ -295,23 +295,6 @@ export const StorePage = () => {
                 Explora piezas esenciales con una estética contemporánea y sofisticada.
               </p>
             </div>
-
-            <div className="grid gap-3 sm:grid-cols-3 lg:w-[32rem]">
-              <div className="rounded-2xl border border-black/8 bg-zinc-50 px-4 py-3">
-                <p className="text-[0.68rem] uppercase tracking-[0.28em] text-black/45">Productos</p>
-                <p className="mt-1 text-xl font-semibold tracking-[-0.04em] text-black">{filteredProducts.length}</p>
-              </div>
-              <div className="rounded-2xl border border-black/8 bg-zinc-50 px-4 py-3">
-                <p className="text-[0.68rem] uppercase tracking-[0.28em] text-black/45">Página</p>
-                <p className="mt-1 text-xl font-semibold tracking-[-0.04em] text-black">{currentPage} / {pageCount}</p>
-              </div>
-              <div className="rounded-2xl border border-black/8 bg-zinc-50 px-4 py-3">
-                <p className="text-[0.68rem] uppercase tracking-[0.28em] text-black/45">Orden</p>
-                <p className="mt-1 text-lg font-medium text-black">
-                  {sortBy === 'ultimos' ? 'Últimos' : sortBy === 'popularidad' ? 'Popularidad' : 'Vista'}
-                </p>
-              </div>
-            </div>
           </div>
         </motion.header>
 
@@ -336,16 +319,6 @@ export const StorePage = () => {
                     Filtros
                   </button>
                   <label className="sr-only" htmlFor="store-sort">Ordenar productos</label>
-                  <select
-                    id="store-sort"
-                    value={sortBy}
-                    onChange={(event) => setSortBy(event.target.value as SortOption)}
-                    className="w-full rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black outline-none transition duration-300 hover:border-black/25 hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] sm:w-auto sm:min-w-40"
-                  >
-                    <option value="ultimos">Últimos</option>
-                    <option value="popularidad">Popularidad</option>
-                    <option value="vista">Vista</option>
-                  </select>
                   <div className="inline-flex w-full items-stretch overflow-hidden rounded-full border border-black/10 bg-white sm:w-auto">
                     {[1, 2, 3, 4].map((cols) => (
                       <button
@@ -369,7 +342,6 @@ export const StorePage = () => {
                 </div>
               </div>
             </motion.div>
-
             {filteredProducts.length === 0 ? (
               <div className="rounded-[1.75rem] border border-black/10 bg-zinc-50 p-8 text-sm text-black/70 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
                 No hay productos que coincidan con los filtros seleccionados.

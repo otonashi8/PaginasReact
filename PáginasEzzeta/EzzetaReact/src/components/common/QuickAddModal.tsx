@@ -23,8 +23,95 @@ const normalizeText = (value: string) =>
     .replace(/[\u0300-\u036f]/g, '')
     .trim();
 
+// Detects if a string is a valid CSS color format we support (hex, rgb/rgba, hsl/hsla)
+const isCssColor = (value: string) => {
+  const v = value.trim();
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(v)) return true;
+  if (/^rgb\(/i.test(v) || /^rgba\(/i.test(v)) return true;
+  if (/^hsl\(/i.test(v) || /^hsla\(/i.test(v)) return true;
+  // allow simple "r,g,b" or "r, g, b"
+  if (/^\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*$/.test(v)) return true;
+  return false;
+};
+
+const hexToRgb = (hex: string) => {
+  const h = hex.replace('#', '');
+  const hexNormalized = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const bigint = parseInt(hexNormalized, 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
+  };
+};
+
+const parseRgbString = (input: string) => {
+  const v = input.trim();
+  const rgbMatch = v.match(/rgba?\(([^)]+)\)/i);
+  if (rgbMatch) {
+    const parts = rgbMatch[1].split(',').slice(0, 3).map((p) => Number(p.trim()));
+    return { r: parts[0], g: parts[1], b: parts[2] };
+  }
+
+  const simple = v.split(',').map((p) => Number(p.trim()));
+  if (simple.length === 3 && simple.every((n) => !Number.isNaN(n))) {
+    return { r: simple[0], g: simple[1], b: simple[2] };
+  }
+
+  const hexMatch = v.match(/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i);
+  if (hexMatch) return hexToRgb(v);
+
+  return null;
+};
+
+const getContrastTextColor = (bgColor: string) => {
+  const rgb = parseRgbString(bgColor) || (/#/.test(bgColor) ? hexToRgb(bgColor) : null);
+  if (!rgb) return '#000';
+
+  // relative luminance
+  const srgb = [rgb.r, rgb.g, rgb.b].map((c) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  const lum = 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+  return lum > 0.5 ? '#000' : '#fff';
+};
+
+const colorFromLetter = (letter: string) => {
+  const code = letter.toUpperCase().charCodeAt(0);
+  // generate hue based on char code
+  const hue = (code * 37) % 360;
+  return `hsl(${hue} 60% 55%)`;
+};
+
+const parseColorEntry = (entry: string) => {
+  const parts = (entry ?? '').split('|');
+  if (parts.length > 1) {
+    const label = parts[0].trim();
+    const value = parts.slice(1).join('|').trim();
+    return { label: label || undefined, value: value || undefined, original: entry };
+  }
+
+  const v = (entry ?? '').trim();
+  return { label: undefined, value: v || undefined, original: entry };
+};
+
+// Resolve a color value provided in product data.
+// Supports: direct CSS colors (hex, rgb, hsl), simple "r,g,b", or named values falling back to a default.
 const getColorValue = (colorName: string) => {
-  const normalized = colorName.toLowerCase().trim();
+  const raw = (colorName ?? '').trim();
+  if (!raw) return '#d6d3d1';
+
+  const parsed = parseColorEntry(raw);
+  const value = parsed.value ?? '';
+
+  if (!value) return '#d6d3d1';
+
+  if (isCssColor(value)) {
+    return value;
+  }
+
+  const normalized = value.toLowerCase();
 
   if (normalized.includes('verde')) return '#7c9b69';
   if (normalized.includes('negro') || normalized.includes('black')) return '#111111';
@@ -35,9 +122,12 @@ const getColorValue = (colorName: string) => {
   if (normalized.includes('azul') || normalized.includes('blue') || normalized.includes('ice')) return '#7aa6c8';
   if (normalized.includes('rojo') || normalized.includes('red')) return '#d84d4d';
   if (normalized.includes('perla')) return '#e7e1d7';
-  if (normalized.includes('gargola') || normalized.includes('gárgola')) return '#c5a27d';
+  if (normalized.includes('gargola') || normalized.includes('g\u00e1rgola')) return '#c5a27d';
   if (normalized.includes('melange')) return '#d6c9b6';
   if (normalized.includes('acero')) return '#8d8f96';
+
+  // If it's a single letter, generate a color from it
+  if (/^[a-zA-Z]$/.test(value)) return colorFromLetter(value);
 
   return '#d6d3d1';
 };
@@ -110,6 +200,14 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
     () => Array.from(new Set(variantOptions.map((option) => option.color))),
     [variantOptions],
   );
+  const availableSizes = useMemo(() => {
+    if (!currentProduct) return [] as string[];
+
+    return currentProduct.sizes.filter((size) => {
+      const stock = Number(currentProduct.sizesStock?.[size] ?? 0);
+      return !Number.isFinite(stock) || stock > 0;
+    });
+  }, [currentProduct]);
   const [selSize, setSelSize] = useState<string>(initialSize ?? product?.sizes?.[0] ?? 'M');
 
   useEffect(() => {
@@ -121,8 +219,13 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
     }
 
     const nextColor = variantOptions.find((variant) => variant.product.id === product.id)?.color ?? variantOptions[0]?.color ?? getVariantColor(product);
+    const nextAvailableSize = product.sizes.find((size) => {
+      const stock = Number(product.sizesStock?.[size] ?? 0);
+      return !Number.isFinite(stock) || stock > 0;
+    }) ?? product.sizes[0] ?? 'M';
+
     setSelColor(nextColor);
-    setSelSize(initialSize ?? product.sizes[0] ?? 'M');
+    setSelSize(initialSize ?? nextAvailableSize);
   }, [product, initialSize, variantOptions]);
 
   useEffect(() => {
@@ -130,8 +233,13 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
       return;
     }
 
+    const nextAvailableSize = currentProduct.sizes.find((size) => {
+      const stock = Number(currentProduct.sizesStock?.[size] ?? 0);
+      return !Number.isFinite(stock) || stock > 0;
+    }) ?? currentProduct.sizes[0] ?? 'M';
+
     setQuantity(1);
-    setSelSize(initialSize ?? currentProduct.sizes[0] ?? 'M');
+    setSelSize(initialSize ?? nextAvailableSize);
   }, [isOpen, currentProduct, initialSize, setQuantity]);
 
   if (!product || !currentProduct) {
@@ -141,14 +249,21 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
   const handleColorChange = (color: string) => {
     const variant = variantOptions.find((option) => normalizeText(option.color) === normalizeText(color));
     if (variant) {
+      const firstAvailableSize = variant.product.sizes.find((size) => {
+        const stock = Number(variant.product.sizesStock?.[size] ?? 0);
+        return !Number.isFinite(stock) || stock > 0;
+      }) ?? variant.product.sizes[0] ?? 'M';
+
       setCurrentProduct(variant.product);
       setSelColor(variant.color);
-      setSelSize(initialSize ?? variant.product.sizes[0] ?? 'M');
+      setSelSize(initialSize ?? firstAvailableSize);
       return;
     }
 
     setSelColor(color);
   };
+
+  const selectedSizeIsAvailable = !availableSizes.length || availableSizes.includes(selSize);
 
   return (
     <AnimatePresence>
@@ -158,24 +273,24 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.22, ease: 'easeOut' }}
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/35 p-3 backdrop-blur-[2px] sm:p-5"
+          className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/35 p-2 backdrop-blur-[2px] sm:items-center sm:p-5"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 14 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full max-w-4xl overflow-hidden rounded-[1.75rem] border border-zinc-200/90 bg-white shadow-[0_26px_70px_rgba(0,0,0,0.16)]"
+            className="my-0 w-full max-w-4xl max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-2xl border border-zinc-200/90 bg-white shadow-[0_26px_70px_rgba(0,0,0,0.16)] sm:my-4 sm:max-h-[92dvh] sm:rounded-[1.75rem]"
           >
             <div className="grid md:grid-cols-[1.05fr_0.95fr]">
               <div className="relative border-b border-zinc-100 bg-zinc-50 md:border-b-0 md:border-r">
-                <img src={currentProduct.image} alt={currentProduct.name} className="h-64 w-full object-contain p-6 sm:h-72 md:h-full md:min-h-[520px] md:p-8" />
-                <div className="absolute left-4 top-4 rounded-full border border-zinc-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-black/70 backdrop-blur">
+                <img src={currentProduct.image} alt={currentProduct.name} className="h-48 w-full object-contain p-4 sm:h-72 sm:p-6 md:h-full md:min-h-[520px] md:p-8" />
+                <div className="absolute left-3 top-3 rounded-full border border-zinc-200 bg-white/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.15em] text-black/70 backdrop-blur sm:left-4 sm:top-4 sm:px-3 sm:text-[10px] sm:tracking-[0.2em]">
                   Compra Rápida
                 </div>
               </div>
 
-              <div className="flex flex-col p-5 sm:p-6 md:p-7">
+              <div className="flex flex-col p-4 sm:p-6 md:p-7">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.2em] text-black/50">Seleccionado</p>
@@ -205,12 +320,19 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-5">
+                <div className="mt-5 grid gap-4 sm:mt-6 sm:gap-5">
                   <div>
                     <label className="text-xs font-medium uppercase tracking-[0.16em] text-black/60">Color</label>
                     <div className="mt-3 flex flex-wrap gap-2.5">
                       {availableColors.map((color) => {
                         const isSelected = color === selColor;
+                        const parsed = parseColorEntry(color);
+                        const label = parsed.label;
+                        const value = parsed.value ?? '';
+                        const displayChar = label && /^[a-zA-Z]$/.test(label) ? label : (/^[a-zA-Z]$/.test(value) ? value : undefined);
+                        const bg = isCssColor(value) ? value : getColorValue(color);
+                        const fg = displayChar ? getContrastTextColor(bg) : undefined;
+                        const titleText = label ?? value ?? parsed.original ?? color;
 
                         return (
                           <button
@@ -218,13 +340,15 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                             type="button"
                             onClick={() => handleColorChange(color)}
                             className={`flex items-center gap-2 rounded-xl border px-2.5 py-2 transition ${isSelected ? 'border-black bg-zinc-50 shadow-[0_0_0_1px_rgba(0,0,0,0.12)]' : 'border-zinc-200 bg-white hover:border-zinc-400'}`}
-                            aria-label={`Seleccionar color ${color}`}
+                            aria-label={`Seleccionar color ${titleText}`}
+                            title={titleText}
                           >
                             <span
-                              className="h-5 w-5 rounded-full border border-black/10"
-                              style={{ backgroundColor: getColorValue(color) }}
-                            />
-                            <span className="text-xs font-medium uppercase tracking-[0.12em] text-black/75">{color}</span>
+                              className="h-5 w-5 rounded-full border border-black/10 flex items-center justify-center text-xs font-semibold"
+                              style={{ backgroundColor: bg, color: fg }}
+                            >
+                              {displayChar ? displayChar.toUpperCase() : null}
+                            </span>
                           </button>
                         );
                       })}
@@ -234,13 +358,18 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                   <div>
                     <label className="text-xs font-medium uppercase tracking-[0.16em] text-black/60">Talla</label>
                     <select
-                      value={selSize}
+                      value={availableSizes.includes(selSize) ? selSize : (availableSizes[0] ?? '')}
                       onChange={(e) => setSelSize(e.target.value)}
                       className="mt-2 h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-black outline-none transition focus:border-zinc-400"
+                      disabled={!availableSizes.length}
                     >
-                      {currentProduct.sizes.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
+                      {availableSizes.length ? (
+                        availableSizes.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))
+                      ) : (
+                        <option value="">Sin tallas disponibles</option>
+                      )}
                     </select>
                   </div>
 
@@ -280,15 +409,20 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="mt-5 grid gap-3 sm:mt-6 sm:grid-cols-2">
                   <PermissionGate permission={PERMISSIONS.salesCreate}>
                     <button
                       type="button"
                       onClick={() => {
+                        if (!availableSizes.length || !availableSizes.includes(selSize)) {
+                          return;
+                        }
+
                         addToCart(currentProduct.id, selSize, quantity);
                         onClose();
                       }}
-                      className="inline-flex h-12 items-center justify-center rounded-xl bg-black px-5 text-sm font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
+                      disabled={!selectedSizeIsAvailable}
+                      className="inline-flex h-12 items-center justify-center rounded-xl bg-black px-5 text-sm font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
                     >
                       Agregar
                     </button>
@@ -300,10 +434,6 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                   >
                     Cancelar
                   </button>
-                </div>
-
-                <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs uppercase tracking-[0.16em] text-black/60">
-                  {selColor} · {selSize}
                 </div>
               </div>
             </div>

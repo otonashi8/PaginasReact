@@ -66,11 +66,12 @@ export const RecommendationsPage = () => {
     };
 
   return (
-    <section className="space-y-8 rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm sm:p-8">
-      <header className="space-y-3">
-        <p className="text-sm uppercase tracking-[0.3em] text-black/60">Legal</p>
-        <h1 className="text-2xl font-semibold uppercase tracking-[0.2em] text-black sm:text-3xl">LIBRO DE RECLAMACIONES VIRTUAL</h1>
-      </header>
+    <div className="mx-auto w-full max-w-7xl">
+      <section className="space-y-8 rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm sm:p-8">
+        <header className="space-y-3">
+          <p className="text-sm uppercase tracking-[0.3em] text-black/60">Legal</p>
+          <h1 className="text-2xl font-semibold uppercase tracking-[0.2em] text-black sm:text-3xl">LIBRO DE RECLAMACIONES VIRTUAL</h1>
+        </header>
 
       <article className="rounded-[1.25rem] border border-black/10 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-black">Informacion de la empresa</h2>
@@ -233,6 +234,7 @@ export const RecommendationsPage = () => {
             </div>
           )}
         </div>
-    </section>
+      </section>
+    </div>
   );
 };

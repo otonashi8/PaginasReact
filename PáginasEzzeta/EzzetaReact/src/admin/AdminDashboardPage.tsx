@@ -210,7 +210,7 @@ export const AdminDashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-zinc-100">
-      <div className="grid w-full max-w-[1600px] gap-1 p-4 md:grid-cols-[300px_1fr] md:p-2">
+      <div className="grid w-full max-w-[1600px] gap-1 p-4 md:grid-cols-[200px_1fr] md:p-2">
         <aside className="rounded-none border border-zinc-200 bg-white p-2 shadow-sm">
           <div className="mb-4 flex items-center justify-between border-b border-zinc-200 pb-4">
             <div>

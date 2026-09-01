@@ -1,20 +1,42 @@
 import { useSyncExternalStore } from 'react';
 import type { Product } from '../types';
-import { obtenerReglas } from '../admin/Sistema/reglas-precios/DatosReglas';
-import { StorageKeys } from '../storage';
+import { StorageKeys, storageManager } from '../storage';
 import { aplicarReglas } from '../admin/Sistema/reglas-precios/motor/aplicarReglas';
 import { aplicarCarrito } from '../admin/Sistema/reglas-precios/motor/aplicarCarrito';
 import { detectarCombo } from '../admin/Sistema/reglas-precios/motor/aplicarCombo';
 import type { ReglaPrecio } from '../admin/Sistema/reglas-precios/TiposReglas';
 
+const readStoredPricingRules = (): ReglaPrecio[] => {
+  const stored = storageManager.get<unknown>(StorageKeys.REGLAS_PRECIOS);
+
+  if (Array.isArray(stored)) {
+    return stored as ReglaPrecio[];
+  }
+
+  if (typeof stored === 'string') {
+    try {
+      const parsed = JSON.parse(stored) as unknown;
+      return Array.isArray(parsed) ? (parsed as ReglaPrecio[]) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  if (stored && typeof stored === 'object' && Array.isArray((stored as { items?: unknown[] }).items)) {
+    return (stored as { items: ReglaPrecio[] }).items;
+  }
+
+  return [];
+};
+
 export const PRICING_RULES_EVENT = 'maxeta:pricing-rules-changed';
 let pricingRulesVersion = 0;
-let pricingRulesSnapshot = obtenerReglas();
+let pricingRulesSnapshot = readStoredPricingRules();
 let pricingRulesListeners = new Set<() => void>();
 let pricingRulesListenersInstalled = false;
 
 const notifyPricingRulesListeners = () => {
-  pricingRulesSnapshot = obtenerReglas();
+  pricingRulesSnapshot = readStoredPricingRules();
   pricingRulesVersion += 1;
   pricingRulesListeners.forEach((listener) => listener());
 };
@@ -123,7 +145,7 @@ const buildProductMotorInput = (product: Product) => ({
   fechaActualizacion: '',
 });
 
-export const resolveProductPrice = (product: Product, contexto: Record<string, unknown> = {}, reglas = obtenerReglas()): ProductPriceSummary => {
+export const resolveProductPrice = (product: Product, contexto: Record<string, unknown> = {}, reglas = readStoredPricingRules()): ProductPriceSummary => {
   const resultado = aplicarReglas(buildProductMotorInput(product) as never, {
     ...contexto,
     reglas,
@@ -151,6 +173,28 @@ export const resolveProductPrice = (product: Product, contexto: Record<string, u
   };
 };
 
+export const getCheckoutLinePricing = (
+  product: Product,
+  quantity: number,
+  contexto: Record<string, unknown> = {},
+  reglas: ReglaPrecio[] = readStoredPricingRules(),
+) => {
+  const pricing = resolveProductPrice(product, { ...contexto, cantidad: quantity }, reglas);
+  const unitPrice = Number.isFinite(pricing.precioFinal) ? Number(pricing.precioFinal) : Number(product.price ?? 0);
+  const originalUnitPrice = Number.isFinite(pricing.precioOriginal) ? Number(pricing.precioOriginal) : Number(product.price ?? 0);
+  const subtotal = Number((unitPrice * quantity).toFixed(2));
+  const originalSubtotal = Number((originalUnitPrice * quantity).toFixed(2));
+
+  return {
+    unitPrice,
+    originalUnitPrice,
+    subtotal,
+    originalSubtotal,
+    discount: Number(Math.max(0, originalSubtotal - subtotal).toFixed(2)),
+    rule: pricing.reglaAplicada,
+  };
+};
+
 export type CartItem = {
   productId: number;
   quantity: number;
@@ -163,7 +207,7 @@ export type CartItem = {
 export const detectarCombosEnCarrito = (
   cartItems: CartItem[],
   products: Product[],
-  reglas: ReglaPrecio[] = obtenerReglas()
+  reglas: ReglaPrecio[] = readStoredPricingRules()
 ): CartComboInfo => {
   // Create a map of products for quick lookup
   const productMap = new Map(products.map(p => [p.id, p]));
@@ -176,7 +220,7 @@ export const detectarCombosEnCarrito = (
   let descuentoTotalCombos = 0;
 
   for (const regla of comboRules) {
-    const deteccion = detectarCombo(cartItems, regla);
+    const deteccion = detectarCombo(cartItems, regla, products);
 
     if (!deteccion) continue;
 
@@ -205,19 +249,17 @@ export const detectarCombosEnCarrito = (
           const producto = productMap.get(item.productId);
           if (!producto) continue;
 
-          // Simple check if producto matches elemento
-          if (elemento.tipo === 'producto' && String(producto.id) === elemento.valor) {
+          const coincide = (
+            elemento.tipo === 'producto' && String(producto.id) === elemento.valor
+          ) || (
+            elemento.tipo === 'categoria' && producto.category === elemento.valor
+          ) || (
+            elemento.tipo === 'subcategoria' && producto.subcategory === elemento.valor
+          );
+
+          if (coincide) {
             const cantidadAUsar = Math.min(item.quantity, elemento.cantidad);
             precioNormalTotal += producto.price * cantidadAUsar;
-            break;
-          } else if (elemento.tipo === 'categoria' && producto.category === elemento.valor) {
-            const cantidadAUsar = Math.min(item.quantity, elemento.cantidad);
-            precioNormalTotal += producto.price * cantidadAUsar;
-            break;
-          } else if (elemento.tipo === 'subcategoria' && producto.subcategory === elemento.valor) {
-            const cantidadAUsar = Math.min(item.quantity, elemento.cantidad);
-            precioNormalTotal += producto.price * cantidadAUsar;
-            break;
           }
         }
       }

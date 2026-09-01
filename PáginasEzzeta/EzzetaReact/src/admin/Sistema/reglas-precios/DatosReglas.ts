@@ -15,21 +15,36 @@ import { notifyPricingRulesChanged } from '../../../services/pricingService';
 const STORAGE_KEY = StorageKeys.REGLAS_PRECIOS;
 
 export function obtenerReglas(): ReglaPrecio[] {
-    const datos = storageManager.get<string>(STORAGE_KEY) as string | null;
-    if (!datos) {
+    const datos = storageManager.get<unknown>(STORAGE_KEY);
+    if (datos == null) {
         return [];
     }
-    try {
-        return JSON.parse(String(datos)) as ReglaPrecio[];
-    } catch {
-        return [];
+
+    if (Array.isArray(datos)) {
+        return datos as ReglaPrecio[];
     }
+
+    if (typeof datos === 'string') {
+        try {
+            const parsed = JSON.parse(datos) as unknown;
+            return Array.isArray(parsed) ? (parsed as ReglaPrecio[]) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    if (typeof datos === 'object' && Array.isArray((datos as { items?: unknown[] }).items)) {
+        return (datos as { items: ReglaPrecio[] }).items;
+    }
+
+    return [];
 }
 
 export function guardarReglas(
     reglas: ReglaPrecio[]
 ) {
-    storageManager.set(STORAGE_KEY, JSON.stringify(reglas));
+    const nextRules = Array.isArray(reglas) ? reglas : [];
+    storageManager.set(STORAGE_KEY, nextRules);
     try { notifyPricingRulesChanged(); } catch {}
 }
 

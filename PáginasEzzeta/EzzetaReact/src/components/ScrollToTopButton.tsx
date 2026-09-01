@@ -31,9 +31,8 @@ export const ScrollToTopButton = () => {
           exit={{ opacity: 0, y: 30, scale: 0.8 }}
           transition={{ duration: 0.25 }}
           onClick={scrollTop}
-          className="fixed bottom-24 right-4 z-[998] flex h-12 w-12 items-center justify-center rounded-full bg-black text-white shadow-xl transition hover:scale-105 hover:bg-red-600 sm:bottom-28 sm:right-6 sm:h-14 sm:w-14"
-        >
-          <ChevronUp size={24} />
+          className="fixed bottom-24 right-4 z-[30] flex h-12 w-12 items-center justify-center rounded-full bg-black text-white shadow-xl transition hover:scale-105 hover:bg-red-600 sm:bottom-20 sm:right-4 sm:h-12 sm:w-12"
+        ><ChevronUp size={24} />
         </motion.button>
       )}
     </AnimatePresence>

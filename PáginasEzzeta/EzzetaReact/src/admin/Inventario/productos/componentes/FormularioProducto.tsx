@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
+import { useState } from 'react';
 import type { Producto } from '../TiposProductos';
-import { generosDisponibles } from '../DatosProductos';
+import { estaTallaAgotada, generosDisponibles, inferirTipoTalla } from '../DatosProductos';
 import { crearSlugProducto } from '../utils/productoMapper';
 import { ExtrasProducto } from './ExtrasProducto';
 import { SelectorCategorias } from './SelectorCategorias';
@@ -8,6 +9,7 @@ import { SelectorRelacionados } from './SelectorRelacionados';
 import { SelectorTallas } from './SelectorTallas';
 import { ImagenPrincipal } from './ImagenPrincipal';
 import { CarruselMiniImagenes } from './CarruselMiniImagenes';
+import ColorEditor from './ColorEditor';
 
 type PropiedadesFormularioProducto = {
     producto: Producto;
@@ -26,6 +28,25 @@ export const FormularioProducto = ({
     cerrar,
     modoEdicion,
 }: PropiedadesFormularioProducto) => {
+    const [tiposVisibles, setTiposVisibles] = useState<Record<'letras' | 'numeros', boolean>>({
+        letras: true,
+        numeros: true,
+    });
+
+    const alternarTipoVisible = (tipo: 'letras' | 'numeros') => {
+        setTiposVisibles((actual) => ({
+            ...actual,
+            [tipo]: !actual[tipo],
+        }));
+    };
+
+    const debeMostrarTalla = (talla: string) => {
+        const tipo = inferirTipoTalla(talla);
+        return tiposVisibles[tipo];
+    };
+
+    const tallasVisibles = producto.tallas.filter((talla) => debeMostrarTalla(talla));
+
     const actualizarCampo = <Campo extends keyof Producto>(
         campo: Campo,
         valor: Producto[Campo],
@@ -85,100 +106,212 @@ export const FormularioProducto = ({
 
     return (
         <div className="space-y-3">
-            <section className="grid gap-3 xl:grid-cols-[1.35fr_0.75fr]">
-                <div className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
-                    <div className="mb-3">
+            {/* INFORMACIÓN GENERAL + RESUMEN */}
+            <section className="grid gap-3 xl:grid-cols-[1.5fr_0.7fr]">
+                <div className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm">
+                    <div className="mb-3 border-b border-zinc-100 pb-3">
                         <h3 className="text-sm font-semibold text-zinc-950">Información general</h3>
-                        <p className="mt-1 text-sm text-zinc-500">Datos base del producto para el catálogo administrativo.</p>
+                        <p className="mt-1 text-xs text-zinc-500">Datos base del producto para el catálogo administrativo.</p>
                     </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <label className="block text-sm text-zinc-700 md:text-base">
-                            <span className="mb-2 block font-medium text-sm">Nombre</span>
+
+                    <div className="grid gap-3 md:grid-cols-2">
+                        <label className="block text-sm text-zinc-700">
+                            <span className="mb-1.5 block text-xs font-semibold text-zinc-800">
+                                Nombre
+                            </span>
                             <input
                                 type="text"
                                 value={producto.nombre}
-                                onChange={(event) => actualizarNombre(event.target.value)}
+                                onChange={(event) =>
+                                    actualizarNombre(event.target.value)
+                                }
                                 placeholder="Ej. Polo Luxury Verde"
-                                className="w-full rounded-none border border-zinc-300 px-3 py-2 outline-none transition focus:border-zinc-900"
+                                className="w-full rounded-none border border-zinc-300 px-3 py-2 text-sm outline-none transition focus:border-red-600 focus:ring-1 focus:ring-red-600/20"
                             />
                         </label>
 
-                        <label className="block text-sm text-zinc-700 md:text-base">
-                            <span className="mb-2 block font-medium text-sm">Slug</span>
+                        <label className="block text-sm text-zinc-700">
+                            <span className="mb-1.5 block text-xs font-semibold text-zinc-800">
+                                Slug
+                            </span>
                             <input
                                 type="text"
                                 value={producto.slug}
-                                onChange={(event) => actualizarCampo('slug', event.target.value)}
+                                onChange={(event) =>
+                                    actualizarCampo("slug", event.target.value)
+                                }
                                 placeholder="polo-luxury-verde"
-                                className="w-full rounded-none border border-zinc-300 px-3 py-2 outline-none transition focus:border-zinc-900"
+                                className="w-full rounded-none border border-zinc-300 px-3 py-2 text-sm outline-none transition focus:border-red-600 focus:ring-1 focus:ring-red-600/20"
                             />
                         </label>
 
-                        <label className="block text-sm text-zinc-700 md:text-base md:col-span-2">
-                            <span className="mb-2 block font-medium text-sm">Descripcion</span>
+                        <label className="block md:col-span-2">
+                            <span className="mb-1.5 block text-xs font-semibold text-zinc-800">
+                                Descripción
+                            </span>
                             <textarea
                                 rows={3}
                                 value={producto.descripcion}
-                                onChange={(event) => actualizarCampo('descripcion', event.target.value)}
-                                placeholder="Describe el producto, materiales, caida, acabado y propuesta de valor."
-                                className="w-full resize-none rounded-none border border-zinc-300 px-2 py-2 outline-none transition focus:border-zinc-900"
+                                onChange={(event) =>
+                                    actualizarCampo(
+                                        "descripcion",
+                                        event.target.value
+                                    )
+                                }
+                                placeholder="Describe el producto, materiales, caída, acabado y propuesta de valor."
+                                className="w-full resize-none rounded-none border border-zinc-300 px-3 py-2 text-sm outline-none transition focus:border-red-600 focus:ring-1 focus:ring-red-600/20"
                             />
+                        </label>
+
+                        <label className="block md:col-span-2">
+                            <span className="mb-2 block text-xs font-semibold text-zinc-800">
+                                Colores
+                            </span>
+
+                            <div className="space-y-2">
+                                <div className="flex flex-wrap gap-2">
+                                    {(producto.colores ?? []).map((c, idx) => {
+                                        const parts = c.split("|");
+
+                                        const label =
+                                            parts.length > 1
+                                                ? parts[0].trim()
+                                                : undefined;
+
+                                        const value =
+                                            parts.length > 1
+                                                ? parts.slice(1).join("|").trim()
+                                                : parts[0].trim();
+
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs"
+                                                title={label ?? value}
+                                            >
+                                                <span
+                                                    className="h-4 w-4 shrink-0 rounded-full border border-zinc-300"
+                                                    style={{
+                                                        backgroundColor: value,
+                                                    }}
+                                                />
+
+                                                <span className="font-medium text-zinc-800">
+                                                    {label ?? value}
+                                                </span>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        actualizarCampo(
+                                                            "colores",
+                                                            (
+                                                                producto.colores ??
+                                                                []
+                                                            ).filter(
+                                                                (_, i) =>
+                                                                    i !== idx
+                                                            )
+                                                        )
+                                                    }
+                                                    className="ml-1 text-zinc-500 transition hover:text-red-600"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <ColorEditor
+                                    producto={producto}
+                                    actualizarCampo={actualizarCampo}
+                                />
+                            </div>
                         </label>
                     </div>
                 </div>
 
-                <div className="rounded-none border border-zinc-200 bg-zinc-50 p-3 shadow-sm sm:p-4">
-                    <div className="mb-3">
-                        <h3 className="text-base font-semibold text-zinc-950">Resumen comercial</h3>
-                        <p className="mt-1 text-sm text-zinc-500">Vista rápida antes de guardar los cambios.</p>
+                {/* RESUMEN */}
+                <div className="rounded-none border border-zinc-200 bg-zinc-50 p-3 shadow-sm">
+                    <div className="mb-3 border-b border-zinc-200 pb-3">
+                        <h3 className="text-sm font-semibold text-zinc-950">
+                            Resumen comercial
+                        </h3>
+                        <p className="mt-1 text-xs text-zinc-500">
+                            Vista rápida del producto.
+                        </p>
                     </div>
 
-                    <div className="space-y-3">
-                        <div className="rounded-none border border-zinc-200 bg-white p-3">
-                            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">ID del producto</p>
-                            <p className="mt-1 text-sm font-semibold text-zinc-950 md:text-sm">{producto.id || 'Sin ID'}</p>
+                    <div className="space-y-2">
+                        <div className="border border-zinc-200 bg-white p-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">ID</p>
+                            <p className="mt-1 text-sm font-semibold text-zinc-950">{producto.id || "Sin ID"}</p>
                         </div>
 
-                        <div className="rounded-none border border-zinc-200 bg-white p-3">
-                            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Precio actual</p>
-                            <p className="mt-1 text-sm font-semibold text-zinc-950 md:text-sm">S/ {producto.precio.toFixed(2)}</p>
+                        <div className="border border-zinc-200 bg-white p-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">Precio actual</p>
+                            <p className="mt-1 text-sm font-semibold text-zinc-950">S/ {producto.precio.toFixed(2)}</p>
                         </div>
 
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-none border border-zinc-200 bg-white p-3">
-                                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Stock</p>
-                                <p className={`mt-1 text-sm font-semibold ${stockTotal <= 0 ? 'text-red-600' : stockTotal <= 5 ? 'text-orange-600' : stockTotal <= 15 ? 'text-yellow-600' : 'text-emerald-600'}`}>
-                                    {stockTotal}
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="border border-zinc-200 bg-white p-3">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">Stock</p>
+
+                                <p
+                                    className={`mt-1 text-sm font-semibold ${
+                                        stockTotal <= 0
+                                            ? "text-red-600"
+                                            : stockTotal <= 5
+                                            ? "text-orange-600"
+                                            : stockTotal <= 15
+                                                ? "text-yellow-600"
+                                                : "text-emerald-600"
+                                    }`}
+                                >{stockTotal}
                                 </p>
                             </div>
-                            <div className="rounded-none border border-zinc-200 bg-white p-3">
-                                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Estado</p>
-                                <p className={`mt-1 text-sm font-semibold ${producto.activo ? 'text-emerald-600' : 'text-red-600'}`}>
-                                    {producto.activo ? 'Activo' : 'Inactivo'}
+                            <div className="border border-zinc-200 bg-white p-3">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">Estado</p>
+
+                                <p
+                                    className={`mt-1 text-sm font-semibold ${
+                                        producto.activo
+                                            ? "text-emerald-600"
+                                            : "text-red-600"
+                                    }`}
+                                >{producto.activo ? "Activo" : "Inactivo"}
                                 </p>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
-
-            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
-                <div className="mb-3">
-                    <h3 className="text-base font-semibold text-zinc-950">Clasificación</h3>
-                    <p className="mt-1 text-sm text-zinc-500">Organiza el producto dentro del módulo de inventario.</p>
+            {/* CLASIFICACIÓN */}
+            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm">
+                <div className="mb-3 border-b border-zinc-100 pb-3">
+                    <h3 className="text-sm font-semibold text-zinc-950">Clasificación</h3>
+                    <p className="mt-1 text-xs text-zinc-500">Organiza el producto dentro del inventario.</p>
                 </div>
 
-                <div className="space-y-5">
-                    <label className="block max-w-sm text-sm text-zinc-700 md:text-base">
-                        <span className="mb-2 block font-medium">Genero</span>
+                <div className="space-y-3">
+                    <label className="block max-w-sm">
+                        <span className="mb-1.5 block text-xs font-semibold text-zinc-800">Género</span>
                         <select
                             value={producto.genero}
-                            onChange={(event) => actualizarCampo('genero', event.target.value as Producto['genero'])}
-                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                            onChange={(event) =>
+                                actualizarCampo(
+                                    "genero",
+                                    event.target.value as Producto["genero"]
+                                )
+                            }
+                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-red-600 focus:ring-1 focus:ring-red-600/20"
                         >
                             {generosDisponibles.map((generoDisponible) => (
-                                <option key={generoDisponible} value={generoDisponible}>
-                                    {generoDisponible}
+                                <option
+                                    key={generoDisponible}
+                                    value={generoDisponible}
+                                >{generoDisponible}
                                 </option>
                             ))}
                         </select>
@@ -187,136 +320,214 @@ export const FormularioProducto = ({
                     <SelectorCategorias
                         categoria={producto.categoria}
                         subcategoria={producto.subcategoria}
-                        actualizarCategoria={(categoria) => actualizarCampo('categoria', categoria)}
-                        actualizarSubcategoria={(subcategoria) => actualizarCampo('subcategoria', subcategoria)}
+                        actualizarCategoria={(categoria) =>
+                            actualizarCampo("categoria", categoria)
+                        }
+                        actualizarSubcategoria={(subcategoria) =>
+                            actualizarCampo("subcategoria", subcategoria)
+                        }
                     />
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <label className="flex items-start gap-3 rounded-none border border-zinc-200 p-4 text-sm text-zinc-700 md:text-base">
+                    <div className="grid gap-2 md:grid-cols-2">
+                        <label className="flex items-center gap-3 border border-zinc-200 px-3 py-2.5 text-sm transition hover:border-zinc-300">
                             <input
                                 type="checkbox"
                                 checked={producto.destacado}
-                                onChange={(event) => actualizarCampo('destacado', event.target.checked)}
-                                className="mt-1 h-4 w-4 rounded border-zinc-300"
+                                onChange={(event) =>
+                                    actualizarCampo(
+                                        "destacado",
+                                        event.target.checked
+                                    )
+                                }
+                                className="h-4 w-4 rounded border-zinc-300 accent-red-600"
                             />
                             <div>
-                                <p className="font-medium text-zinc-950">Producto destacado</p>
+                                <p className="text-sm font-medium text-zinc-950">Producto destacado</p>
+                                <p className="text-xs text-zinc-500">Mostrar en secciones destacadas.</p>
                             </div>
                         </label>
-
-                        <label className="flex items-start gap-3 rounded-none border border-zinc-200 p-4 text-sm text-zinc-700 md:text-base">
+                        <label className="flex items-center gap-3 border border-zinc-200 px-3 py-2.5 text-sm transition hover:border-zinc-300">
                             <input
                                 type="checkbox"
                                 checked={producto.activo}
-                                onChange={(event) => actualizarCampo('activo', event.target.checked)}
-                                className="mt-1 h-4 w-4 rounded border-zinc-300"
+                                onChange={(event) =>
+                                    actualizarCampo(
+                                        "activo",
+                                        event.target.checked
+                                    )
+                                }
+                                className="h-4 w-4 rounded border-zinc-300 accent-red-600"
                             />
                             <div>
-                                <p className="font-medium text-zinc-950">Producto activo</p>
+                                <p className="text-sm font-medium text-zinc-950">Producto activo</p>
+                                <p className="text-xs text-zinc-500">Disponible en el catálogo.</p>
                             </div>
                         </label>
                     </div>
                 </div>
             </section>
-
-            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
-                <div className="mb-3">
-                    <h3 className="text-base font-semibold text-zinc-950">Precios e inventario</h3>
-                    <p className="mt-1 text-sm text-zinc-500">Configura valores comerciales y disponibilidad del producto.</p>
+            {/* PRECIOS E INVENTARIO */}
+            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm">
+                <div className="mb-3 border-b border-zinc-100 pb-3">
+                    <h3 className="text-sm font-semibold text-zinc-950">Precios e inventario</h3>
+                    <p className="mt-1 text-xs text-zinc-500">Configura el valor comercial y disponibilidad.</p>
                 </div>
-
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
-                    <label className="block text-sm text-zinc-700 md:text-base">
-                        <span className="mb-2 block font-medium">Precio actual</span>
+                <div className="grid gap-3 md:grid-cols-2">
+                    <label className="block">
+                        <span className="mb-1.5 block text-xs font-semibold text-zinc-800">Precio actual</span>
                         <input
                             type="number"
                             min={0}
                             step="0.01"
                             value={producto.precio}
-                            onChange={(event) => actualizarCampo('precio', Number(event.target.value))}
-                            className="w-full rounded-none border border-zinc-300 px-3 py-2 outline-none transition focus:border-zinc-900"
+                            onChange={(event) =>
+                                actualizarCampo(
+                                    "precio",
+                                    Number(event.target.value)
+                                )
+                            }
+                            className="w-full rounded-none border border-zinc-300 px-3 py-2 text-sm outline-none transition focus:border-red-600 focus:ring-1 focus:ring-red-600/20"
                         />
                     </label>
-
-                    <div className="rounded-none border border-zinc-200 bg-white p-4">
-                        <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Stock total</p>
-                        <p className={`mt-1 text-sm font-semibold ${stockTotal <= 0 ? 'text-red-600' : stockTotal <= 5 ? 'text-orange-600' : stockTotal <= 15 ? 'text-yellow-600' : 'text-emerald-600'}`}>
-                            {stockTotal}
+                    <div className="border border-zinc-200 bg-zinc-50 px-3 py-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">Stock total</p>
+                        <p
+                            className={`mt-1 text-sm font-semibold ${
+                                stockTotal <= 0
+                                    ? "text-red-600"
+                                    : stockTotal <= 5
+                                    ? "text-orange-600"
+                                    : stockTotal <= 15
+                                        ? "text-yellow-600"
+                                        : "text-emerald-600"
+                            }`}
+                        >{stockTotal} unidades
                         </p>
                     </div>
                 </div>
             </section>
-
             <ImagenPrincipal
                 nombreProducto={producto.nombre}
                 imagen={producto.imagen}
-                actualizarImagen={(imagen) => actualizarCampo('imagen', imagen)}
+                actualizarImagen={(imagen) =>
+                    actualizarCampo("imagen", imagen)
+                }
             />
-
             <CarruselMiniImagenes
                 miniImagenes={producto.miniImagenes}
-                actualizarMiniImagenes={(miniImagenes) => actualizarCampo('miniImagenes', miniImagenes)}
+                actualizarMiniImagenes={(miniImagenes) =>
+                    actualizarCampo("miniImagenes", miniImagenes)
+                }
             />
-
-            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
-                <div className="mb-3">
-                    <h3 className="text-base font-semibold text-zinc-950">Stock por talla</h3>
-                    <p className="mt-1 text-sm text-zinc-500">Ingresa la cantidad disponible para cada talla seleccionada.</p>
+            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm">
+                <div className="mb-3 border-b border-zinc-100 pb-3">
+                    <h3 className="text-sm font-semibold text-zinc-950">Stock por talla</h3>
+                    <p className="mt-1 text-xs text-zinc-500">Actualiza las unidades disponibles por talla.</p>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {producto.tallas.map((talla) => {
-                        const cantidad = Number.isFinite(Number(producto.tallasStock?.[talla])) ? Math.max(0, Math.trunc(Number(producto.tallasStock?.[talla]))) : 0;
+                <div className="mb-3 flex flex-wrap gap-2">
+                    {(["letras", "numeros"] as const).map((tipo) => (
+                        <label
+                            key={tipo}
+                            className="inline-flex items-center gap-2 border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-700"
+                        >
+                            <input
+                                type="checkbox"
+                                checked={tiposVisibles[tipo]}
+                                onChange={() => alternarTipoVisible(tipo)}
+                                className="h-4 w-4 rounded border-zinc-300 accent-red-600"
+                            />
+                            <span>{tipo === "letras" ? "Letras" : "Números"}</span>
+                        </label>
+                    ))}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+                    {tallasVisibles.map((talla) => {
+                        const cantidad = Number.isFinite(
+                            Number(producto.tallasStock?.[talla])
+                        )
+                            ? Math.max(
+                                0,
+                                Math.trunc(
+                                    Number(producto.tallasStock?.[talla])
+                                )
+                            )
+                            : 0;
+
+                        const agotada = estaTallaAgotada(
+                            talla,
+                            producto.tallasStock ?? {}
+                        );
 
                         return (
-                            <label key={talla} className="block text-sm text-zinc-700 md:text-base">
-                                <span className="mb-2 block font-medium">{talla}</span>
+                            <label
+                                key={talla}
+                                className={`block ${
+                                    agotada
+                                        ? "text-red-600"
+                                        : "text-zinc-700"
+                                }`}
+                            >
+                                <span
+                                    className={`mb-1.5 block text-xs font-semibold ${
+                                        agotada ? "line-through" : ""
+                                    }`}
+                                >{talla}
+                                </span>
                                 <input
                                     type="number"
                                     min={0}
                                     value={cantidad}
-                                    onChange={(event) => actualizarStockPorTalla(talla, Number(event.target.value))}
-                                    className="w-full rounded-none border border-zinc-300 px-3 py-2 outline-none transition focus:border-zinc-900"
+                                    onChange={(event) =>
+                                        actualizarStockPorTalla(
+                                            talla,
+                                            Number(event.target.value)
+                                        )
+                                    }
+                                    className={`w-full rounded-none border px-3 py-2 text-sm outline-none transition focus:border-red-600 focus:ring-1 focus:ring-red-600/20 ${
+                                        agotada
+                                            ? "border-red-300 bg-red-50 text-red-700"
+                                            : "border-zinc-300 bg-white text-zinc-700"
+                                    }`}
                                 />
                             </label>
                         );
                     })}
                 </div>
             </section>
-
-            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+            <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm">
                 <SelectorTallas
                     tallasSeleccionadas={producto.tallas}
                     actualizarTallas={actualizarTallas}
                 />
             </section>
-
             <SelectorRelacionados
                 productoActualId={producto.id}
                 relacionados={producto.relacionados}
                 productosExistentes={productosExistentes}
-                actualizarRelacionados={(relacionados) => actualizarCampo('relacionados', relacionados)}
+                actualizarRelacionados={(relacionados) =>
+                    actualizarCampo("relacionados", relacionados)
+                }
             />
-
             <ExtrasProducto
                 extras={producto.extras}
-                actualizarExtras={(extras) => actualizarCampo('extras', extras)}
+                actualizarExtras={(extras) =>
+                    actualizarCampo("extras", extras)
+                }
             />
-
-            <div className="flex flex-col gap-3 border-t border-zinc-200 pt-6 sm:flex-row sm:justify-end">
+            <div className="flex flex-col gap-2 border-t border-zinc-200 pt-4 sm:flex-row sm:justify-end">
                 <button
                     type="button"
                     onClick={cerrar}
-                    className="w-full rounded-none border border-zinc-300 px-6 py-3 text-sm font-medium text-zinc-700 transition hover:border-zinc-500 sm:w-auto"
-                >
-                    Cancelar
+                    className="w-full rounded-none border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-500 hover:bg-zinc-50 sm:w-auto"
+                >Cancelar
                 </button>
                 <button
                     type="button"
                     onClick={guardar}
-                    className="w-full rounded-none bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-red-600 sm:w-auto"
-                >
-                    {modoEdicion ? 'Guardar cambios' : 'Crear producto'}
+                    className="w-full rounded-none bg-zinc-950 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600 sm:w-auto"
+                >{modoEdicion ? "Guardar cambios" : "Crear producto"}
                 </button>
             </div>
         </div>

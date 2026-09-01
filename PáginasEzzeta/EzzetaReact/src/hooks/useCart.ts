@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useWishlist } from '../context/WishlistContext';
 import { getProducts } from '../services/contentService';
+import { getCheckoutLinePricing, usePricingRules } from '../services/pricingService';
 
 export default function useCart() {
   const {
@@ -14,24 +15,39 @@ export default function useCart() {
     closeCart,
     toggleCart,
   } = useWishlist();
+  const pricingRules = usePricingRules();
 
   const items = useMemo(() => cart.map((item) => {
     const product = getProducts().find((entry) => entry.id === item.productId);
+    if (!product) {
+      return {
+        id: item.productId,
+        productId: item.productId,
+        name: 'Producto',
+        image: '',
+        unitPrice: 0,
+        quantity: item.quantity,
+        size: item.size,
+        subtotal: 0,
+      };
+    }
+
+    const pricing = getCheckoutLinePricing(product, item.quantity, { cantidad: item.quantity }, pricingRules);
 
     return {
       id: item.productId,
       productId: item.productId,
-      name: product?.name ?? 'Producto',
-      image: product?.image ?? '',
-      unitPrice: product?.price ?? 0,
+      name: product.name,
+      image: product.image,
+      unitPrice: pricing.unitPrice,
       quantity: item.quantity,
       size: item.size,
-      subtotal: (product?.price ?? 0) * item.quantity,
+      subtotal: pricing.subtotal,
     };
-  }), [cart]);
+  }), [cart, pricingRules]);
 
   const totalPrice = useMemo(
-    () => items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
+    () => items.reduce((sum, item) => sum + item.subtotal, 0),
     [items],
   );
 

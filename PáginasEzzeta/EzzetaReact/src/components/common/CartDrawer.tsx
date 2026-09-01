@@ -72,7 +72,7 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
       const product = products.find((entry) => entry.id === item.productId);
       if (!product) return null;
       const precio = resolveProductPrice(product, { cantidad: item.quantity });
-      return { ...product, price: precio.precioFinal, quantity: item.quantity, size: item.size };
+      return { ...product, price: precio.precioFinal, quantity: item.quantity, size: item.size, __discountApplied: precio.descuentoAplicado, __precioOriginal: precio.precioOriginal } as CartProduct & { __discountApplied?: number; __precioOriginal?: number };
     })
     .filter((item): item is CartProduct => item !== null);
 
@@ -126,6 +126,12 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
   }, [getDraft]);
 
   const selectedProductsSubtotal = selectedProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const selectedProductsOriginalSubtotal = selectedProducts.reduce((sum, item) => sum + ((item as any).__precioOriginal ?? item.price) * item.quantity, 0);
+
+  const productLevelDiscountTotal = selectedProducts.reduce((sum, item) => {
+    const discountPerUnit = (item as any).__discountApplied ?? 0;
+    return sum + discountPerUnit * item.quantity;
+  }, 0);
   const configuracionEnvio = obtenerConfiguracionEnvioActual();
 
   const cartItemsForComboDetection: CartItem[] = cart.map((item) => ({
@@ -169,6 +175,8 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
   const shipping = shippingResult.shippingAmount ?? 0;
   const discountedSubtotal = Number(Math.max(0, selectedProductsSubtotal - promoDiscountAmount - comboInfo.descuentoTotalCombos).toFixed(2));
   const discountedTotal = Number(Math.max(0, discountedSubtotal + shipping).toFixed(2));
+
+  const totalSavings = Number(Math.max(0, productLevelDiscountTotal + promoDiscountAmount + comboInfo.descuentoTotalCombos).toFixed(2));
 
   useEffect(() => {
     if (appliedCoupon && selectedProductsSubtotal < appliedCoupon.minPurchase) {
@@ -328,7 +336,7 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
 
               {checkoutStep === 'cart' && (
                 <CartSummary
-                  subtotal={selectedProductsSubtotal}
+                    subtotal={selectedProductsOriginalSubtotal}
                   promoDiscountAmount={promoDiscountAmount}
                   shipping={shipping}
                   shippingLabel={shippingResult.shippingLabel}
@@ -340,6 +348,7 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
                   departamentoError={departamentoError}
                   discountedSubtotal={discountedSubtotal}
                   discountedTotal={discountedTotal}
+                    totalSavings={totalSavings}
                   onApplyPromo={applyPromoCode}
                   promoMessage={promoMessage}
                   appliedCoupon={appliedCoupon}

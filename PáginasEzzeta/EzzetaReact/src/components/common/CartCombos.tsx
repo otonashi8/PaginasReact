@@ -32,26 +32,6 @@ export default function CartCombos({ combosAplicados, combosIncompletos }: CartC
           </div>
         </motion.div>
       )}
-
-      {combosIncompletos.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-[1.2rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"
-        >
-          <p className="font-semibold mb-2">💡 Completa un combo</p>
-          <div className="space-y-2">
-            {combosIncompletos.map((combo, idx) => (
-              <div key={idx} className="text-amber-700">
-                <p className="font-medium">{combo.regla.nombre}</p>
-                {combo.mensajeOportunidad && (
-                  <p className="text-xs mt-1">{combo.mensajeOportunidad} S/{combo.regla.configuracion?.precioCombo}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 }

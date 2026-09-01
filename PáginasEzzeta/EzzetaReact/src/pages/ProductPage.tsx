@@ -13,8 +13,6 @@ import type { Product } from '../types';
 import { PERMISSIONS } from '../utils/permissionCodes';
 import { obtenerSubcategoriaMetadata } from '../admin/Inventario/productos/DatosProductos';
 
-const allSizeOptions = ['S', 'M', 'L', 'XL', '28', '30', '32', '34', '36'];
-
 export const ProductPage = () => {
   const { slug } = useParams();
   const location = useLocation();
@@ -27,6 +25,7 @@ export const ProductPage = () => {
   const [quickBuyProduct, setQuickBuyProduct] = useState<Product | null>(null);
   const [quickBuySize, setQuickBuySize] = useState("M");
   const [quickBuyQuantity, setQuickBuyQuantity] = useState(1);
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
   const product = useMemo(() => {
     if (!slug) {
@@ -75,13 +74,18 @@ export const ProductPage = () => {
   useEffect(() => {
     if (!product) return;
 
-    const images =
-      product["mini-image"]?.map((url) => url ?? null) ??
-      [product.image, null, null];
+    const productImages = Array.isArray(product["mini-image"]) ? product["mini-image"].filter(Boolean) : [];
+    const fallbackImages = product.image ? [product.image] : [];
+    const images = productImages.length > 0 ? productImages : fallbackImages;
+
+    const firstAvailableSize = product.sizes.find((size) => {
+      const stock = Number(product.sizesStock?.[size] ?? 0);
+      return !Number.isFinite(stock) || stock > 0;
+    }) ?? product.sizes[0] ?? 'M';
 
     setUploadedImages(images);
     setSelectedImageIndex(0);
-    setSelectedSize(product.sizes[0] ?? "M");
+    setSelectedSize(firstAvailableSize);
     setQuantity(1);
   }, [product?.id, location.pathname]);
   useEffect(() => {
@@ -116,6 +120,7 @@ export const ProductPage = () => {
   const metadataSubcategoria = obtenerSubcategoriaMetadata(product.category, product.subcategory);
   const guiaLavado = metadataSubcategoria.guiaLavado;
   const guiaTallas = metadataSubcategoria.guiaTallas;
+  const sizeOptions = product.sizes.length > 0 ? product.sizes : ['Única'];
 
   const openQuickBuy = (item: Product) => {
     setQuickBuyProduct(item);
@@ -173,10 +178,10 @@ export const ProductPage = () => {
             </AnimatePresence>
           </div>
 
-          <div className="mt-5 grid grid-cols-3 gap-2.5 sm:gap-3">
+          <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
             {uploadedImages.map((imageUrl, index) => (
               <button
-                key={index}
+                key={`${imageUrl ?? 'empty'}-${index}`}
                 type="button"
                 onClick={() => setSelectedImageIndex(index)}
                 className={`group h-24 overflow-hidden rounded-2xl border-2 bg-white transition-all duration-250 sm:h-28 ${selectedImageIndex === index ? 'border-red-600 shadow-[0_0_0_1px_rgba(220,38,38,0.22)]' : 'border-black/10 hover:border-black/35'}`}
@@ -208,19 +213,28 @@ export const ProductPage = () => {
                 <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
                   {etiquetaDescuento}
                 </span>
-              ) : !hayDescuento && product.previousPrice ? (
-                <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
-                  Oferta
-                </span>
               ) : null}
             </div>
           </div>
           <div className="mt-7 space-y-6">
             <div>
-              <label className="text-xs font-semibold uppercase tracking-[0.26em] text-black/70">Talla</label>
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-xs font-semibold uppercase tracking-[0.26em] text-black/70">Talla</label>
+                {guiaTallas && (guiaTallas.columnas.length > 0 || guiaTallas.filas.length > 0) ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsSizeGuideOpen(true)}
+                    className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black transition-colors hover:text-red-600"
+                  >
+                    GUÍA DE TALLAS ↗
+                  </button>
+                ) : null}
+              </div>
+
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-                {allSizeOptions.map((size) => {
-                  const isAvailable = product.sizes.includes(size);
+                {sizeOptions.map((size) => {
+                  const stockForSize = Number(product.sizesStock?.[size] ?? 0);
+                  const isAvailable = !Number.isFinite(stockForSize) || stockForSize > 0;
                   const isSelected = selectedSize === size;
 
                   return (
@@ -237,7 +251,7 @@ export const ProductPage = () => {
                       }}
                       className={`rounded-xl border px-3 py-2.5 text-sm font-medium tracking-[0.08em] transition-all duration-200 ${isSelected ? 'border-red-600 bg-white text-black shadow-[0_0_0_1px_rgba(220,38,38,0.22)]' : 'border-black/15 bg-white text-black'} ${isAvailable ? 'hover:border-black/45' : 'cursor-not-allowed border-black/10 text-black/30 line-through'}`}
                     >
-                      {isAvailable ? size : `${size} X`}
+                      {size}
                     </motion.button>
                   );
                 })}
@@ -313,44 +327,14 @@ export const ProductPage = () => {
           </div>
 
           {guiaLavado?.url ? (
-            <div className="mt-7 rounded-[1.4rem] border border-black/10 bg-white p-5">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-black">Guía de lavado</h3>
-              <a href={guiaLavado.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center rounded-xl border border-black/15 bg-white px-4 py-3 text-sm font-medium text-black transition-colors hover:border-red-600 hover:text-red-600">
-                Ver PDF de lavado
+            <div className="mt-7">
+              <a
+                href={guiaLavado.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center text-sm font-semibold uppercase tracking-[0.2em] text-black transition-colors hover:text-red-600"
+              >GUÍA DE LAVADO ↗
               </a>
-            </div>
-          ) : null}
-
-          {guiaTallas && (guiaTallas.columnas.length > 0 || guiaTallas.filas.length > 0) ? (
-            <div className="mt-7 rounded-[1.4rem] border border-black/10 bg-white p-5">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-black">Guía de tallas</h3>
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[360px] border border-black/10 text-left text-sm">
-                  <thead>
-                    <tr>
-                      <th className="border-b border-black/10 bg-black/[0.02] px-3 py-2 font-medium text-black/70">Medida</th>
-                      {guiaTallas.columnas.map((columna, index) => (
-                        <th key={`size-col-${columna}-${index}`} className="border-b border-black/10 bg-black/[0.02] px-3 py-2 font-medium text-black/70">{columna}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {guiaTallas.filas.map((fila, index) => (
-                      <tr key={`size-row-${fila.etiqueta}-${index}`}>
-                        <td className="border-b border-black/10 px-3 py-2 font-medium text-black/80">{fila.etiqueta}</td>
-                        {guiaTallas.columnas.map((columna, colIndex) => (
-                          <td key={`size-cell-${fila.etiqueta}-${columna}-${colIndex}`} className="border-b border-black/10 px-3 py-2 text-black/70">
-                            {fila.valores?.[columna] ?? ''}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {guiaTallas.mensajeSecundario ? (
-                <p className="mt-3 text-sm text-black/65">{guiaTallas.mensajeSecundario}</p>
-              ) : null}
             </div>
           ) : null}
 
@@ -375,7 +359,6 @@ export const ProductPage = () => {
           <h2 className="text-2xl font-semibold uppercase tracking-[0.16em] text-black sm:text-[1.7rem]">
             Productos relacionados
           </h2>
-          <span className="text-xs uppercase tracking-[0.24em] text-black/45">Seleccion premium</span>
         </div>
 
         <div className="mt-7 grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
@@ -446,7 +429,7 @@ export const ProductPage = () => {
                           event.stopPropagation();
                           openQuickBuy(item);
                         }}
-                        className="inline-flex items-center justify-center rounded-xl border border-black bg-black p-3 text-white transition-colors hover:border-red-600 hover:bg-red-600"
+                        className="inline-flex items-center justify-center rounded-full border border-black bg-black p-3 text-white transition-colors hover:border-red-600 hover:bg-red-600"
                       >
                         <ShoppingBag size={16} />
                       </motion.button>
@@ -458,6 +441,54 @@ export const ProductPage = () => {
           })}
         </div>
       </div>
+
+      {isSizeGuideOpen && guiaTallas && (guiaTallas.columnas.length > 0 || guiaTallas.filas.length > 0) ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-[1.5rem] border border-black/10 bg-white shadow-[0_22px_60px_rgba(0,0,0,0.22)]">
+            <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-black">Guía de tallas</h3>
+              <button
+                type="button"
+                onClick={() => setIsSizeGuideOpen(false)}
+                className="text-sm font-medium text-black/65 transition-colors hover:text-red-600"
+              >
+                Cerrar
+              </button>
+            </div>
+
+            <div className="overflow-x-auto p-5">
+              <table className="w-full min-w-[360px] border border-black/10 text-left text-sm">
+                <thead>
+                  <tr>
+                    {guiaTallas.columnas.map((columna, index) => (
+                      <th key={`modal-guide-head-${columna}-${index}`} className="border-b border-black/10 bg-black/[0.02] px-1 py-1 font-medium text-black/70">
+                        {columna}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {guiaTallas.filas.map((fila, index) => (
+                    <tr key={`modal-guide-row-${fila.etiqueta}-${index}`}>
+                      {guiaTallas.columnas.map((columna, colIndex) => (
+                        <td key={`modal-guide-cell-${fila.etiqueta}-${columna}-${colIndex}`} className="border-b border-black/10 px-1 py-1 text-black/70">
+                          {fila.valores?.[columna] ?? ''}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {guiaTallas.mensajeSecundario ? (
+              <div className="border-t border-black/10 px-5 py-4">
+                <p className="text-sm leading-relaxed text-black/65">{guiaTallas.mensajeSecundario}</p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <QuickAddModal
         product={quickBuyProduct ?? (relatedProducts[0] ?? product)}

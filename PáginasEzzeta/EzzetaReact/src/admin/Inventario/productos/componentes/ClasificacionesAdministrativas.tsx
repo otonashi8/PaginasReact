@@ -148,116 +148,171 @@ export const ClasificacionesAdministrativas = ({
 
     return (
         <section className="rounded-none border border-zinc-200 bg-white shadow-sm">
-            <div className="flex flex-col gap-4 border-b border-zinc-200 bg-zinc-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* CABECERA */}
+            <div className="flex flex-col gap-3 border-b border-zinc-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h3 className="text-base font-semibold text-zinc-950">Clasificaciones de inventario</h3>
-                    <p className="mt-1 text-sm text-zinc-500">Crea y administra categorías, subcategorías, géneros y tallas para tus productos.</p>
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-red-600">Configuración</p>
+                    <h3 className="mt-1 text-base font-semibold text-zinc-950">Clasificaciones de inventario</h3>
+                    <p className="mt-1 max-w-3xl text-sm text-zinc-500">
+                        Administra categorías, subcategorías, géneros, beneficios y
+                        tallas disponibles para tus productos.
+                    </p>
                 </div>
                 <button
                     type="button"
                     onClick={toggleExpandido}
-                    className="self-start sm:self-auto rounded-none border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-950 transition hover:bg-zinc-100"
-                >
-                    {expandido ? '⋀' : '⋁'}
+                    aria-label={
+                        expandido
+                            ? 'Ocultar clasificaciones'
+                            : 'Mostrar clasificaciones'
+                    }
+                    className="flex size-9 shrink-0 items-center justify-center rounded-none border border-zinc-300 bg-white text-lg font-medium text-zinc-800 transition hover:border-red-600 hover:text-red-600"
+                >{expandido ? '−' : '+'}
                 </button>
             </div>
-
             {expandido ? (
                 <div className="grid gap-4 p-4 xl:grid-cols-2">
-                    <div className="space-y-4 min-w-0">
-                        <div className="rounded-none border border-zinc-200 bg-zinc-50 p-4 h-fit">
-                            <div className="flex items-center justify-between gap-4">
-                                <div>
-                                    <h4 className="font-medium text-zinc-950">Categorías</h4>
-                                    <p className="mt-1 text-sm text-zinc-500">Agrega nuevas categorías que los productos deberán seleccionar.</p>
+                    <div className="min-w-0 space-y-4">
+                        <div className="rounded-none border border-zinc-200 bg-zinc-50">
+                            <div className="flex items-start justify-between gap-3 p-4">
+                                <div className="min-w-0">
+                                    <h4 className="font-semibold text-zinc-950">Categorías</h4>
+                                    <p className="mt-1 text-xs leading-5 text-zinc-500">Categorías principales del catálogo.</p>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={toggleCategoriasExpandido}
-                                    className="rounded-none border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
-                                >
-                                    {categoriasExpandido ? 'Ocultar' : 'Mostrar'}
+                                    className="shrink-0 rounded-none border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:border-red-600 hover:text-red-600"
+                                >{categoriasExpandido ? 'Ocultar' : 'Mostrar'}
                                 </button>
                             </div>
-
                             {categoriasExpandido ? (
-                                <>
-                                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                                <div className="border-t border-zinc-200 p-4">
+                                    {/* CREAR CATEGORÍA */}
+                                    <div className="flex flex-col gap-2 sm:flex-row">
                                         <input
                                             type="text"
                                             value={categoriaNueva}
-                                            onChange={(event) => setCategoriaNueva(event.target.value)}
+                                            onChange={(event) =>
+                                                setCategoriaNueva(
+                                                    event.target.value
+                                                )
+                                            }
                                             placeholder="Nueva categoría"
-                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                            className="min-w-0 flex-1 rounded-none border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-900"
                                         />
                                         <button
                                             type="button"
                                             onClick={handleAgregarCategoria}
-                                            className="rounded-none bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 sm:whitespace-nowrap"
-                                        >Agregar</button>
+                                            className="rounded-none bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 sm:shrink-0"
+                                        >Agregar
+                                        </button>
                                     </div>
-
-                                    <div className="mt-4 grid max-h-80 gap-2 overflow-y-auto pr-1">
-                                        {Object.entries(clasificaciones.categorias).map(([categoria, subcategorias]) => (
-                                            <div key={categoria} className="rounded-none border border-zinc-200 bg-white p-3">
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <p className="font-medium text-zinc-900">{categoria}</p>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => eliminarCategoria(categoria)}
-                                                        className="rounded-none border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-                                                    >Eliminar</button>
-                                                </div>
-                                                {subcategorias.length > 0 ? (
-                                                    <div className="mt-2 max-h-40 space-y-2 overflow-y-auto pr-1">
-                                                        {subcategorias.map((subcategoria) => (
-                                                            <div key={subcategoria} className="flex items-center justify-between rounded-none border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
-                                                                <span>{subcategoria}</span>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => eliminarSubcategoria(categoria, subcategoria)}
-                                                                    className="rounded-none border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-                                                                >Eliminar</button>
-                                                            </div>
-                                                        ))}
+                                    {/* LISTA */}
+                                    <div className="mt-4 max-h-80 space-y-2 overflow-y-auto pr-1">
+                                        {Object.entries(
+                                            clasificaciones.categorias
+                                        ).map(
+                                            ([
+                                                categoria,
+                                                subcategorias,
+                                            ]) => (
+                                                <div
+                                                    key={categoria}
+                                                    className="border border-zinc-200 bg-white p-3"
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <p className="min-w-0 break-words text-sm font-semibold text-zinc-900">{categoria}</p>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                eliminarCategoria(
+                                                                    categoria
+                                                                )
+                                                            }
+                                                            className="shrink-0 border border-red-200 bg-red-50 px-2 py-1 text-[0.65rem] font-semibold text-red-600 transition hover:bg-red-600 hover:text-white"
+                                                        >Eliminar
+                                                        </button>
                                                     </div>
-                                                ) : (
-                                                    <p className="mt-1 text-sm text-zinc-500">Sin subcategorías</p>
-                                                )}
-                                            </div>
-                                        ))}
+                                                    {subcategorias.length > 0 ? (
+                                                        <div className="mt-2 space-y-1.5 border-t border-zinc-100 pt-2">
+                                                            {subcategorias.map(
+                                                                (
+                                                                    subcategoria
+                                                                ) => (
+                                                                    <div
+                                                                        key={
+                                                                            subcategoria
+                                                                        }
+                                                                        className="flex items-center justify-between gap-3 bg-zinc-50 px-3 py-2 text-xs text-zinc-700"
+                                                                    >
+                                                                        <span className="min-w-0 break-words">
+                                                                            {
+                                                                                subcategoria
+                                                                            }
+                                                                        </span>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                eliminarSubcategoria(
+                                                                                    categoria,
+                                                                                    subcategoria
+                                                                                )
+                                                                            }
+                                                                            className="shrink-0 text-[0.65rem] font-medium text-red-600 transition hover:text-red-800"
+                                                                        >Eliminar
+                                                                        </button>
+                                                                    </div>
+                                                                )
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="mt-2 text-xs text-zinc-400">Sin subcategorías.</p>
+                                                    )}
+                                                </div>
+                                            )
+                                        )}
                                     </div>
-                                </>
+                                </div>
                             ) : null}
                         </div>
-
-                        <div className="rounded-none border border-zinc-200 bg-zinc-50 p-4 h-fit">
-                            <div className="flex items-center justify-between gap-4">
+                        <div className="rounded-none border border-zinc-200 bg-zinc-50">
+                            <div className="flex items-start justify-between gap-3 p-4">
                                 <div>
-                                    <h4 className="font-medium text-zinc-950">Subcategorías</h4>
-                                    <p className="mt-1 text-sm text-zinc-500">Define subcategorías asociadas a una categoría existente.</p>
+                                    <h4 className="font-semibold text-zinc-950">Subcategorías</h4>
+                                    <p className="mt-1 text-xs leading-5 text-zinc-500">Asocia nuevas subcategorías a una categoría.</p>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={toggleSubcategoriasExpandido}
-                                    className="rounded-none border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
+                                    className="shrink-0 rounded-none border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:border-red-600 hover:text-red-600"
                                 >
-                                    {subcategoriasExpandido ? 'Ocultar' : 'Mostrar'}
+                                    {subcategoriasExpandido
+                                        ? 'Ocultar'
+                                        : 'Mostrar'}
                                 </button>
                             </div>
-
                             {subcategoriasExpandido ? (
-                                <>
-                                    <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+                                <div className="border-t border-zinc-200 p-4">
+                                    <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                                         <label className="block text-sm text-zinc-700">
-                                            <span className="mb-2 block font-medium">Categoría</span>
+                                            <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600">Categoría</span>
                                             <select
                                                 value={categoriaSeleccionada}
-                                                onChange={(event) => setCategoriaSeleccionada(event.target.value)}
-                                                className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                                onChange={(event) =>
+                                                    setCategoriaSeleccionada(
+                                                        event.target.value
+                                                    )
+                                                }
+                                                className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-zinc-900"
                                             >
-                                                {Object.keys(clasificaciones.categorias).map((categoria) => (
-                                                    <option key={categoria} value={categoria}>
+                                                {Object.keys(
+                                                    clasificaciones.categorias
+                                                ).map((categoria) => (
+                                                    <option
+                                                        key={categoria}
+                                                        value={categoria}
+                                                    >
                                                         {categoria}
                                                     </option>
                                                 ))}
@@ -266,150 +321,193 @@ export const ClasificacionesAdministrativas = ({
                                         <button
                                             type="button"
                                             onClick={handleAgregarSubcategoria}
-                                            className="mt-6 rounded-none bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
-                                        >Agregar</button>
+                                            className="self-end rounded-none bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                                        >Agregar
+                                        </button>
                                     </div>
-                                    <label className="mt-4 block text-sm text-zinc-700">
-                                        <span className="mb-2 block font-medium">Subcategoría</span>
+                                    <label className="mt-3 block text-sm text-zinc-700">
+                                        <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-600">Subcategoría</span>
                                         <input
                                             type="text"
                                             value={subcategoriaNueva}
-                                            onChange={(event) => setSubcategoriaNueva(event.target.value)}
+                                            onChange={(event) =>
+                                                setSubcategoriaNueva(
+                                                    event.target.value
+                                                )
+                                            }
                                             placeholder="Nueva subcategoría"
-                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-zinc-900"
                                         />
                                     </label>
-                                </>
+                                </div>
                             ) : null}
                         </div>
                     </div>
-
-                    <div className="space-y-4 min-w-0">
-                        <div className="rounded-none border border-zinc-200 bg-zinc-50 p-4 h-fit">
-                            <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 space-y-4">
+                        <div className="rounded-none border border-zinc-200 bg-zinc-50">
+                            <div className="flex items-start justify-between gap-3 p-4">
                                 <div>
-                                    <h4 className="font-medium text-zinc-950">Géneros</h4>
-                                    <p className="mt-1 text-sm text-zinc-500">Agrega géneros de producto compatibles con el catálogo.</p>
+                                    <h4 className="font-semibold text-zinc-950">Géneros</h4>
+                                    <p className="mt-1 text-xs leading-5 text-zinc-500">Define los géneros disponibles para elcatálogo.
+                                    </p>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={toggleGenerosExpandido}
-                                    className="rounded-none border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
-                                >
-                                    {generosExpandido ? 'Ocultar' : 'Mostrar'}
+                                    className="shrink-0 rounded-none border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:border-red-600 hover:text-red-600"
+                                >{generosExpandido ? 'Ocultar' : 'Mostrar'}
                                 </button>
                             </div>
-
                             {generosExpandido ? (
-                                <>
-                                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                                <div className="border-t border-zinc-200 p-4">
+                                    <div className="flex flex-col gap-2 sm:flex-row">
                                         <input
                                             type="text"
                                             value={generoNuevo}
-                                            onChange={(event) => setGeneroNuevo(event.target.value)}
+                                            onChange={(event) =>
+                                                setGeneroNuevo(
+                                                    event.target.value
+                                                )
+                                            }
                                             placeholder="Nuevo género"
-                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                            className="min-w-0 flex-1 rounded-none border border-zinc-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-zinc-900"
                                         />
                                         <button
                                             type="button"
                                             onClick={handleAgregarGenero}
-                                            className="rounded-none bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 sm:whitespace-nowrap"
-                                        >Agregar</button>
+                                            className="rounded-none bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                                        >Agregar
+                                        </button>
                                     </div>
-
                                     <div className="mt-4 flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-1">
-                                        {clasificaciones.generosDisponibles.map((genero) => (
-                                            <div key={genero} className="flex items-center gap-2 rounded-none border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-700">
-                                                <span>{genero}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => eliminarGenero(genero)}
-                                                    className="rounded-none border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-                                                >x</button>
-                                            </div>
-                                        ))}
+                                        {clasificaciones.generosDisponibles.map(
+                                            (genero) => (
+                                                <div
+                                                    key={genero}
+                                                    className="flex items-center gap-2 border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-700"
+                                                >
+                                                    <span>{genero}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            eliminarGenero(
+                                                                genero
+                                                            )
+                                                        }
+                                                        className="font-bold text-red-600 transition hover:text-red-800"
+                                                    >×
+                                                    </button>
+                                                </div>
+                                            )
+                                        )}
                                     </div>
-                                </>
+                                </div>
                             ) : null}
                         </div>
-
-                        <div className="rounded-none border border-zinc-200 bg-zinc-50 p-4 h-fit">
-                            <div className="flex items-center justify-between gap-4">
+                        <div className="rounded-none border border-zinc-200 bg-zinc-50">
+                            <div className="flex items-start justify-between gap-3 p-4">
                                 <div>
-                                    <h4 className="font-medium text-zinc-950">Beneficios</h4>
-                                    <p className="mt-1 text-sm text-zinc-500">Registra beneficios que luego podrán agregarse a los productos.</p>
+                                    <h4 className="font-semibold text-zinc-950">Beneficios</h4>
+                                    <p className="mt-1 text-xs leading-5 text-zinc-500">Beneficios que pueden asignarse a los productos.</p>
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => setBeneficiosExpandido((prev) => !prev)}
-                                    className="rounded-none border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
+                                    onClick={() =>
+                                        setBeneficiosExpandido(
+                                            (prev) => !prev
+                                        )
+                                    }
+                                    className="shrink-0 rounded-none border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:border-red-600 hover:text-red-600"
                                 >
-                                    {beneficiosExpandido ? 'Ocultar' : 'Mostrar'}
+                                    {beneficiosExpandido
+                                        ? 'Ocultar'
+                                        : 'Mostrar'}
                                 </button>
                             </div>
-
                             {beneficiosExpandido ? (
-                                <>
-                                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                                <div className="border-t border-zinc-200 p-4">
+                                    <div className="flex flex-col gap-2 sm:flex-row">
                                         <input
                                             type="text"
                                             value={beneficioNuevo}
-                                            onChange={(event) => setBeneficioNuevo(event.target.value)}
+                                            onChange={(event) =>
+                                                setBeneficioNuevo(
+                                                    event.target.value
+                                                )
+                                            }
                                             placeholder="Nuevo beneficio"
-                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                            className="min-w-0 flex-1 rounded-none border border-zinc-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-zinc-900"
                                         />
                                         <button
                                             type="button"
                                             onClick={handleAgregarBeneficio}
-                                            className="rounded-none bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 sm:whitespace-nowrap"
-                                        >Agregar</button>
+                                            className="rounded-none bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                                        >Agregar
+                                        </button>
                                     </div>
-
                                     <div className="mt-4 flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-1">
-                                        {clasificaciones.beneficiosDisponibles.map((beneficio) => (
-                                            <div key={beneficio} className="flex items-center gap-2 rounded-none border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-700">
-                                                <span>{beneficio}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => eliminarBeneficio(beneficio)}
-                                                    className="rounded-none border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-                                                >x</button>
-                                            </div>
-                                        ))}
+                                        {clasificaciones.beneficiosDisponibles.map(
+                                            (beneficio) => (
+                                                <div
+                                                    key={beneficio}
+                                                    className="flex items-center gap-2 border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-700"
+                                                >
+                                                    <span>{beneficio}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            eliminarBeneficio(
+                                                                beneficio
+                                                            )
+                                                        }
+                                                        className="font-bold text-red-600 transition hover:text-red-800"
+                                                    >×
+                                                    </button>
+                                                </div>
+                                            )
+                                        )}
                                     </div>
-                                </>
+                                </div>
                             ) : null}
                         </div>
-
-                        <div className="rounded-none border border-zinc-200 bg-zinc-50 p-4 h-fit">
-                            <div className="flex items-center justify-between gap-4">
-                                <div>
-                                    <h4 className="font-medium text-zinc-950">Tallas</h4>
-                                    <p className="mt-1 text-sm text-zinc-500">Agrega tallas disponibles para asignar productos y stock por talla. Se dividen en letras y números.</p>
+                        <div className="rounded-none border border-zinc-200 bg-zinc-50">
+                            <div className="flex items-start justify-between gap-3 p-4">
+                                <div className="min-w-0">
+                                    <h4 className="font-semibold text-zinc-950">Tallas</h4>
+                                    <p className="mt-1 text-xs leading-5 text-zinc-500">Administra tallas por letras y números para asignación y control de stock.</p>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={toggleTallasExpandido}
-                                    className="rounded-none border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-950 transition hover:bg-zinc-100"
-                                >
-                                    {tallasExpandido ? 'Ocultar' : 'Mostrar'}
+                                    className="shrink-0 rounded-none border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:border-red-600 hover:text-red-600"
+                                >{tallasExpandido ? 'Ocultar' : 'Mostrar'}
                                 </button>
                             </div>
-
                             {tallasExpandido ? (
-                                <>
-                                    <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_180px_auto]">
+                                <div className="border-t border-zinc-200 p-4">
+                                    {/* CREAR TALLA */}
+                                    <div className="grid gap-2 sm:grid-cols-[1fr_150px_auto]">
                                         <input
                                             type="text"
                                             value={tallaNueva}
-                                            onChange={(event) => setTallaNueva(event.target.value)}
+                                            onChange={(event) =>
+                                                setTallaNueva(
+                                                    event.target.value
+                                                )
+                                            }
                                             placeholder="Nueva talla"
-                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                            className="w-full rounded-none border border-zinc-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-zinc-900"
                                         />
                                         <select
                                             value={tipoTallaNueva}
-                                            onChange={(event) => setTipoTallaNueva(event.target.value as 'letras' | 'numeros')}
-                                            className="rounded-none border border-zinc-300 bg-white px-3 py-2 outline-none transition focus:border-zinc-900"
+                                            onChange={(event) =>
+                                                setTipoTallaNueva(
+                                                    event.target.value as
+                                                        | 'letras'
+                                                        | 'numeros'
+                                                )
+                                            }
+                                            className="rounded-none border border-zinc-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-zinc-900"
                                         >
                                             <option value="letras">Letras</option>
                                             <option value="numeros">Números</option>
@@ -417,32 +515,73 @@ export const ClasificacionesAdministrativas = ({
                                         <button
                                             type="button"
                                             onClick={handleAgregarTalla}
-                                            className="rounded-none bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 sm:whitespace-nowrap"
-                                        >Agregar</button>
+                                            className="rounded-none bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                                        >Agregar
+                                        </button>
                                     </div>
-
-                                    <div className="mt-5 space-y-4">
-                                        {(['letras', 'numeros'] as const).map((tipo) => (
-                                            <div key={tipo} className="rounded-none border border-zinc-200 bg-white p-3">
-                                                <h5 className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-zinc-600">
-                                                    {tipo === 'letras' ? 'Letras' : 'Números'}
-                                                </h5>
-                                                <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto pr-1">
-                                                    {(clasificaciones.tallasPorTipo?.[tipo] ?? []).map((talla) => (
-                                                        <div key={talla} className="flex items-center gap-2 rounded-none border border-zinc-200 bg-zinc-50 px-3 py-1 text-sm text-zinc-700">
+                                    {/* TALLAS */}
+                                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                        {(
+                                            ['letras', 'numeros'] as const
+                                        ).map((tipo) => (
+                                            <div
+                                                key={tipo}
+                                                className="border border-zinc-200 bg-white p-3"
+                                            >
+                                                <div className="mb-3 flex items-center justify-between border-b border-zinc-100 pb-2">
+                                                    <h5 className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-700">
+                                                        {tipo === 'letras'
+                                                            ? 'Letras'
+                                                            : 'Números'}
+                                                    </h5>
+                                                    <span className="text-[0.65rem] text-zinc-400">
+                                                        {
+                                                            (
+                                                                clasificaciones
+                                                                    .tallasPorTipo?.[
+                                                                    tipo
+                                                                ] ?? []
+                                                            ).length
+                                                        }
+                                                    </span>
+                                                </div>
+                                                <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto pr-1">
+                                                    {(
+                                                        clasificaciones
+                                                            .tallasPorTipo?.[
+                                                            tipo
+                                                        ] ?? []
+                                                    ).map((talla) => (
+                                                        <div
+                                                            key={talla}
+                                                            className="flex items-center gap-2 border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs text-zinc-700"
+                                                        >
                                                             <span>{talla}</span>
                                                             <button
                                                                 type="button"
-                                                                onClick={() => eliminarTalla(talla)}
-                                                                className="rounded-none border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-                                                            >x</button>
+                                                                onClick={() =>
+                                                                    eliminarTalla(
+                                                                        talla
+                                                                    )
+                                                                }
+                                                                className="font-bold text-red-600 transition hover:text-red-800"
+                                                            >×
+                                                            </button>
                                                         </div>
                                                     ))}
+                                                    {(
+                                                        clasificaciones
+                                                            .tallasPorTipo?.[
+                                                            tipo
+                                                        ] ?? []
+                                                    ).length === 0 ? (
+                                                        <span className="text-xs text-zinc-400">Sin tallas registradas.</span>
+                                                    ) : null}
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                </>
+                                </div>
                             ) : null}
                         </div>
                     </div>

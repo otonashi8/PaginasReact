@@ -85,17 +85,37 @@ export const pedidoVacio: Pedido = {
     fechaActualizacion: new Date().toISOString()
 };
 
+export function normalizarPedidos(input: unknown): Pedido[] {
+    if (Array.isArray(input)) {
+        return input as Pedido[];
+    }
+
+    if (input && typeof input === 'object') {
+        const candidate = input as Record<string, unknown>;
+        const list = Array.isArray(candidate.items) ? candidate.items : [];
+        return Array.isArray(list) ? (list as Pedido[]) : [];
+    }
+
+    return [];
+}
+
 export function obtenerPedidos(): Pedido[] {
     const datos = storageManager.get<string>(CLAVE_PEDIDOS) as string | null;
-    return datos
-        ? JSON.parse(String(datos))
-        : [];
+    if (!datos) {
+        return [];
+    }
+
+    try {
+        return normalizarPedidos(JSON.parse(String(datos)));
+    } catch {
+        return [];
+    }
 }
 
 export function guardarPedidos(
     pedidos: Pedido[]
 ) {
-    storageManager.set(CLAVE_PEDIDOS, JSON.stringify(pedidos));
+    storageManager.set(CLAVE_PEDIDOS, JSON.stringify(Array.isArray(pedidos) ? pedidos : []));
 }
 
 export function crearPedido(

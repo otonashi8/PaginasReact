@@ -1,6 +1,7 @@
 import { AlertCircle, ChevronDown, ChevronUp, ImageIcon, Pencil, Plus, Power, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { registrarLog, obtenerActorAuditoria } from '../../../services/auditService';
+import { PaginacionClientes } from '../../componentes/Paginacion';
 import {
   getBannerRotationSeconds,
   getPersistedBanners,
@@ -39,11 +40,24 @@ export const BannersCrudPanel = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [form, setForm] = useState<BannerFormState>(() => createEmptyForm());
   const [message, setMessage] = useState<BannerMessage | null>(null);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const elementosPorPagina = 10;
 
   const sortedBanners = useMemo(
     () => [...banners].sort((a, b) => a.orden - b.orden),
     [banners],
   );
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [banners.length]);
+
+  const paginaBanners = useMemo(() => {
+    const inicio = (paginaActual - 1) * elementosPorPagina;
+    return sortedBanners.slice(inicio, inicio + elementosPorPagina);
+  }, [paginaActual, sortedBanners]);
+
+  const paginaTope = Math.max(1, Math.ceil(sortedBanners.length / elementosPorPagina));
 
   const closeForm = () => {
     setEditingId(null);
@@ -384,7 +398,7 @@ export const BannersCrudPanel = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedBanners.length === 0 ? (
+              {paginaBanners.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
                     No hay banners registrados.
@@ -392,7 +406,7 @@ export const BannersCrudPanel = () => {
                 </tr>
               ) : null}
 
-              {sortedBanners.map((banner) => (
+              {paginaBanners.map((banner) => (
                 <tr key={banner.id} className="align-top">
                   <td className="border-b border-zinc-200 px-4 py-3 text-zinc-800">
                     <div className="font-medium">{banner.nombre}</div>
@@ -469,6 +483,11 @@ export const BannersCrudPanel = () => {
           </table>
         </div>
       </div>
+      <PaginacionClientes
+        paginaActual={paginaActual}
+        paginaTope={paginaTope}
+        onPaginaChange={setPaginaActual}
+      />
     </section>
   );
 };

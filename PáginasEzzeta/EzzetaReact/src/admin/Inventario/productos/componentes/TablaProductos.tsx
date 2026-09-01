@@ -119,11 +119,18 @@ export const TablaProductos = ({
                                                 {producto.tallas.length === 0 ? (
                                                     <span className="text-sm text-zinc-400">Sin tallas</span>
                                                 ) : (
-                                                    producto.tallas.map((talla) => (
-                                                        <span key={talla} className="rounded-none border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700">
-                                                            {talla}
-                                                        </span>
-                                                    ))
+                                                    producto.tallas.map((talla) => {
+                                                        const agotada = Number(producto.tallasStock?.[talla] ?? 0) <= 0;
+
+                                                        return (
+                                                            <span
+                                                                key={talla}
+                                                                className={`rounded-none border px-3 py-1 text-xs font-medium ${agotada ? 'border-red-200 bg-red-50 text-red-600 line-through' : 'border-zinc-200 bg-zinc-50 text-zinc-700'}`}
+                                                            >
+                                                                {talla}
+                                                            </span>
+                                                        );
+                                                    })
                                                 )}
                                             </div>
                                         </td>
@@ -222,11 +229,18 @@ export const TablaProductos = ({
                                             {producto.tallas.length === 0 ? (
                                                 <span className="text-xs text-zinc-400">Sin tallas</span>
                                             ) : (
-                                                producto.tallas.map((talla) => (
-                                                    <span key={talla} className="rounded-none border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-700">
-                                                        {talla}
-                                                    </span>
-                                                ))
+                                                producto.tallas.map((talla) => {
+                                                    const agotada = Number(producto.tallasStock?.[talla] ?? 0) <= 0;
+
+                                                    return (
+                                                        <span
+                                                            key={talla}
+                                                            className={`rounded-none border px-2.5 py-1 text-[11px] font-medium ${agotada ? 'border-red-200 bg-red-50 text-red-600 line-through' : 'border-zinc-200 bg-white text-zinc-700'}`}
+                                                        >
+                                                            {talla}
+                                                        </span>
+                                                    );
+                                                })
                                             )}
                                         </div>
 

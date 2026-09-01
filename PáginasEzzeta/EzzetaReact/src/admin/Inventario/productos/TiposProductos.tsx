@@ -21,6 +21,7 @@ export interface Producto {
     relacionados:number[];
     extras:string[];
     activo:boolean;
+    colores?: string[];
     fechaCreacion:string;
     fechaActualizacion:string;
 }

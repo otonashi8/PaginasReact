@@ -10,6 +10,16 @@ type AuthSessionLike = {
     } | null;
 } | null;
 
+type CheckoutSnapshot = {
+    email?: string;
+    phone?: string;
+    couponCode?: string;
+    subtotal?: number;
+    discountTotal?: number;
+    shippingCost?: number;
+    total?: number;
+};
+
 export const determinarOrigenCarrito = (context: {
     userId?: string;
     authSession?: AuthSessionLike;
@@ -58,7 +68,8 @@ const buildCarritoPerdido = (
     id: string,
     origen: CarritoPerdido["origen"],
     metadata: Partial<Pick<CarritoPerdido, "userId" | "guestId" | "checkoutEmail" | "checkoutPhone" | "couponCode">> = {},
-    fechaCreacion?: string
+    fechaCreacion?: string,
+    checkoutSnapshot?: CheckoutSnapshot
 ): CarritoPerdido => {
     const { total, cantidadItems } = calcularTotalesCarrito(items);
     const fechaBase = fechaCreacion || new Date().toISOString();
@@ -67,7 +78,10 @@ const buildCarritoPerdido = (
         origen,
         ...metadata,
         cantidadItems,
-        total,
+        subtotal: checkoutSnapshot?.subtotal,
+        discountTotal: checkoutSnapshot?.discountTotal,
+        shippingCost: checkoutSnapshot?.shippingCost,
+        total: checkoutSnapshot?.total ?? total,
         fecha: fechaBase,
         ultimaActividad: fechaBase,
         productos: items
@@ -83,7 +97,7 @@ export const obtenerCarritosPerdidos = (): CarritoPerdido[] => {
 
     const currentCart = storageManager.cart.get() as StorageCartItem[] | null;
     const guestRecord = storageManager.guest.get() as { id?: string; createdAt?: string } | null;
-    const checkoutDraft = storageManager.checkout.get() as { email?: string; phone?: string } | null;
+    const checkoutDraft = storageManager.checkout.get() as CheckoutSnapshot | null;
     const appliedCoupon = storageManager.cart.appliedCoupon.get() as { code?: string } | null;
     const authSession = storageManager.auth.get() as AuthSessionLike;
     const registeredUsers = storageManager.get<Array<Record<string, unknown>>>(StorageKeys.USERS) || [];
@@ -103,7 +117,7 @@ export const obtenerCarritosPerdidos = (): CarritoPerdido[] => {
                 checkoutEmail: checkoutDraft?.email,
                 checkoutPhone: checkoutDraft?.phone,
                 couponCode: appliedCoupon?.code
-            }, obtenerFechaCreacionCarrito(StorageKeys.CART, guestRecord?.createdAt))
+            }, obtenerFechaCreacionCarrito(StorageKeys.CART, guestRecord?.createdAt), checkoutDraft ?? undefined)
         );
     }
 
@@ -122,7 +136,7 @@ export const obtenerCarritosPerdidos = (): CarritoPerdido[] => {
         carritos.push(
             buildCarritoPerdido(items, key, origen, {
                 userId
-            }, obtenerFechaCreacionCarrito(key))
+            }, obtenerFechaCreacionCarrito(key), authSession?.user?.id === userId ? checkoutDraft ?? undefined : undefined)
         );
     });
 

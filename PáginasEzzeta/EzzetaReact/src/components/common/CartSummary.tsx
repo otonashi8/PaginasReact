@@ -23,23 +23,11 @@ export default function CartSummary({
 
         <div className="space-y-3 rounded-[1.2rem] border border-black/10 bg-white p-5 text-sm shadow-[0_14px_36px_rgba(0,0,0,0.07)]">
           <div className="flex justify-between text-black/70">
-            <span>Subtotal</span>
+            <span>Total original</span>
             <span>S/{subtotal.toFixed(2)}</span>
           </div>
-          {promoDiscountAmount > 0 ? (
-            <div className="flex justify-between text-green-600">
-              <span>Descuento aplicado</span>
-              <span>-S/{promoDiscountAmount.toFixed(2)}</span>
-            </div>
-          ) : null}
-          {automaticDiscountAmount > 0 ? (
-            <div className="flex justify-between text-green-600">
-              <span>Descuento de productos</span>
-              <span>-S/{automaticDiscountAmount.toFixed(2)}</span>
-            </div>
-          ) : null}
           <div className="flex justify-between text-green-600">
-            <span>Ahorro</span>
+            <span>Lo Que Ahorras</span>
             <span className={totalSavings > 0 ? 'font-semibold text-green-600' : 'text-green-600'}>-S/{totalSavings.toFixed(2)}</span>
           </div>
           {shippingNotConfigured ? (

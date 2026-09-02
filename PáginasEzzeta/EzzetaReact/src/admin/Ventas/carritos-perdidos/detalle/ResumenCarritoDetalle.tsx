@@ -11,8 +11,8 @@ export const ResumenCarritoDetalle = ({ carrito }: Props) => {
         const producto = catalogo.find((product) => Number(product.id) === item.productId);
         return sum + (producto?.price ?? 0) * item.quantity;
     }, 0);
-    const descuentos = 0;
-    const envio = subtotal > 0 ? 15 : 0;
+    const descuentos = carrito.discountTotal ?? 0;
+    const envio = carrito.shippingCost ?? (subtotal > 0 ? 15 : 0);
     const total = carrito.total;
 
     return (
@@ -28,7 +28,7 @@ export const ResumenCarritoDetalle = ({ carrito }: Props) => {
                 </div>
                 <div>
                     <p className="text-sm text-zinc-500">Subtotal</p>
-                    <p className="font-medium">S/ {subtotal.toFixed(2)}</p>
+                    <p className="font-medium">S/ {(carrito.subtotal ?? subtotal).toFixed(2)}</p>
                 </div>
                 <div>
                     <p className="text-sm text-zinc-500">Descuentos</p>

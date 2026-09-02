@@ -11,7 +11,8 @@ export const syncGuestToUser = async (userId: string) => {
 
   try {
     const guestCart = (storageManager.cart.get() as any[]) || [];
-    const userCart = (storageManager.get(StorageKeys.CART) as any[]) || [];
+    const userCartKey = `${StorageKeys.CART}.${userId}`;
+    const userCart = (storageManager.get(userCartKey) as any[]) || [];
 
     const keyForItem = (it: any) => `${it.productId}::${it.size}`;
     const map = new Map<string, any>();
@@ -27,7 +28,10 @@ export const syncGuestToUser = async (userId: string) => {
     });
 
     const mergedCart = Array.from(map.values());
-    storageManager.set(StorageKeys.CART, mergedCart);
+    storageManager.set(userCartKey, mergedCart);
+    storageManager.remove(StorageKeys.CART);
+    storageManager.remove(`${StorageKeys.CART}.meta`);
+    storageManager.remove(StorageKeys.WISHLIST_CART_LEGACY);
     results.cart = { merged: mergedCart.length };
   } catch (e) {
     results.cart = { error: String(e) };

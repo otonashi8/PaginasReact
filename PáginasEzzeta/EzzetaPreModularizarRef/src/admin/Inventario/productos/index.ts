@@ -1,1 +1,0 @@
-export { ProductosCrudPanel } from './ProductosCrudPanel';

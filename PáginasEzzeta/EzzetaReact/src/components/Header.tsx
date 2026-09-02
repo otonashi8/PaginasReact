@@ -271,7 +271,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
           return candidateValues.some((value) => value && (id === value || email === value || username === value || phone === value));
         });
 
-        const candidateUsers = matches.length > 0 ? matches : normalizedUsers.slice(0, 1);
+        const candidateUsers = matches;
 
         const mergeSavedEntries = (key: 'direcciones' | 'metodosPago') => {
           const collected = candidateUsers.flatMap((entry) => Array.isArray(entry[key]) ? (entry[key] as Array<Record<string, unknown>>) : []);

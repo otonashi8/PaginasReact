@@ -135,10 +135,14 @@ export const useCarritosPerdidos = () => {
         };
 
         window.addEventListener("storage", handleStorage);
+        window.addEventListener("maxeta:cart-changed", recargarCarritos);
+        window.addEventListener("maxeta:checkout-draft-changed", recargarCarritos);
         window.addEventListener("focus", handleFocus);
 
         return () => {
             window.removeEventListener("storage", handleStorage);
+            window.removeEventListener("maxeta:cart-changed", recargarCarritos);
+            window.removeEventListener("maxeta:checkout-draft-changed", recargarCarritos);
             window.removeEventListener("focus", handleFocus);
         };
     }, []);

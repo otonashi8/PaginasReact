@@ -122,13 +122,11 @@ export const TablaProductos = ({
                                                 ) : (
                                                     producto.tallas.map((talla) => {
                                                         const agotada = Number(producto.tallasStock?.[talla] ?? 0) <= 0;
-
                                                         return (
                                                             <span
                                                                 key={talla}
                                                                 className={`rounded-none border px-3 py-1 text-xs font-medium ${agotada ? 'border-red-200 bg-red-50 text-red-600 line-through' : 'border-zinc-200 bg-zinc-50 text-zinc-700'}`}
-                                                            >
-                                                                {talla}
+                                                            >{talla}
                                                             </span>
                                                         );
                                                     })
@@ -140,8 +138,7 @@ export const TablaProductos = ({
                                                 type="button"
                                                 onClick={() => cambiarEstado(producto, 'destacado')}
                                                 className={`inline-flex rounded-none border px-3 py-1 text-xs font-semibold transition ${producto.destacado ? 'border-yellow-200 bg-yellow-100 text-yellow-800 hover:border-yellow-300 hover:bg-yellow-50' : 'border-zinc-200 bg-white text-zinc-400 hover:border-zinc-400 hover:bg-zinc-50'}`}
-                                            >
-                                                {producto.destacado ? '✓' : '✕'}
+                                            >{producto.destacado ? '✓' : '✕'}
                                             </button>
                                         </td>
                                         <td className="px-4 py-4">
@@ -149,13 +146,10 @@ export const TablaProductos = ({
                                                 type="button"
                                                 onClick={() => cambiarEstado(producto, 'activo')}
                                                 className={`inline-flex rounded-none border px-3 py-1 text-xs font-semibold transition ${producto.activo ? 'border-emerald-200 bg-emerald-100 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50' : 'border-red-200 bg-red-100 text-red-700 hover:border-red-300 hover:bg-red-50'}`}
-                                            >
-                                                {producto.activo ? '✓' : '✕'}
+                                            >{producto.activo ? '✓' : '✕'}
                                             </button>
                                         </td>
-                                        <td className="px-4 py-4 text-sm text-zinc-600">
-                                            {formatearFechaProducto(producto.fechaActualizacion)}
-                                        </td>
+                                        <td className="px-4 py-4 text-sm text-zinc-600">{formatearFechaProducto(producto.fechaActualizacion)}</td>
                                         <td className="px-4 py-4">
                                             <div className="flex justify-end whitespace-nowrap">
                                                 <TablaAcciones>

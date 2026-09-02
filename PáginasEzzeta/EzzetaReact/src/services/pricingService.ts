@@ -112,6 +112,37 @@ export type CartComboInfo = {
   combosIncompletos: ComboApplied[];
 };
 
+export type CartDiscountResolution = {
+  descuentoCupon: number;
+  descuentoCombos: number;
+  subtotalFinal: number;
+};
+
+export const obtenerMayorDescuentoCombo = (comboInfo: CartComboInfo): number => (
+  comboInfo.combosAplicados.reduce(
+    (mayorDescuento, combo) => Math.max(mayorDescuento, combo.descuentoTotal),
+    0,
+  )
+);
+
+export const resolverDescuentosCarrito = (
+  subtotal: number,
+  descuentoCupon: number,
+  descuentoCombos: number,
+): CartDiscountResolution => {
+  const subtotalSeguro = Math.max(0, Number(subtotal) || 0);
+  const cuponAplicado = Math.min(subtotalSeguro, Math.max(0, Number(descuentoCupon) || 0));
+  const combosDisponibles = Math.min(subtotalSeguro, Math.max(0, Number(descuentoCombos) || 0));
+  const aplicarCupon = cuponAplicado >= combosDisponibles;
+  const descuentoGanador = aplicarCupon ? cuponAplicado : combosDisponibles;
+
+  return {
+    descuentoCupon: aplicarCupon ? Number(cuponAplicado.toFixed(2)) : 0,
+    descuentoCombos: aplicarCupon ? 0 : Number(combosDisponibles.toFixed(2)),
+    subtotalFinal: Number((subtotalSeguro - descuentoGanador).toFixed(2)),
+  };
+};
+
 export const resolveCartCoupon = (
   subtotal: number,
   codigoCupon: string,
@@ -270,7 +301,12 @@ export const detectarCombosEnCarrito = (
 
           if (coincide) {
             const cantidadAUsar = Math.min(item.quantity, elemento.cantidad);
-            precioNormalTotal += producto.price * cantidadAUsar;
+            const precioEfectivo = resolveProductPrice(
+              producto,
+              { cantidad: item.quantity },
+              reglas,
+            ).precioFinal;
+            precioNormalTotal += precioEfectivo * cantidadAUsar;
           }
         }
       }

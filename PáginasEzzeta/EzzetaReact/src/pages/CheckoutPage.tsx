@@ -11,7 +11,7 @@ import type { Pedido } from '@/admin/Ventas/pedidos/TiposPedidos'
 import { getPeruDepartments } from '@/services/peruUbigeoService'
 import { calcularCostoEnvio, obtenerConfiguracionEnvioActual } from '@/utils/envioHelpers'
 import { SHIPPING_CONFIG_EVENT } from '@/admin/Sistema/envio/DatosEnvio'
-import { detectarCombosEnCarrito, resolveCartCoupon, usePricingRules } from '@/services/pricingService'
+import { detectarCombosEnCarrito, obtenerMayorDescuentoCombo, resolverDescuentosCarrito, resolveCartCoupon, usePricingRules } from '@/services/pricingService'
 import { getProducts } from '@/services/contentService'
 import { descontarStockPorTalla } from '@/admin/Inventario/productos/DatosProductos'
 import { validarStockDelCarrito } from '@/utils/cartHelpers'
@@ -141,6 +141,12 @@ const parseStoredCheckout = (): Partial<FormValues> => {
     const raw = window.localStorage.getItem(StorageKeys.CHECKOUT)
     if (!raw) return {}
     const parsed = JSON.parse(raw) as Record<string, unknown>
+    const authRaw = window.localStorage.getItem(StorageKeys.AUTH)
+    if (authRaw) {
+      const auth = JSON.parse(authRaw) as { user?: { id?: string } }
+      const activeUserId = String(auth.user?.id ?? '').trim()
+      if (!activeUserId || String(parsed.userId ?? '').trim() !== activeUserId) return {}
+    }
     return {
       fullName: typeof parsed.name === 'string' ? parsed.name : '',
       email: typeof parsed.email === 'string' ? parsed.email : '',
@@ -199,7 +205,7 @@ const getStoredProfileData = () => {
       )
     })
 
-    const candidateUsers = matches.length > 0 ? matches : users.slice(0, 1)
+    const candidateUsers = matches
     const mergeSavedData = (key: 'direcciones' | 'metodosPago') => {
       const collected = candidateUsers.flatMap((entry) => Array.isArray(entry[key]) ? (entry[key] as Array<Record<string, unknown>>) : [])
       const seen = new Map<string, Record<string, unknown>>()
@@ -397,11 +403,12 @@ function CheckoutPage() {
     }))
 
     const comboInfo = detectarCombosEnCarrito(cartItems, getProducts(), pricingRules)
-    return comboInfo.descuentoTotalCombos
+    return obtenerMayorDescuentoCombo(comboInfo)
   }, [items, pricingRules])
 
+  const descuentosCarrito = resolverDescuentosCarrito(totalPrice, couponDiscount, comboDiscount)
   const shippingCost = shippingResult.shippingAmount ?? 0
-  const subtotalConDescuento = Math.max(0, Number((totalPrice - couponDiscount - comboDiscount).toFixed(2)))
+  const subtotalConDescuento = descuentosCarrito.subtotalFinal
   const wholesaleDiscount = Math.max(0, Number((totalPriceBeforeWholesale - totalPrice).toFixed(2)))
   const subtotalOriginal = useMemo(
     () => items.reduce((sum, item) => sum + item.originalSubtotal, 0),
@@ -437,6 +444,7 @@ function CheckoutPage() {
     if (!hasContactData) return
 
     const payload = {
+      userId: user?.id ?? null,
       name: form.fullName,
       email: form.email,
       phone: form.phone,
@@ -449,13 +457,18 @@ function CheckoutPage() {
       reference: form.reference,
       paymentMethod: form.paymentMethod,
       couponCode: appliedCouponCode,
+      subtotal: subtotalConDescuento,
+      discountTotal: Number((automaticDiscount + descuentosCarrito.descuentoCupon + descuentosCarrito.descuentoCombos).toFixed(2)),
+      shippingCost,
+      total: checkoutTotal,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
     window.localStorage.setItem(StorageKeys.CHECKOUT, JSON.stringify(payload))
     window.localStorage.setItem('ezzeta.checkout.lastEmail', form.email)
     window.localStorage.setItem('ezzeta.checkout.lastPhone', form.phone)
-  }, [items.length, form, appliedCouponCode])
+    window.dispatchEvent(new Event('maxeta:checkout-draft-changed'))
+  }, [items.length, form, appliedCouponCode, user?.id])
 
   const updateField = (field: keyof FormValues, value: string) => {
     setForm((current) => ({ ...current, [field]: value }))
@@ -494,7 +507,7 @@ function CheckoutPage() {
     setErrors((current) => ({ ...current, ...nextErrors }))
     if (Object.keys(nextErrors).length > 0) return
 
-    if (saveLocation) {
+    if (isCustomer && saveLocation) {
       const addressPayload = {
         id: Date.now(),
         nombre: form.locationName || 'Ubicación guardada',
@@ -646,7 +659,7 @@ function CheckoutPage() {
         couponCode: appliedCouponCode || undefined,
         couponDiscountAmount: couponDiscount,
         subtotal: totalPrice,
-        descuentoTotal: Number((couponDiscount + comboDiscount + wholesaleDiscount).toFixed(2)),
+        descuentoTotal: Number((descuentosCarrito.descuentoCupon + descuentosCarrito.descuentoCombos + wholesaleDiscount).toFixed(2)),
         costoEnvio: shippingCost,
         total: checkoutTotal,
         metodoPago: form.paymentMethod,
@@ -871,18 +884,22 @@ function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
-                    <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-[rgba(125,36,56,0.18)] px-3 py-2.5 text-sm font-semibold text-vino-oscuro">
-                      <input type="checkbox" checked={saveLocation} onChange={(event) => setSaveLocation(event.target.checked)} className="size-4 accent-vino" />
-                      Guardar ubicación
-                    </label>
-                  </div>
+                  {isCustomer ? (
+                    <>
+                      <div className="flex justify-end">
+                        <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-[rgba(125,36,56,0.18)] px-3 py-2.5 text-sm font-semibold text-vino-oscuro">
+                          <input type="checkbox" checked={saveLocation} onChange={(event) => setSaveLocation(event.target.checked)} className="size-4 accent-vino" />
+                          Guardar ubicación
+                        </label>
+                      </div>
 
-                  {saveLocation ? (
-                    <div>
-                      <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Nombre de la ubicación</label>
-                      <input value={form.locationName} onChange={(event) => updateField('locationName', event.target.value)} className="h-11 w-full rounded-xl border border-[rgba(125,36,56,0.18)] bg-white px-3.5 text-sm outline-none focus:border-vino" placeholder="Ej. Casa o trabajo" />
-                    </div>
+                      {saveLocation ? (
+                        <div>
+                          <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Nombre de la ubicación</label>
+                          <input value={form.locationName} onChange={(event) => updateField('locationName', event.target.value)} className="h-11 w-full rounded-xl border border-[rgba(125,36,56,0.18)] bg-white px-3.5 text-sm outline-none focus:border-vino" placeholder="Ej. Casa o trabajo" />
+                        </div>
+                      ) : null}
+                    </>
                   ) : null}
 
                   <Button className={`${BTN_PRIMARIO_CLASS} w-full justify-center sm:w-auto`} onClick={handleSaveContact}>Guardar y continuar</Button>
@@ -1061,7 +1078,7 @@ function CheckoutPage() {
               <div className="flex justify-between"><span>Subtotal</span><span>S/ {subtotalOriginal.toFixed(2)}</span></div>
               {automaticDiscount > 0 ? <div className="flex justify-between text-green-600"><span>Descuento automático</span><span>-S/ {automaticDiscount.toFixed(2)}</span></div> : null}
               {couponDiscount > 0 ? <div className="flex justify-between text-green-600"><span>Descuento cupón</span><span>-S/ {couponDiscount.toFixed(2)}</span></div> : null}
-              {comboDiscount > 0 ? <div className="flex justify-between text-green-600"><span>Descuento combo</span><span>-S/ {comboDiscount.toFixed(2)}</span></div> : null}
+              {descuentosCarrito.descuentoCombos > 0 ? <div className="flex justify-between text-green-600"><span>Descuento combo</span><span>-S/ {descuentosCarrito.descuentoCombos.toFixed(2)}</span></div> : null}
               <div className="flex justify-between"><span>Envío</span><span>{etiquetaEnvio}</span></div>
               <div className="flex justify-between"><span>Departamento</span><span>{selectedDepartmentName || 'Sin seleccionar'}</span></div>
             </div>

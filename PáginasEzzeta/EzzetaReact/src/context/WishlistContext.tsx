@@ -51,7 +51,29 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
     setFavorites(loadedFavorites);
 
     try {
-      const loadedCart = (storageManager.get<CartItem[]>(cartKey) as CartItem[]) || [];
+      const storedCart = (storageManager.get<CartItem[]>(cartKey) as CartItem[]) || [];
+      const guestCart = isAuthenticated && cartKey !== StorageKeys.CART
+        ? (storageManager.get<CartItem[]>(StorageKeys.CART) as CartItem[]) || []
+        : [];
+      const itemKey = (item: CartItem) => `${item.productId}::${item.size}`;
+      const mergedItems = new Map<string, CartItem>();
+
+      storedCart.forEach((item) => mergedItems.set(itemKey(item), { ...item }));
+      guestCart.forEach((item) => {
+        const key = itemKey(item);
+        const current = mergedItems.get(key);
+        mergedItems.set(key, current
+          ? { ...current, quantity: current.quantity + item.quantity }
+          : { ...item });
+      });
+
+      const loadedCart = Array.from(mergedItems.values());
+      if (guestCart.length > 0) {
+        storageManager.set(cartKey, loadedCart);
+        storageManager.remove(StorageKeys.CART);
+        storageManager.remove(`${StorageKeys.CART}.meta`);
+        storageManager.remove(StorageKeys.WISHLIST_CART_LEGACY);
+      }
       setCart(loadedCart);
     } catch {
       setCart([]);
@@ -74,6 +96,7 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       storageManager.set(cartKey, cart);
+      window.dispatchEvent(new Event('maxeta:cart-changed'));
     } catch {
     }
   }, [cart, cartKey, isLoaded]);

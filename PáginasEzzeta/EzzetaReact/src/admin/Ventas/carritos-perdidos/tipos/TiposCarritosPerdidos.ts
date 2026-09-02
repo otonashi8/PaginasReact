@@ -16,6 +16,9 @@ export interface CarritoPerdido {
     checkoutEmail?: string;
     checkoutPhone?: string;
     couponCode?: string;
+    subtotal?: number;
+    discountTotal?: number;
+    shippingCost?: number;
     cantidadItems: number;
     total: number;
     fecha: string;

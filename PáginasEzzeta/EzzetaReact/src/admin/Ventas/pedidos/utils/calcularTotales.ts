@@ -9,15 +9,13 @@ export function calcularTotales(
         0
     );
 
-    const descuentoTotal = pedido.descuentoTotal;
-    const costoEnvio = pedido.costoEnvio;
-    const total =
-        subtotal
-        - descuentoTotal
-        + costoEnvio;
+    const descuentoTotal = Math.min(subtotal, Math.max(0, pedido.descuentoTotal));
+    const costoEnvio = Math.max(0, pedido.costoEnvio);
+    const total = Math.max(0, subtotal - descuentoTotal) + costoEnvio;
     return {
         ...pedido,
         subtotal,
+        descuentoTotal,
         total
     };
 

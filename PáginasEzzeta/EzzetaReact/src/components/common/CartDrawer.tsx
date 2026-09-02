@@ -7,7 +7,7 @@ import useCart from '../../hooks/useCart';
 import useCheckoutDraft, { CHECKOUT_DRAFT_CHANGED } from '../../hooks/useCheckoutDraft';
 import type { Product } from '../../types';
 import { getProducts } from '../../services/contentService';
-import { resolveProductPrice, resolveCartCoupon, usePricingRules, detectarCombosEnCarrito, obtenerPrecioMayorista, type CartItem } from '../../services/pricingService';
+import { resolveProductPrice, resolveCartCoupon, resolverDescuentosCarrito, obtenerMayorDescuentoCombo, usePricingRules, detectarCombosEnCarrito, obtenerPrecioMayorista, type CartItem } from '../../services/pricingService';
 import { obtenerPromoCodes } from '../../data/promoCodes';
 import { storageManager, StorageKeys } from '../../storage';
 import CartCheckout from './CartCheckout';
@@ -186,6 +186,11 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
   }, [appliedCoupon, selectedProductsSubtotal]);
 
   const freeShippingCoupon = appliedCoupon?.freeShipping || appliedCoupon?.type === 'shipping';
+  const descuentosCarrito = resolverDescuentosCarrito(
+    selectedProductsSubtotal,
+    promoDiscountAmount,
+    obtenerMayorDescuentoCombo(comboInfo),
+  );
   const shippingResult = calcularCostoEnvio({
     subtotal: selectedProductsSubtotal,
     departamento: checkoutDepartamento,
@@ -195,10 +200,10 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
 
   const canProceedToCheckout = selectedProducts.length > 0;
   const shipping = shippingResult.shippingAmount ?? 0;
-  const discountedSubtotal = Number(Math.max(0, selectedProductsSubtotal - promoDiscountAmount - comboInfo.descuentoTotalCombos).toFixed(2));
+  const discountedSubtotal = descuentosCarrito.subtotalFinal;
   const discountedTotal = Number(Math.max(0, discountedSubtotal + shipping).toFixed(2));
 
-  const totalSavings = Number(Math.max(0, productLevelDiscountTotal + promoDiscountAmount + comboInfo.descuentoTotalCombos).toFixed(2));
+  const totalSavings = Number(Math.max(0, productLevelDiscountTotal + descuentosCarrito.descuentoCupon + descuentosCarrito.descuentoCombos).toFixed(2));
 
   useEffect(() => {
     if (appliedCoupon && selectedProductsSubtotal < appliedCoupon.minPurchase) {

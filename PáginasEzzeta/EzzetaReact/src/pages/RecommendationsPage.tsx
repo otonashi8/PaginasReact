@@ -95,7 +95,7 @@ export const RecommendationsPage = () => {
             <div className="border-b border-zinc-200 bg-zinc-950 p-6 lg:border-b-0 lg:border-r">
               <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-red-500">Información legal</p>
               <h2 className="mt-3 text-xl font-semibold uppercase tracking-[0.08em] text-white">Datos de la empresa</h2>
-              <p className="mt-4 max-w-xs text-xs leading-6 text-white/45">Información oficial de la empresa responsable de la atención de tu solicitud.</p>
+              <p className="mt-4 max-w-xs text-sm leading-6 text-white/65">Información oficial de la empresa responsable de la atención de tu solicitud.</p>
             </div>
             <div className="grid gap-x-8 gap-y-5 p-6 sm:grid-cols-2 lg:grid-cols-3">
               <div>
@@ -140,24 +140,24 @@ export const RecommendationsPage = () => {
             <p className="mt-4 text-sm leading-7 text-zinc-500">Completa el formulario con la información necesaria para que podamos atender tu caso de manera adecuada.</p>
             <div className="mt-8 space-y-4 border-t border-zinc-200 pt-6">
               <div className="flex gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-zinc-950 text-xs text-white">01</div>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-zinc-950 text-sm text-white">01</div>
                 <div>
-                  <p className="text-xs font-semibold text-zinc-950">Selecciona el motivo</p>
-                  <p className="mt-1 text-xs leading-5 text-zinc-500">Indica qué tipo de solicitud deseas registrar.</p>
+                  <p className="text-sm font-semibold text-zinc-950">Selecciona el motivo</p>
+                  <p className="mt-1 text-sm leading-5 text-zinc-500">Indica qué tipo de solicitud deseas registrar.</p>
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-zinc-950 text-xs text-white">02</div>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-zinc-950 text-sm text-white">02</div>
                 <div>
-                  <p className="text-xs font-semibold text-zinc-950">Completa tus datos</p>
-                  <p className="mt-1 text-xs leading-5 text-zinc-500">Déjanos tus datos para poder contactarte.</p>
+                  <p className="text-sm font-semibold text-zinc-950">Completa tus datos</p>
+                  <p className="mt-1 text-sm leading-5 text-zinc-500">Déjanos tus datos para poder contactarte.</p>
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-zinc-950 text-xs text-white">03</div>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-zinc-950 text-sm text-white">03</div>
                 <div>
-                  <p className="text-xs font-semibold text-zinc-950">Describe lo ocurrido</p>
-                  <p className="mt-1 text-xs leading-5 text-zinc-500">Explica el problema con el mayor detalle posible.</p>
+                  <p className="text-sm font-semibold text-zinc-950">Describe lo ocurrido</p>
+                  <p className="mt-1 text-sm leading-5 text-zinc-500">Explica el problema con el mayor detalle posible.</p>
                 </div>
               </div>
             </div>

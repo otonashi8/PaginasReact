@@ -26,12 +26,14 @@ function PageVisibilityGate({ pageKey, children, fallback }: { pageKey: 'home' |
 
   if (!visible) {
     return <>{fallback ?? (
-      <main className="flex min-h-[60vh] items-center justify-center bg-[#ffffff] px-6 text-center">
-        <div className="rounded-[28px] border border-[#e4d0c6] bg-white p-8 shadow-[0_24px_60px_rgba(97,43,51,0.08)]">
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#8c5b5d]">Mantenimiento</p>
-          <h1 className="mt-4 text-3xl font-semibold text-[#3b1d27]">Página en mantenimiento</h1>
-          <p className="mt-3 text-sm text-[#6f4c52]">Volveremos a estar disponibles en breve.</p>
-        </div>
+      <main className="flex min-h-[60vh] items-center justify-center bg-white px-4 py-8 text-center sm:px-6">
+          <div className="w-full max-w-md border border-zinc-200 bg-white p-6 shadow-[0_18px_45px_rgba(0,0,0,0.04)] sm:p-8">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center border border-zinc-200 bg-zinc-50"><span className="text-lg text-zinc-500">🪏</span></div>
+              <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Mantenimiento</p>
+              <h1 className="mt-2 text-2xl font-semibold leading-tight text-zinc-900 sm:text-3xl">Página en mantenimiento</h1>
+              <p className="mt-3 text-xs leading-5 text-zinc-500 sm:text-sm">Volveremos a estar disponibles en breve.</p>
+              <div className="mx-auto mt-6 h-px w-12 bg-red-600" />
+          </div>
       </main>
     )}</>;
   }

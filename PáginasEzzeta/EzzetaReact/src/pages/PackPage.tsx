@@ -162,26 +162,26 @@ export const PacksPage = () => {
                 <div className="bg-black px-5 py-4 text-white">
                     <div className="mb-2 flex items-center gap-2">
                         <ShoppingBag size={15} />
-                        <span className="text-[15px] font-semibold uppercase tracking-[0.16em] text-white/60">Paso 01</span>
+                        <span className="text-[20px] font-semibold uppercase tracking-[0.16em] text-white/60">Paso 01</span>
                     </div>
-                    <p className="text-sm font-semibold">Selecciona tus productos</p>
-                    <p className="mt-1 text-sm leading-relaxed text-white/60">Elige las prendas incluidas en el pack.</p>
+                    <p className="text-lg font-semibold">Selecciona tus productos</p>
+                    <p className="mt-1 text-md leading-relaxed text-white/60">Elige las prendas incluidas en el pack.</p>
                 </div>
                 <div className="bg-white px-5 py-4">
                     <div className="mb-2 flex items-center gap-2">
                         <span className="text-sm font-bold text-red-600">+</span>
-                        <span className="text-[15px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Paso 02</span>
+                        <span className="text-[20px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Paso 02</span>
                     </div>
-                    <p className="text-sm font-semibold text-zinc-900">Configura tu combinación</p>
-                    <p className="mt-1 text-sm leading-relaxed text-zinc-500">Selecciona tallas, colores y cantidades disponibles.</p>
+                    <p className="text-lg font-semibold text-zinc-900">Configura tu combinación</p>
+                    <p className="mt-1 text-md leading-relaxed text-zinc-500">Selecciona tallas, colores y cantidades disponibles.</p>
                 </div>
                 <div className="bg-white px-5 py-4">
                     <div className="mb-2 flex items-center gap-2">
-                        <span className="text-sm font-bold text-red-600">✓</span>
-                        <span className="text-[15px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Paso 03</span>
+                        <span className="text-lg font-bold text-red-600">✓</span>
+                        <span className="text-[20px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Paso 03</span>
                     </div>
                     <p className="text-sm font-semibold text-zinc-900">Descuento automático</p>
-                    <p className="mt-1 text-sm leading-relaxed text-zinc-500">El precio especial se aplicará automáticamente al completar el pack.</p>
+                    <p className="mt-1 text-md leading-relaxed text-zinc-500">El precio especial se aplicará automáticamente al completar el pack.</p>
                 </div>
             </div>
         </div>

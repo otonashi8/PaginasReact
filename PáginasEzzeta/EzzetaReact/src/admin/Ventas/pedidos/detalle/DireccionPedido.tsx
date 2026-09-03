@@ -27,94 +27,77 @@ export const DireccionPedido = ({
     };
 
     return (
-        <section className="space-y-6">
-            <div>
-                <h3 className="text-lg font-semibold">Dirección de entrega</h3>
-                <p className="text-sm text-zinc-500">Información utilizada para el envío.</p>
+        <section className="space-y-5">
+            <div className="border-b border-zinc-100 pb-3">
+                <h3 className="text-sm font-semibold text-zinc-900">Dirección de entrega</h3>
+                <p className="mt-0.5 text-xs text-zinc-500">Información utilizada para el envío.</p>
             </div>
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="grid gap-4 lg:grid-cols-3">
                 <div>
-                    <label className="mb-2 block font-medium">Departamento</label>
+                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Departamento</label>
                     <input
                         type="text"
                         value={pedido.direccion.departamento}
-                        onChange={(e)=>
-                            actualizar(
-                                "departamento",
-                                e.target.value
-                            )
-                        }className="w-full rounded-lg border border-zinc-300 px-4 py-3"
+                        onChange={(e) =>
+                            actualizar("departamento", e.target.value)
+                        }
+                        className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500"
                     />
                 </div>
                 <div>
-                    <label className="mb-2 block font-medium">Provincia</label>
+                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Provincia</label>
                     <input
                         type="text"
                         value={pedido.direccion.provincia}
-                        onChange={(e)=>
-                            actualizar(
-                                "provincia",
-                                e.target.value
-                            )
-                        }className="w-full rounded-lg border border-zinc-300 px-4 py-3"
+                        onChange={(e) =>
+                            actualizar("provincia", e.target.value)
+                        }
+                        className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500"
                     />
                 </div>
                 <div>
-                    <label className="mb-2 block font-medium">Distrito</label>
+                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Distrito</label>
                     <input
                         type="text"
                         value={pedido.direccion.distrito}
-                        onChange={(e)=>
-                            actualizar(
-                                "distrito",
-                                e.target.value
-                            )
-                        }className="w-full rounded-lg border border-zinc-300 px-4 py-3"
+                        onChange={(e) =>
+                            actualizar("distrito", e.target.value)
+                        }
+                        className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500"
                     />
                 </div>
                 <div>
-                    <label className="mb-2 block font-medium">Código postal</label>
+                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Código postal</label>
                     <input
                         type="text"
                         value={pedido.direccion.codigoPostal}
-                        onChange={(e)=>
-                            actualizar(
-                                "codigoPostal",
-                                e.target.value
-                            )
-                        }className="w-full rounded-lg border border-zinc-300 px-4 py-3"
+                        onChange={(e) =>
+                            actualizar("codigoPostal", e.target.value)
+                        }
+                        className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500"
                     />
                 </div>
+
                 <div className="lg:col-span-2">
-                    <label className="mb-2 block font-medium">
-                        Dirección
-                    </label>
+                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Dirección</label>
                     <input
                         type="text"
                         value={pedido.direccion.direccion}
-                        onChange={(e)=>
-                            actualizar(
-                                "direccion",
-                                e.target.value
-                            )
+                        onChange={(e) =>
+                            actualizar("direccion", e.target.value)
                         }
-                        className="w-full rounded-lg border border-zinc-300 px-4 py-3"
+                        className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500"
                     />
                 </div>
                 <div className="lg:col-span-2">
-                    <label className="mb-2 block font-medium">
-                        Referencia
-                    </label>
+                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Referencia</label>
                     <textarea
-                        rows={3}
+                        rows={2}
                         value={pedido.direccion.referencia}
-                        onChange={(e)=>
-                            actualizar(
-                                "referencia",
-                                e.target.value
-                            )
+                        onChange={(e) =>
+                            actualizar("referencia", e.target.value)
                         }
-                        className="w-full rounded-lg border border-zinc-300 px-4 py-3"
+                        className="w-full resize-none border border-zinc-300 bg-white px-2.5 py-2 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500"
                     />
                 </div>
             </div>

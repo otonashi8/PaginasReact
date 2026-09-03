@@ -109,9 +109,7 @@ export const ProductPage = () => {
 
   if (!product) {
     return (
-      <div className="rounded-[1.75rem] border border-black/10 bg-white p-8 text-black/70">
-        Producto no encontrado.
-      </div>
+      <div className="rounded-[1.75rem] border border-black/10 bg-white p-8 text-black/70">Producto no encontrado.</div>
     );
   }
 
@@ -133,32 +131,34 @@ export const ProductPage = () => {
   const closeQuickBuy = () => setQuickBuyProduct(null);
 
   return (
-    <section className="space-y-12 sm:space-y-14">
-      <div className="rounded-[2rem] border border-black/10 bg-white px-5 py-6 shadow-[0_14px_40px_rgba(0,0,0,0.05)] sm:px-8 sm:py-8">
-        <div className="flex flex-wrap items-center gap-2 text-xs tracking-[0.12em] text-black/55 sm:text-sm">
-          <Link to="/" className="transition-colors duration-200 hover:text-red-600">Inicio</Link>
-          <span className="text-black/35">/</span>
-          <Link to="/tienda" className="transition-colors duration-200 hover:text-red-600">Tienda</Link>
-          <span className="text-black/35">/</span>
-          <span className="text-black/85">{product.name}</span>
+    <section className="space-y-8 sm:space-y-10">
+      <div className="border-b border-black/10 pb-6">
+        <div className="flex flex-wrap items-center gap-2 text-[11px] tracking-[0.08em] text-black/45">
+          <Link
+            to="/"
+            className="transition-colors hover:text-red-600"
+          >Inicio
+          </Link>
+          <span className="text-black/25">/</span>
+          <Link
+            to="/tienda"
+            className="transition-colors hover:text-red-600"
+          >Tienda
+          </Link>
+          <span className="text-black/25">/</span>
+          <span className="text-black/75">{product.name}</span>
         </div>
-
-        <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_0.8fr] lg:items-end">
           <div>
-            <p className="text-xs uppercase tracking-[0.26em] text-black/50">Coleccion masculina</p>
-            <h1 className="mt-3 text-3xl font-semibold uppercase tracking-[0.14em] text-black sm:text-4xl">
-              {product.name}
-            </h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-red-600">{product.category}</p>
+            <h1 className="mt-2 text-3xl font-semibold uppercase tracking-[0.1em] text-black sm:text-4xl">{product.name}</h1>
           </div>
-          <p className="max-w-xl text-sm leading-relaxed text-black/65 sm:text-base lg:text-right">
-            {product.description}
-          </p>
+          <p className="max-w-xl text-sm leading-6 text-black/60 lg:text-right">{product.description}</p>
         </div>
       </div>
-
-      <div className="grid gap-7 lg:grid-cols-[1.18fr_0.82fr]">
-        <div className="rounded-[2rem] border border-black/10 bg-white p-4 shadow-[0_16px_44px_rgba(0,0,0,0.06)] sm:p-6">
-          <div className="overflow-hidden rounded-[1.7rem] border border-black/10 bg-white">
+      <div className="grid gap-6 lg:grid-cols-[1.12fr_0.88fr]">
+        <div className="min-w-0">
+          <div className="relative overflow-hidden border border-black/10 bg-white">
             <AnimatePresence mode="wait">
               <motion.img
                 key={selectedImageIndex}
@@ -167,71 +167,71 @@ export const ProductPage = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.45, ease: 'easeOut' }}
-                className="w-full aspect-[4/5] object-cover sm:aspect-[5/6]"
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="aspect-[4/5] w-full object-cover sm:aspect-[5/6]"
               />
             </AnimatePresence>
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
           </div>
-
-          <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
+          <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5">
             {uploadedImages.map((imageUrl, index) => (
               <button
-                key={`${imageUrl ?? 'empty'}-${index}`}
+                key={`${imageUrl ?? "empty"}-${index}`}
                 type="button"
                 onClick={() => setSelectedImageIndex(index)}
-                className={`group h-24 overflow-hidden rounded-2xl border-2 bg-white transition-all duration-250 sm:h-28 ${selectedImageIndex === index ? 'border-red-600 shadow-[0_0_0_1px_rgba(220,38,38,0.22)]' : 'border-black/10 hover:border-black/35'}`}
+                className={`group aspect-[4/5] overflow-hidden border bg-white transition ${
+                  selectedImageIndex === index
+                    ? "border-red-600"
+                    : "border-black/10 hover:border-black/40"
+                }`}
               >
                 {imageUrl ? (
                   <img
                     src={imageUrl}
                     alt={`${product.name} ${index + 1}`}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-[11px] uppercase tracking-[0.16em] text-black/45">
-                    Sin imagen
-                  </div>
+                  <div className="flex h-full items-center justify-center text-[9px] uppercase tracking-[0.12em] text-black/40">Sin imagen</div>
                 )}
               </button>
             ))}
           </div>
         </div>
-
-        <div className="rounded-[2rem] border border-black/10 bg-white p-5 shadow-[0_16px_44px_rgba(0,0,0,0.06)] sm:p-7">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-black/55">{product.category}</p>
-          <h2 className="mt-2 text-[13px] uppercase tracking-[0.2em] text-black/45">{product.subcategory}</h2>
-
-          <div className="mt-6 flex flex-col gap-2">
-            <div className="flex items-end gap-3">
+        <div className="flex flex-col border border-black/10 bg-white p-5 sm:p-6">
+          <div className="border-b border-black/10 pb-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-black/45">{product.category}</p>
+            <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-black/40">{product.subcategory}</p>
+            <div className="mt-5 flex flex-wrap items-end gap-3">
               <PriceDisplay product={product} cantidad={quantity} />
               {hayDescuento && etiquetaDescuento ? (
-                <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
-                  {etiquetaDescuento}
-                </span>
+                <span className="border border-red-200 bg-red-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-red-600">{etiquetaDescuento}</span>
               ) : null}
             </div>
           </div>
-          <div className="mt-7 space-y-6">
+          <div className="mt-6 space-y-6">
             <div>
               <div className="flex items-center justify-between gap-3">
-                <label className="text-xs font-semibold uppercase tracking-[0.26em] text-black/70">Talla</label>
-                {guiaTallas && (guiaTallas.columnas.length > 0 || guiaTallas.filas.length > 0) ? (
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/65">Talla</label>
+                {guiaTallas &&
+                (guiaTallas.columnas.length > 0 ||
+                  guiaTallas.filas.length > 0) ? (
                   <button
                     type="button"
                     onClick={() => setIsSizeGuideOpen(true)}
-                    className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black transition-colors hover:text-red-600"
-                  >
-                    GUÍA DE TALLAS ↗
+                    className="text-[10px] font-bold uppercase tracking-[0.14em] text-black transition hover:text-red-600"
+                  >Guía de tallas ↗
                   </button>
                 ) : null}
               </div>
-
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
                 {sizeOptions.map((size) => {
-                  const stockForSize = Number(product.sizesStock?.[size] ?? 0);
-                  const isAvailable = !Number.isFinite(stockForSize) || stockForSize > 0;
+                  const stockForSize = Number(
+                    product.sizesStock?.[size] ?? 0,
+                  );
+                  const isAvailable =
+                    !Number.isFinite(stockForSize) || stockForSize > 0;
                   const isSelected = selectedSize === size;
-
                   return (
                     <motion.button
                       key={size}
@@ -244,27 +244,29 @@ export const ProductPage = () => {
                           setSelectedSize(size);
                         }
                       }}
-                      className={`rounded-xl border px-3 py-2.5 text-sm font-medium tracking-[0.08em] transition-all duration-200 ${isSelected ? 'border-red-600 bg-white text-black shadow-[0_0_0_1px_rgba(220,38,38,0.22)]' : 'border-black/15 bg-white text-black'} ${isAvailable ? 'hover:border-black/45' : 'cursor-not-allowed border-black/10 text-black/30 line-through'}`}
-                    >
-                      {size}
+                      className={`h-10 border text-xs font-medium uppercase tracking-[0.08em] transition ${
+                        isSelected
+                          ? "border-black bg-black text-white"
+                          : isAvailable
+                            ? "border-black/15 bg-white text-black hover:border-black"
+                            : "cursor-not-allowed border-black/10 text-black/30 line-through"
+                      }`}
+                    >{size}
                     </motion.button>
                   );
                 })}
               </div>
             </div>
-
             <div>
-              <label className="text-xs font-semibold uppercase tracking-[0.26em] text-black/70">Cantidad</label>
-              <div className="mt-3 inline-flex items-center gap-3 rounded-2xl border border-black/15 bg-white px-3 py-2">
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/65">Cantidad</label>
+              <div className="mt-3 inline-flex h-10 items-center border border-black/15 bg-white">
                 <motion.button
                   type="button"
-                  whileHover={{ scale: 1.06 }}
                   whileTap={{ scale: 0.94 }}
                   onMouseDown={() => startChanging(-1)}
                   onTouchStart={() => startChanging(-1)}
-                  className="rounded-xl border border-black/15 bg-white p-2 text-black transition-colors hover:border-red-600 hover:text-red-600"
-                >
-                  <Minus size={16} />
+                  className="flex h-full w-10 items-center justify-center border-r border-black/10 text-black transition hover:bg-black hover:text-white"
+                ><Minus size={15} />
                 </motion.button>
                 <input
                   type="text"
@@ -272,35 +274,34 @@ export const ProductPage = () => {
                   pattern="[0-9]*"
                   value={quantity}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
-                    changeQuantity(value === '' ? 1 : Number(value));
+                    const value = e.target.value.replace(/\D/g, "");
+
+                    changeQuantity(value === "" ? 1 : Number(value));
                   }}
-                  className="w-16 rounded-xl border border-black/10 bg-white py-2 text-center text-lg font-semibold text-black outline-none focus:border-red-600"
+                  className="h-full w-14 bg-white text-center text-sm font-semibold text-black outline-none"
                 />
                 <motion.button
                   type="button"
-                  whileHover={{ scale: 1.06 }}
                   whileTap={{ scale: 0.94 }}
                   onMouseDown={() => startChanging(1)}
                   onTouchStart={() => startChanging(1)}
-                  className="rounded-xl border border-black/15 bg-white p-2 text-black transition-colors hover:border-red-600 hover:text-red-600"
-                >
-                  <Plus size={16} />
+                  className="flex h-full w-10 items-center justify-center border-l border-black/10 text-black transition hover:bg-black hover:text-white"
+                ><Plus size={15} />
                 </motion.button>
               </div>
             </div>
           </div>
-
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-7 grid gap-2 sm:grid-cols-[1fr_auto]">
             <PermissionGate permission={PERMISSIONS.salesCreate}>
               <motion.button
                 type="button"
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.99 }}
-                onClick={() => addToCart(product.id, selectedSize, quantity)}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-black bg-black px-5 py-3.5 text-sm font-semibold uppercase tracking-[0.13em] text-white transition-colors hover:border-red-600 hover:bg-red-600"
-              >
-                <ShoppingBag size={16} /> Agregar al carrito
+                onClick={() =>
+                  addToCart(product.id, selectedSize, quantity)
+                }
+                className="inline-flex h-11 items-center justify-center gap-2 border border-black bg-black px-5 text-xs font-bold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600"
+              ><ShoppingBag size={15} />Agregar al carrito
               </motion.button>
             </PermissionGate>
             {isAuthenticated ? (
@@ -309,81 +310,83 @@ export const ProductPage = () => {
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.99 }}
                 onClick={() => toggleFavorite(product.id)}
-                className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-5 py-3.5 text-sm font-semibold uppercase tracking-[0.13em] transition-colors ${isFavorite ? 'border-red-600 bg-red-600 text-white' : 'border-black/20 bg-white text-black hover:border-red-600 hover:text-red-600'}`}
-              >
-                <Heart size={16} /> Favoritos
+                className={`inline-flex h-11 items-center justify-center gap-2 border px-5 text-xs font-bold uppercase tracking-[0.12em] transition ${
+                  isFavorite
+                    ? "border-red-600 bg-red-600 text-white"
+                    : "border-black/15 bg-white text-black hover:border-red-600 hover:text-red-600"
+                }`}
+              ><Heart size={15} />Favoritos
               </motion.button>
             ) : null}
           </div>
-
-          <div className="mt-8 rounded-[1.4rem] border border-black/10 bg-white p-5">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-black">Detalle</h3>
-            <p className="mt-3 text-sm leading-relaxed text-black/70">{product.description}</p>
+          <div className="mt-7 border-t border-black/10 pt-5">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black">Detalle</h3>
+            <p className="mt-3 text-sm leading-6 text-black/65">{product.description}</p>
           </div>
-
           {guiaLavado?.url ? (
-            <div className="mt-7">
+            <div className="mt-5">
               <a
                 href={guiaLavado.url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center text-sm font-semibold uppercase tracking-[0.2em] text-black transition-colors hover:text-red-600"
-              >GUÍA DE LAVADO ↗
+                className="inline-flex text-[10px] font-bold uppercase tracking-[0.18em] text-black transition hover:text-red-600"
+              >Guía de lavado ↗
               </a>
             </div>
           ) : null}
-
-          <div className="mt-7 grid gap-2.5 sm:grid-cols-3">
+          <div className="mt-6 grid gap-2 border-t border-black/10 pt-5 sm:grid-cols-4">
             {(product.extras ?? []).map((extra, index) => {
               const icons = [Truck, Shield, RotateCcw] as const;
               const Icon = icons[index % icons.length];
-
               return (
-                <div key={extra} className="flex items-center gap-2.5 rounded-xl border border-black/10 bg-white px-3 py-3 text-sm text-black/75">
-                  <Icon size={15} className="text-black/70" />
-                  <span>{extra}</span>
+                <div
+                  key={extra}
+                  className="flex items-center gap-2 border border-black/10 px-3 py-2.5 text-xs text-black/65"
+                ><Icon size={14} className="shrink-0 text-black/60" /><span>{extra}</span>
                 </div>
               );
             })}
           </div>
         </div>
       </div>
-
-      <div className="rounded-[2rem] border border-black/10 bg-white p-5 shadow-[0_16px_44px_rgba(0,0,0,0.05)] sm:p-7">
+      <div className="border-t border-black/10 pt-8">
         <div className="flex items-end justify-between gap-4">
-          <h2 className="text-2xl font-semibold uppercase tracking-[0.16em] text-black sm:text-[1.7rem]">
-            Productos relacionados
-          </h2>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-black/45">También te puede interesar</p>
+            <h2 className="mt-2 text-2xl font-semibold uppercase tracking-[0.1em] text-black sm:text-3xl">Productos relacionados</h2>
+          </div>
         </div>
-
-        <div className="mt-7 grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
+        <div className="mt-6 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(230px,1fr))]">
           {relatedProducts.map((item, index) => {
             const resultadoPrecioRelacionado = resolveProductPrice(item);
             const precioOriginalRelacionado = resultadoPrecioRelacionado.precioOriginal;
             const precioFinalRelacionado = resultadoPrecioRelacionado.precioFinal;
-            const hayDescuentoRelacionado = resultadoPrecioRelacionado.descuentoAplicado > 0
-              && precioFinalRelacionado < precioOriginalRelacionado;
+            const hayDescuentoRelacionado = resultadoPrecioRelacionado.descuentoAplicado > 0 && precioFinalRelacionado < precioOriginalRelacionado;
             const etiquetaDescuentoRelacionado = resultadoPrecioRelacionado.etiquetaDescuento;
-
             return (
               <motion.article
                 key={item.id}
                 initial={{ opacity: 0, y: 14 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.25 }}
-                transition={{ duration: 0.35, delay: index * 0.04 }}
-                whileHover={{ y: -4 }}
-                className="rounded-[1.6rem] border border-black/10 bg-white p-4 shadow-[0_12px_34px_rgba(0,0,0,0.05)]"
+                transition={{
+                  duration: 0.35,
+                  delay: index * 0.04,
+                }}
+                whileHover={{ y: -3 }}
+                className="group border border-black/10 bg-white p-3"
               >
-                <div className="relative aspect-[3/4] overflow-hidden rounded-[1.2rem] border border-black/10 bg-white">
-                  <Link to={`/producto/${item.slug}`} className="flex h-full w-full items-center justify-center">
+                <div className="relative aspect-[3/4] overflow-hidden border border-black/10 bg-white">
+                  <Link
+                    to={`/producto/${item.slug}`}
+                    className="flex h-full w-full items-center justify-center"
+                  >
                     <ProductHoverImage
                       product={item}
                       alt={item.name}
-                      className="h-full w-full object-contain transition duration-300 hover:scale-105"
+                      className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
                     />
                   </Link>
-
                   {isAuthenticated ? (
                     <div className="absolute right-3 top-3">
                       <button
@@ -393,27 +396,27 @@ export const ProductPage = () => {
                           event.stopPropagation();
                           toggleFavorite(item.id);
                         }}
-                        className={`rounded-full border p-2.5 transition-colors ${favorites.includes(item.id) ? 'border-red-600 bg-red-600 text-white' : 'border-black/15 bg-white text-black hover:border-red-600 hover:text-red-600'}`}
-                      >
-                        <Heart size={16} />
+                        className={`flex rounded-full size-8 items-center justify-center border transition ${
+                          favorites.includes(item.id)
+                            ? "border-red-600 bg-red-600 text-white"
+                            : "border-black/15 bg-white text-black hover:border-red-600 hover:text-red-600"
+                        }`}
+                      ><Heart size={14} />
                       </button>
                     </div>
                   ) : null}
                 </div>
-
                 <div className="mt-4">
-                  <h3 className="text-base font-semibold text-black sm:text-lg">{item.name}</h3>
-                  <p className="mt-1 text-xs uppercase tracking-[0.18em] text-black/45">{item.category}</p>
-
+                  <h3 className="text-sm font-semibold text-black">{item.name}</h3>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-black/45">{item.category}</p>
                   <div className="mt-4 flex items-center justify-between gap-3">
-                    <p className="text-lg font-semibold text-red-600">
-                      <PriceDisplay product={item}/>
-                      {hayDescuentoRelacionado && etiquetaDescuentoRelacionado ? (
-                        <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
-                          {etiquetaDescuentoRelacionado}
-                        </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-base font-semibold text-red-600"><PriceDisplay product={item} /></div>
+                      {hayDescuentoRelacionado &&
+                      etiquetaDescuentoRelacionado ? (
+                        <span className="border border-red-200 bg-red-50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-red-600">{etiquetaDescuentoRelacionado}</span>
                       ) : null}
-                    </p>
+                    </div>
                     <PermissionGate permission={PERMISSIONS.salesCreate}>
                       <motion.button
                         type="button"
@@ -424,9 +427,8 @@ export const ProductPage = () => {
                           event.stopPropagation();
                           openQuickBuy(item);
                         }}
-                        className="inline-flex items-center justify-center rounded-full border border-black bg-black p-3 text-white transition-colors hover:border-red-600 hover:bg-red-600"
-                      >
-                        <ShoppingBag size={16} />
+                        className="inline-flex size-9 rounded-full items-center justify-center border border-black bg-black text-white transition hover:border-red-600 hover:bg-red-600"
+                      ><ShoppingBag size={15} />
                       </motion.button>
                     </PermissionGate>
                   </div>
@@ -436,38 +438,44 @@ export const ProductPage = () => {
           })}
         </div>
       </div>
-
-      {isSizeGuideOpen && guiaTallas && (guiaTallas.columnas.length > 0 || guiaTallas.filas.length > 0) ? (
+      {isSizeGuideOpen &&
+      guiaTallas &&
+      (guiaTallas.columnas.length > 0 ||
+        guiaTallas.filas.length > 0) ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-[1.5rem] border border-black/10 bg-white shadow-[0_22px_60px_rgba(0,0,0,0.22)]">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-hidden border border-black/10 bg-white shadow-[0_22px_60px_rgba(0,0,0,0.22)]">
             <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-black">Guía de tallas</h3>
               <button
                 type="button"
                 onClick={() => setIsSizeGuideOpen(false)}
-                className="text-sm font-medium text-black/65 transition-colors hover:text-red-600"
-              >
-                Cerrar
+                className="text-[10px] font-bold uppercase tracking-[0.14em] text-black/60 transition hover:text-red-600"
+              >Cerrar
               </button>
             </div>
-
             <div className="overflow-x-auto p-5">
-              <table className="w-full min-w-[360px] border border-black/10 text-left text-sm">
+              <table className="w-full min-w-[360px] border border-black/10 text-left text-xs">
                 <thead>
                   <tr>
                     {guiaTallas.columnas.map((columna, index) => (
-                      <th key={`modal-guide-head-${columna}-${index}`} className="border-b border-black/10 bg-black/[0.02] px-1 py-1 font-medium text-black/70">
-                        {columna}
+                      <th
+                        key={`modal-guide-head-${columna}-${index}`}
+                        className="border-b border-black/10 bg-black/[0.03] px-3 py-2 font-semibold text-black/70"
+                      >{columna}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {guiaTallas.filas.map((fila, index) => (
-                    <tr key={`modal-guide-row-${fila.etiqueta}-${index}`}>
+                    <tr
+                      key={`modal-guide-row-${fila.etiqueta}-${index}`}
+                    >
                       {guiaTallas.columnas.map((columna, colIndex) => (
-                        <td key={`modal-guide-cell-${fila.etiqueta}-${columna}-${colIndex}`} className="border-b border-black/10 px-1 py-1 text-black/70">
-                          {fila.valores?.[columna] ?? ''}
+                        <td
+                          key={`modal-guide-cell-${fila.etiqueta}-${columna}-${colIndex}`}
+                          className="border-b border-black/10 px-3 py-2 text-black/65"
+                        >{fila.valores?.[columna] ?? ""}
                         </td>
                       ))}
                     </tr>
@@ -475,20 +483,18 @@ export const ProductPage = () => {
                 </tbody>
               </table>
             </div>
-
             {guiaTallas.mensajeSecundario ? (
               <div className="border-t border-black/10 px-5 py-4">
-                <p className="text-sm leading-relaxed text-black/65">{guiaTallas.mensajeSecundario}</p>
+                <p className="text-sm leading-6 text-black/65">{guiaTallas.mensajeSecundario}</p>
               </div>
             ) : null}
           </div>
         </div>
       ) : null}
-
       <QuickAddModal
-        product={quickBuyProduct ?? (relatedProducts[0] ?? product)}
+        product={quickBuyProduct ?? relatedProducts[0] ?? product}
         isOpen={Boolean(quickBuyProduct)}
-        initialSize={quickBuyProduct?.sizes?.[0] || 'M'}
+        initialSize={quickBuyProduct?.sizes?.[0] || "M"}
         onClose={closeQuickBuy}
       />
     </section>

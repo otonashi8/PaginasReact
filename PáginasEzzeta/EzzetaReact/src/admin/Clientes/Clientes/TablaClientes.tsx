@@ -4,13 +4,8 @@ import { pedidosClienteMock } from "./DatosClientes";
 import {
     calcularTotalGeneradoCliente,
     formatearTipoCliente,
-    obtenerPlanCliente
 } from "./utils/clientesMetricas";
 
-const obtenerPlanDisplay = (clientePlanId?: string, clientePlanNombre?: string): string | undefined => {
-    if (!clientePlanId && !clientePlanNombre) return undefined;
-    return clientePlanNombre ?? clientePlanId ?? "Cuenta estándar";
-};
 
 type Props = {
     clientes: Cliente[];
@@ -35,9 +30,6 @@ export const TablaClientes = ({
                             <th className="px-5 py-4">Correo</th>
                             <th className="px-5 py-4 hidden lg:table-cell">Número</th>
                             <th className="px-5 py-4">Tipo de cliente</th>
-                            <th className="px-5 py-4">Plan actual</th>
-                            <th className="px-5 py-4 hidden xl:table-cell">Inicio plan</th>
-                            <th className="px-5 py-4 hidden xl:table-cell">Fin plan</th>
                             <th className="px-5 py-4 hidden md:table-cell">Total generado</th>
                             <th className="px-5 py-4 hidden md:table-cell">Estado</th>
                             <th className="px-5 py-4 text-right">Acciones</th>
@@ -52,7 +44,6 @@ export const TablaClientes = ({
                             </tr>
                         ) : (
                             clientes.map((cliente) => {
-                                const plan = obtenerPlanCliente(cliente);
                                 const pedidos = cliente.pedidos ?? pedidosClienteMock.filter((pedido) => pedido.clienteId === cliente.id);
                                 const totalGenerado = calcularTotalGeneradoCliente(cliente, pedidos);
 
@@ -62,17 +53,6 @@ export const TablaClientes = ({
                                         <td className="px-4 py-3 max-w-[220px] truncate" title={cliente.correo}>{cliente.correo}</td>
                                         <td className="px-4 py-3 hidden lg:table-cell whitespace-nowrap">{cliente.telefono}</td>
                                         <td className="px-4 py-3 whitespace-nowrap">{formatearTipoCliente(cliente.tipoRegistro)}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap">
-                                            {plan ? (
-                                                <span className="inline-flex items-center gap-1">
-                                                    <span>{obtenerPlanDisplay(cliente.planActual, cliente.planNombre)}</span>
-                                                </span>
-                                            ) : (
-                                                "Sin plan"
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3 hidden xl:table-cell whitespace-nowrap">{plan?.fechaInicio ?? "-"}</td>
-                                        <td className="px-4 py-3 hidden xl:table-cell whitespace-nowrap">{plan?.fechaFin ?? "-"}</td>
                                         <td className="px-4 py-3 hidden md:table-cell whitespace-nowrap">S/ {totalGenerado.toFixed(2)}</td>
                                         <td className="px-4 py-3 hidden md:table-cell whitespace-nowrap capitalize">{cliente.estado}</td>
                                         <td className="px-4 py-3 text-right">

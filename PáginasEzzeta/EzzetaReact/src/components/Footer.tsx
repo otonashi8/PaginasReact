@@ -66,23 +66,11 @@ export const Footer = () => {
   return (
     <footer className="border-t border-zinc-200 bg-black text-white">
       <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
-
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr_0.8fr_0.8fr]">
-
-          {/* Logo */}
           <div className="text-center lg:text-left">
-            <p className="text-sm uppercase tracking-[0.3em] text-white/70">
-              EZZETA
-            </p>
-
-            <h2 className="mt-3 text-2xl font-semibold">
-              Diseño moderno, piezas claras y estilo para todos los días.
-            </h2>
-
-            <p className="mt-3 text-sm text-white/70">
-              Una propuesta urbana, accesible y versátil que combina comodidad, identidad y actitud.
-            </p>
-
+            <p className="text-sm uppercase tracking-[0.3em] text-white/70">EZZETA</p>
+            <h2 className="mt-3 text-2xl font-semibold">Diseño moderno, piezas claras y estilo para todos los días.</h2>
+            <p className="mt-3 text-sm text-white/70">Una propuesta urbana, accesible y versátil que combina comodidad, identidad y actitud.</p>
             <div className="mt-6 flex justify-center lg:block">
               <img
                 src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRtR0xkrj_2RuK9RzeXNqdSDl2boknRmgrjLLUMccTPnX6Z0K7mXfQJkg&s=10"
@@ -90,14 +78,8 @@ export const Footer = () => {
                 className="h-40 w-75 rounded-xl"
               />
             </div>
-
-            {/* Mobile Accordion */}
             <div className="mt-10 space-y-5 lg:hidden">
-
-              {/* Acerca de Nosotros */}
-
               <div className="border-t border-white/10 pt-4">
-
                 <button
                   onClick={() => toggleSection('empresa')}
                   className="flex w-full items-center justify-between text-sm uppercase tracking-[0.2em]"
@@ -123,21 +105,15 @@ export const Footer = () => {
                           <Link
                             to={link.href}
                             className="block rounded-lg px-2 py-2 transition hover:bg-white/10"
-                          >
-                            {link.label}
+                          >{link.label}
                           </Link>
                         </li>
                       ))}
                     </motion.ul>
                   )}
                 </AnimatePresence>
-
               </div>
-
-              {/* La Empresa */}
-
               <div className="border-t border-white/10 pt-4">
-
                 <button
                   onClick={() => toggleSection('empresa-info')}
                   className="flex w-full items-center justify-between text-sm uppercase tracking-[0.2em]"
@@ -145,7 +121,6 @@ export const Footer = () => {
                   <span>LA EMPRESA</span>
                   <span>{openSection === 'empresa-info' ? '△' : '▽'}</span>
                 </button>
-
                 <AnimatePresence initial={false}>
                   {openSection === "empresa-info" && (
                     <motion.ul
@@ -163,21 +138,15 @@ export const Footer = () => {
                           <Link
                             to={link.href}
                             className="block rounded-lg px-2 py-2 transition hover:bg-white/10"
-                          >
-                            {link.label}
+                          >{link.label}
                           </Link>
                         </li>
                       ))}
                     </motion.ul>
                   )}
                 </AnimatePresence>
-
               </div>
-
-              {/* Redes */}
-
               <div className="border-t border-white/10 pt-4">
-
                 <button
                   onClick={() => toggleSection('redes')}
                   className="flex w-full items-center justify-between text-sm uppercase tracking-[0.2em]"
@@ -185,7 +154,6 @@ export const Footer = () => {
                   <span>REDES</span>
                   <span>{openSection === 'redes' ? '△' : '▽'}</span>
                 </button>
-
                 <AnimatePresence initial={false}>
                   {openSection === "redes" && (
                     <motion.ul
@@ -202,28 +170,17 @@ export const Footer = () => {
                         .filter((red) => red.activo && red.url)
                         .map((red) => (
                           <li key={red.id ?? red.nombre}>
-                            <a href={red.url} target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">
-                              {red.nombre}
-                            </a>
+                            <a href={red.url} target="_blank" rel="noreferrer" className="block rounded-lg px-2 py-2 transition hover:bg-white/10">{red.nombre}</a>
                           </li>
                         ))}
                     </motion.ul>
                   )}
                 </AnimatePresence>
-
               </div>
-
             </div>
-
           </div>
-
-          {/* Escritorio */}
-
           <div className="hidden lg:block">
-            <h3 className="text-sm uppercase tracking-[0.2em] text-white/60">
-              Acerca de Nosotros
-            </h3>
-
+            <h3 className="text-sm uppercase tracking-[0.2em] text-white/60">Acerca de Nosotros</h3>
             <ul className="mt-3 space-y-2 text-sm text-white/80">
               {aboutLinks.map(link=>(
                 <li key={link.href}>
@@ -234,12 +191,8 @@ export const Footer = () => {
               ))}
             </ul>
           </div>
-
           <div className="hidden lg:block">
-            <h3 className="text-sm uppercase tracking-[0.2em] text-white/60">
-              La Empresa
-            </h3>
-
+            <h3 className="text-sm uppercase tracking-[0.2em] text-white/60">La Empresa</h3>
             <ul className="mt-3 space-y-2 text-sm text-white/80">
               {companyLinks.map(link=>(
                 <li key={link.href}>
@@ -250,27 +203,16 @@ export const Footer = () => {
               ))}
             </ul>
           </div>
-
-          <div className="hidden lg:flex flex-col items-end">
-            <h3 className="text-sm uppercase tracking-[0.2em] text-white/60">
-              Redes
-            </h3>
-
-            <div className="mt-3 flex flex-col gap-3 w-full">
-              {socialLinks}
-            </div>
+          <div className="hidden lg:flex flex-col items-start">
+            <h3 className="text-sm uppercase tracking-[0.2em] text-white/60">Redes</h3>
+            <div className="mt-3 flex flex-col gap-3 w-full">{socialLinks}</div>
           </div>
-
         </div>
       </div>
-
       <div className="border-t border-white/10 bg-black/90 pb-40">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-4 text-sm text-white/60 sm:flex-row lg:px-8">
           <p>© 2026 EZZETA. Todos los derechos reservados.</p>
-          <Link to="/tienda" className="inline-flex items-center gap-2 text-white/80 hover:text-white">
-            Ver colección<ArrowRight size={16}/>
-          </Link>
-
+          <Link to="/tienda" className="inline-flex items-center gap-2 text-white/80 hover:text-white">Ver colección<ArrowRight size={16}/></Link>
         </div>
       </div>
     </footer>

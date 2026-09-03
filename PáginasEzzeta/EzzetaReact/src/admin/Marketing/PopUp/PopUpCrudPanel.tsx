@@ -1,4 +1,4 @@
-import { ImageIcon, PlayCircle, Plus } from 'lucide-react';
+import { ImageIcon, PlayCircle, Plus, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
   deletePopUp,
@@ -87,6 +87,19 @@ export const PopUpCrudPanel = () => {
     setEditingId(null);
     setFormState(createEmptyFormState());
     setMessage(null);
+  };
+
+  const handleImageFileChange = (field: 'imagenDesktop' | 'imagenMobile', file?: File) => {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setFormState((current) => ({ ...current, [field]: reader.result }));
+      }
+    };
+    reader.onerror = () => setMessage({ type: 'error', text: 'No se pudo cargar la imagen seleccionada.' });
+    reader.readAsDataURL(file);
   };
 
   const validateForm = (): string | null => {
@@ -200,19 +213,26 @@ export const PopUpCrudPanel = () => {
       ) : null}
 
       {isFormOpen ? (
-        <div className="rounded-none border border-zinc-200 bg-white p-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-zinc-900">{editingId ? 'Editar Pop-Up' : 'Nuevo Pop-Up'}</h2>
-            <button
-              type="button"
-              onClick={handleCloseForm}
-              className="text-sm text-zinc-500 transition hover:text-red-600"
-            >
-              Cancelar
-            </button>
-          </div>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="popup-form-title"
+        >
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-none border border-zinc-200 bg-white p-5 shadow-xl sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 id="popup-form-title" className="text-lg font-semibold text-zinc-900">{editingId ? 'Editar Pop-Up' : 'Nuevo Pop-Up'}</h2>
+              <button
+                type="button"
+                onClick={handleCloseForm}
+                className="inline-flex size-9 items-center justify-center text-zinc-500 transition hover:bg-zinc-100 hover:text-red-600"
+                aria-label="Cerrar formulario de Pop-Up"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
             <label className="text-sm text-zinc-700 md:col-span-2">
               <span className="mb-1 block font-medium">Nombre interno</span>
               <input
@@ -316,7 +336,7 @@ export const PopUpCrudPanel = () => {
               </label>
             ) : (
               <>
-                <label className="text-sm text-zinc-700 md:col-span-2">
+                <label className="text-sm text-zinc-700">
                   <span className="mb-1 block font-medium">Imagen Desktop</span>
                   <input
                     value={formState.imagenDesktop}
@@ -324,8 +344,22 @@ export const PopUpCrudPanel = () => {
                     className="w-full rounded-none border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-zinc-800"
                     placeholder="https://..."
                   />
+                  <span className="mt-2 block text-xs text-zinc-500">O subir imagen desde la PC</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => handleImageFileChange('imagenDesktop', event.target.files?.[0])}
+                    className="mt-1 block w-full text-xs text-zinc-600 file:mr-3 file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-xs file:font-medium file:text-white"
+                  />
+                  <div className="mt-3 overflow-hidden border border-zinc-200 bg-zinc-50">
+                    {formState.imagenDesktop ? (
+                      <img src={formState.imagenDesktop} alt="Vista previa desktop" className="h-28 w-full object-contain" />
+                    ) : (
+                      <div className="flex h-28 items-center justify-center text-zinc-400"><ImageIcon size={18} /></div>
+                    )}
+                  </div>
                 </label>
-                <label className="text-sm text-zinc-700 md:col-span-2">
+                <label className="text-sm text-zinc-700">
                   <span className="mb-1 block font-medium">Imagen Mobile</span>
                   <input
                     value={formState.imagenMobile}
@@ -333,17 +367,23 @@ export const PopUpCrudPanel = () => {
                     className="w-full rounded-none border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-zinc-800"
                     placeholder="https://..."
                   />
+                  <span className="mt-2 block text-xs text-zinc-500">O subir imagen desde la PC</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => handleImageFileChange('imagenMobile', event.target.files?.[0])}
+                    className="mt-1 block w-full text-xs text-zinc-600 file:mr-3 file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-xs file:font-medium file:text-white"
+                  />
+                  <div className="mt-3 overflow-hidden border border-zinc-200 bg-zinc-50">
+                    {formState.imagenMobile ? (
+                      <img src={formState.imagenMobile} alt="Vista previa mobile" className="h-28 w-full object-contain" />
+                    ) : (
+                      <div className="flex h-28 items-center justify-center text-zinc-400"><ImageIcon size={18} /></div>
+                    )}
+                  </div>
                 </label>
               </>
             )}
-
-            <div className="text-sm text-zinc-700">
-              <span className="mb-1 block font-medium">Vista previa</span>
-              <div className="inline-flex items-center gap-2 rounded-none border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-                {formState.tipoContenido === 'video' ? <PlayCircle size={18} /> : <ImageIcon size={18} />}
-                <span>{formState.tipoContenido === 'video' ? 'Video' : 'Imagen'}</span>
-              </div>
-            </div>
 
             <label className="text-sm text-zinc-700">
               <span className="mb-1 block font-medium">Estado</span>
@@ -356,23 +396,24 @@ export const PopUpCrudPanel = () => {
                 <option value="inactivo">Inactivo</option>
               </select>
             </label>
-          </div>
+            </div>
 
-          <div className="mt-5 flex flex-wrap justify-end gap-2">
-            <button
-              type="button"
-              onClick={handleCloseForm}
-              className="rounded-none border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:border-red-600 hover:text-red-600"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="rounded-none bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
-            >
-              {editingId ? 'Guardar cambios' : 'Crear Pop-Up'}
-            </button>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCloseForm}
+                className="rounded-none border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:border-red-600 hover:text-red-600"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                className="rounded-none bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
+              >
+                {editingId ? 'Guardar cambios' : 'Crear Pop-Up'}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -383,7 +424,7 @@ export const PopUpCrudPanel = () => {
             <thead className="bg-zinc-50 text-zinc-700">
               <tr>
                 <th className="border-b border-zinc-200 px-4 py-3 font-semibold">Nombre</th>
-                <th className="border-b border-zinc-200 px-4 py-3 font-semibold">Contenido</th>
+                <th className="border-b border-zinc-200 px-4 py-3 font-semibold">Preview</th>
                 <th className="border-b border-zinc-200 px-4 py-3 font-semibold">Mostrar en</th>
                 <th className="border-b border-zinc-200 px-4 py-3 font-semibold">Frecuencia</th>
                 <th className="border-b border-zinc-200 px-4 py-3 font-semibold">Retraso</th>
@@ -395,7 +436,7 @@ export const PopUpCrudPanel = () => {
             <tbody>
               {sortedPopUps.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-zinc-500">
+                  <td colSpan={9} className="px-4 py-8 text-center text-zinc-500">
                     No hay Pop-Ups registrados. Haz clic en "+ Crear Pop-Up" para comenzar.
                   </td>
                 </tr>
@@ -407,14 +448,20 @@ export const PopUpCrudPanel = () => {
                     <div className="font-medium">{popup.nombre}</div>
                     <div className="mt-1 text-xs text-zinc-500">{popup.id}</div>
                   </td>
-                  <td className="border-b border-zinc-200 px-4 py-3 text-zinc-700">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs uppercase tracking-[0.2em] text-zinc-600">
-                      {popup.tipoContenido === 'video' ? (
-                        <><PlayCircle size={14} /> Video</>
-                      ) : (
-                        <><ImageIcon size={14} /> Imagen</>
-                      )}
-                    </div>
+                  <td className="border-b border-zinc-200 px-4 py-3">
+                    {popup.tipoContenido === 'imagen' && (popup.imagenDesktop || popup.imagenMobile) ? (
+                      <div className="relative h-16 w-24 overflow-hidden border border-zinc-200 bg-zinc-50">
+                        <img
+                          src={popup.imagenDesktop || popup.imagenMobile}
+                          alt={`Previsualización de ${popup.nombre}`}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-16 w-24 items-center justify-center border border-dashed border-zinc-300 bg-zinc-50 text-zinc-400">
+                        {popup.tipoContenido === 'video' ? <PlayCircle size={18} /> : <ImageIcon size={18} />}
+                      </div>
+                    )}
                   </td>
                   <td className="border-b border-zinc-200 px-4 py-3 text-zinc-700">
                     {siteRouteOptions.find((item) => item.value === popup.mostrarEn)?.label ?? popup.mostrarEn}

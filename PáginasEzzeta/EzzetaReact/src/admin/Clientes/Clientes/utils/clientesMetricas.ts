@@ -1,23 +1,4 @@
-import type { Cliente, ClientePedido, PlanCliente, TipoRegistroCliente } from "../TiposClientes";
-
-export const obtenerPlanCliente = (
-    cliente: Cliente
-): PlanCliente | undefined => {
-    if (!cliente.planActual && !cliente.planNombre) {
-        return undefined;
-    }
-
-    return {
-        clienteId: cliente.id,
-        nombre: cliente.planNombre ?? cliente.planActual ?? "Cuenta estándar",
-        descripcion: "Cuenta del cliente sin plan premium.",
-        precioMensual: "-",
-        descuento: "-",
-        fechaInicio: cliente.planInicio ?? "-",
-        fechaFin: cliente.planFin ?? "-",
-        beneficios: [],
-    };
-};
+import type { Cliente, ClientePedido, TipoRegistroCliente } from "../TiposClientes";
 
 export const calcularTotalGeneradoCliente = (
     cliente: Cliente,

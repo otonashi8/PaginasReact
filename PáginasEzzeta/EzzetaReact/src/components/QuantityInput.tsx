@@ -14,7 +14,7 @@ export default function QuantityInput({ value, onChange }: { value: number; onCh
   }, [v]);
 
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white p-1 shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
+    <div className="inline-flex items-center gap-2 rounded-full p-1 ">
       <motion.button
         type="button"
         onMouseDown={() => start(-1)}

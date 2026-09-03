@@ -14,6 +14,7 @@ export const ResumenCarritoDetalle = ({ carrito }: Props) => {
     const descuentos = carrito.discountTotal ?? 0;
     const envio = carrito.shippingCost ?? (subtotal > 0 ? 15 : 0);
     const total = carrito.total;
+    const totalfinal = envio+total;
 
     return (
         <section className="rounded-none border border-zinc-200 bg-white p-6">
@@ -21,7 +22,7 @@ export const ResumenCarritoDetalle = ({ carrito }: Props) => {
                 <h3 className="text-lg font-semibold">Resumen</h3>
                 <p className="mt-1 text-sm text-zinc-500">Totales calculados a partir de los productos del carrito.</p>
             </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                 <div>
                     <p className="text-sm text-zinc-500">Productos</p>
                     <p className="font-medium">{carrito.productos.length}</p>
@@ -38,9 +39,9 @@ export const ResumenCarritoDetalle = ({ carrito }: Props) => {
                     <p className="text-sm text-zinc-500">Envío</p>
                     <p className="font-medium">S/ {envio.toFixed(2)}</p>
                 </div>
-                <div className="sm:col-span-2 xl:col-span-4">
+                <div>
                     <p className="text-sm text-zinc-500">Total</p>
-                    <p className="text-2xl font-semibold">S/ {total.toFixed(2)}</p>
+                    <p className="text-1xl font-semibold">S/ {totalfinal.toFixed(2)}</p>
                 </div>
             </div>
         </section>

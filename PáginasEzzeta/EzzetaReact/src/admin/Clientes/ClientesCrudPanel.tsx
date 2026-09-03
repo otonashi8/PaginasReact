@@ -83,7 +83,6 @@ export const ClientesCrudPanel = () => {
                             { label: 'Teléfono', value: (row) => row.telefono },
                             { label: 'Documento', value: (row) => row.documento ?? '' },
                             { label: 'Estado', value: (row) => row.estado },
-                            { label: 'Plan actual', value: (row) => row.planActual ?? '' },
                             { label: 'Fecha registro', value: (row) => row.fechaRegistro },
                             { label: 'Último pedido', value: (row) => row.ultimoPedido ?? '' },
                             { label: 'Total gastado', value: (row) => row.totalGastado },

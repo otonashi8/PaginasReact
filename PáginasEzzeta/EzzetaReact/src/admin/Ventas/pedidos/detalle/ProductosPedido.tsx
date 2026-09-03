@@ -106,58 +106,53 @@ export const ProductosPedido = ({
     }
 
     return (
-        <section className="space-y-6">
-            <div className="flex items-center justify-between">
+        <section className="space-y-5">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                 <div>
-                    <h3 className="text-lg font-semibold">Productos</h3>
-                    <p className="text-sm text-zinc-500">Resumen compacto del pedido.</p>
+                    <h3 className="text-sm font-semibold text-zinc-900">Productos</h3>
+                    <p className="mt-0.5 text-xs text-zinc-500">Resumen compacto del pedido.</p>
                 </div>
                 <button
                     type="button"
                     onClick={agregarProducto}
-                    className="rounded-lg bg-black px-3 py-2 text-sm text-white"
+                    className="h-9 bg-zinc-950 px-3 text-xs font-medium text-white transition hover:bg-zinc-800"
                 >Agregar producto
                 </button>
             </div>
-            {
-                pedido.productos.length === 0 && (
-                    <div className="rounded-none border border-dashed border-zinc-300 p-8 text-center text-zinc-500">
-                        No existen productos agregados.</div>
-                )
-            }
-            {
-                pedido.productos.map((producto, index) => (
-                    <div
-                        key={index}
-                        className="rounded-none border border-zinc-200 p-4 space-y-4"
-                    >
-                        <div className="grid gap-3 lg:grid-cols-[0.7fr_1.4fr_0.7fr_0.6fr_0.6fr_0.7fr_0.4fr]">
-                            <div>
-                                <label className="mb-1 block text-sm font-medium">Imagen</label>
-                                <div className="flex h-20 items-center justify-center rounded-lg border border-zinc-300 bg-zinc-50">
-                                    {
-                                        producto.imagen
-                                            ? (
-                                                <img
-                                                    src={producto.imagen}
-                                                    alt={producto.nombre}
-                                                    className="h-full w-full object-contain"
-                                                />
-                                            ) : (
-                                                <span className="text-xs text-zinc-500">Sin imagen</span>
-                                            )
-                                    }
+            {pedido.productos.length === 0 && (
+                <div className="border border-dashed border-zinc-300 px-4 py-8 text-center text-xs text-zinc-500">No existen productos agregados.</div>
+            )}
+            <div className="space-y-3">
+                {pedido.productos.map((producto, index) => {
+                    const productoCatalogo = productosCatalogo.find(
+                        (item) => item.id === producto.productoId
+                    );
+                    return (
+                        <div
+                            key={index}
+                            className="border border-zinc-200 bg-white p-3"
+                        >
+                            <div className="grid gap-3 lg:grid-cols-[72px_minmax(180px,1.5fr)_minmax(100px,0.8fr)_72px_100px_100px_72px]">
+                                <div>
+                                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Imagen</label>
+                                    <div className="flex h-16 items-center justify-center border border-zinc-200 bg-zinc-50">
+                                        {producto.imagen ? (
+                                            <img
+                                                src={producto.imagen}
+                                                alt={producto.nombre}
+                                                className="h-full w-full object-contain"
+                                            />
+                                        ) : (
+                                            <span className="text-[10px] text-zinc-400">Sin imagen</span>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium">Nombre</label>
-                                {
-                                    producto.productoId && producto.nombre ? (
-                                        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-700">
-                                            {producto.nombre}
-                                        </div>
+                                <div>
+                                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Nombre</label>
+                                    {producto.productoId && producto.nombre ? (
+                                        <div className="flex min-h-9 items-center border border-zinc-200 bg-zinc-50 px-2.5 text-xs font-medium text-zinc-700">{producto.nombre}</div>
                                     ) : (
-                                        <div className="flex flex-col gap-2">
+                                        <div className="space-y-1">
                                             <select
                                                 value={producto.productoId || ""}
                                                 onChange={(e) =>
@@ -166,137 +161,133 @@ export const ProductosPedido = ({
                                                         Number(e.target.value)
                                                     )
                                                 }
-                                                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                                                className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition focus:border-zinc-500"
                                             >
                                                 <option value="">Selecciona un producto</option>
-                                                {
-                                                    productosCatalogo.map(
-                                                        item => (
-                                                            <option
-                                                                key={item.id}
-                                                                value={item.id}
-                                                            >
-                                                                {item.name}
-                                                            </option>
-                                                        )
-                                                    )
-                                                }
+                                                {productosCatalogo.map((item) => (
+                                                    <option
+                                                        key={item.id}
+                                                        value={item.id}
+                                                    >{item.name}
+                                                    </option>
+                                                ))}
                                             </select>
-                                            <span className="text-xs text-zinc-500">Se muestra al elegir un producto.</span>
+                                            <span className="block text-[10px] text-zinc-400">Se muestra al elegir un producto.</span>
                                         </div>
-                                    )
-                                }
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium">Talla</label>
-                                {
-                                    productosCatalogo.find(
-                                        item => item.id === producto.productoId
-                                    )?.sizes.length ? (
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Talla</label>
+                                    {productoCatalogo?.sizes.length ? (
                                         <select
                                             value={producto.talla}
-                                            onChange={(e)=>
+                                            onChange={(e) =>
                                                 actualizarProducto(
                                                     index,
                                                     "talla",
                                                     e.target.value
                                                 )
                                             }
-                                            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                                            className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition focus:border-zinc-500"
                                         >
-                                            {
-                                                productosCatalogo.find(
-                                                    item => item.id === producto.productoId
-                                                )?.sizes.map(
-                                                    talla => (
-                                                        <option
-                                                            key={talla}
-                                                            value={talla}
-                                                        >
-                                                            {talla}
-                                                        </option>
-                                                    )
-                                                )
-                                            }
+                                            {productoCatalogo.sizes.map((talla) => (
+                                                <option
+                                                    key={talla}
+                                                    value={talla}
+                                                >{talla}
+                                                </option>
+                                            ))}
                                         </select>
                                     ) : (
                                         <input
                                             value={producto.talla}
-                                            onChange={(e)=>
+                                            onChange={(e) =>
                                                 actualizarProducto(
                                                     index,
                                                     "talla",
                                                     e.target.value
                                                 )
                                             }
-                                            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                                            className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition focus:border-zinc-500"
                                         />
-                                    )
-                                }
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium">Cant.</label>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    value={producto.cantidad}
-                                    onChange={(e)=>{
-                                        const cantidad =
-                                            Number(e.target.value);
-                                        establecerPedido(prev => {
-                                            const productos = [...prev.productos];
-                                            productos[index] = {
-                                                ...productos[index],
-                                                cantidad,
-                                                subtotal: cantidad * producto.precioUnitario
-                                            };
-                                            return calcularTotales({
-                                                ...prev,
-                                                productos
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Cant.</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={producto.cantidad}
+                                        onChange={(e) => {
+                                            const cantidad = Number(
+                                                e.target.value
+                                            );
+                                            establecerPedido((prev) => {
+                                                const productos = [
+                                                    ...prev.productos,
+                                                ];
+
+                                                productos[index] = {
+                                                    ...productos[index],
+                                                    cantidad,
+                                                    subtotal:
+                                                        cantidad *
+                                                        producto.precioUnitario,
+                                                };
+                                                return calcularTotales({
+                                                    ...prev,
+                                                    productos,
+                                                });
                                             });
-                                        });
-                                    }}className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium">Precio unit.</label>
-                                <input
-                                    type="number"
-                                    value={producto.precioUnitario}
-                                    onChange={(e)=>{
-                                        const precio =
-                                            Number(e.target.value);
-                                        establecerPedido(prev => {
-                                            const productos = [...prev.productos];
-                                            productos[index] = {
-                                                ...productos[index],
-                                                precioUnitario: precio,
-                                                subtotal: precio * producto.cantidad
-                                            };
-                                            return calcularTotales({
-                                                ...prev,
-                                                productos
+                                        }}
+                                        className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition focus:border-zinc-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Precio unit.</label>
+                                    <input
+                                        type="number"
+                                        value={producto.precioUnitario}
+                                        onChange={(e) => {
+                                            const precio = Number(
+                                                e.target.value
+                                            );
+                                            establecerPedido((prev) => {
+                                                const productos = [
+                                                    ...prev.productos,
+                                                ];
+                                                productos[index] = {
+                                                    ...productos[index],
+                                                    precioUnitario: precio,
+                                                    subtotal:
+                                                        precio * producto.cantidad,
+                                                };
+                                                return calcularTotales({
+                                                    ...prev,
+                                                    productos,
+                                                });
                                             });
-                                        });
-                                    }}className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium">Subtotal</label>
-                                <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-700">
-                                    S/ {producto.subtotal.toFixed(2)}
+                                        }}
+                                        className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition focus:border-zinc-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Subtotal</label>
+                                    <div className="flex h-9 items-center border border-zinc-200 bg-zinc-50 px-2.5 text-xs font-semibold text-zinc-700">S/ {producto.subtotal.toFixed(2)}</div>
+                                </div>
+                                <div className="flex items-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => eliminarProducto(index)}
+                                        className="h-9 w-full border border-red-200 px-2 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                                    >Eliminar
+                                    </button>
                                 </div>
                             </div>
-                            <div className="flex items-end">
-                                <button
-                                    onClick={() => eliminarProducto(index)}
-                                    className="w-full rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600"
-                                >Eliminar</button>
-                            </div>
                         </div>
-                    </div>
-                ))
-            }
+                    );
+                })}
+            </div>
         </section>
     );
 };

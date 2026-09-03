@@ -125,14 +125,3 @@ export interface DireccionCliente {
     pais: string;
     esPrincipal: boolean;
 }
-
-export interface PlanCliente {
-    clienteId: number;
-    nombre: string;
-    descripcion: string;
-    precioMensual: string;
-    descuento: string;
-    fechaInicio: string;
-    fechaFin: string;
-    beneficios: string[];
-}

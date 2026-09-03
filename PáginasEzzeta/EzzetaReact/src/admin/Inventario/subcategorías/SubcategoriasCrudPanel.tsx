@@ -21,6 +21,7 @@ export const SubcategoriasCrudPanel = ({ access }: Props) => {
   const [niveles, setNiveles] = useState<NivelMayoristaSubcategoria[]>([]);
     const [precio, setPrecio] = useState('');
     const [preciosTabla, setPreciosTabla] = useState<Record<string, string>>({});
+        const [nuevaColumna, setNuevaColumna] = useState('');
   const categorias = Object.keys(clasificaciones.categorias);
   const filas = Object.entries(clasificaciones.categorias).flatMap(([categoriaFila, subcategorias]) => subcategorias.map((nombre) => ({ categoria: categoriaFila, nombre })));
   const permisos = { ver: access.actions.view ? hasPermission(access.actions.view) : true, crear: access.actions.create ? hasPermission(access.actions.create) : false, editar: access.actions.update ? hasPermission(access.actions.update) : false, eliminar: access.actions.delete ? hasPermission(access.actions.delete) : false };
@@ -40,6 +41,62 @@ export const SubcategoriasCrudPanel = ({ access }: Props) => {
     guardarMetadataSubcategoria(editando.categoria, editando.nombre, { precio: Number.isFinite(precioNumerico) && precioNumerico > 0 ? precioNumerico : 0, guiaLavado: lavado, guiaTallas: tallas, nivelesMayoristas: niveles.filter((nivel) => nivel.cantidad > 0 && nivel.precio >= 0).sort((a, b) => a.cantidad - b.cantidad) });
     setEditando(null);
   };
+    const actualizarColumna = (indice: number, valor: string) => {
+        setTallas((actual) => {
+            const columnaAnterior = actual.columnas[indice];
+            const columnas = actual.columnas.map((columna, columnaIndice) => columnaIndice === indice ? valor : columna);
+            const filas = actual.filas.map((fila) => {
+                const valores = { ...fila.valores };
+                if (columnaAnterior !== valor) {
+                    valores[valor] = valores[columnaAnterior] ?? '';
+                    delete valores[columnaAnterior];
+                }
+                return { ...fila, valores };
+            });
+            return { ...actual, columnas, filas };
+        });
+    };
+    const agregarColumna = () => {
+        const nombre = nuevaColumna.trim();
+        if (!nombre || tallas.columnas.some((columna) => columna.toLowerCase() === nombre.toLowerCase())) return;
+        setTallas((actual) => ({
+            ...actual,
+            columnas: [...actual.columnas, nombre],
+            filas: actual.filas.map((fila) => ({ ...fila, valores: { ...fila.valores, [nombre]: '' } })),
+        }));
+        setNuevaColumna('');
+    };
+    const eliminarColumna = (indice: number) => {
+        if (tallas.columnas.length <= 1) return;
+        setTallas((actual) => {
+            const columna = actual.columnas[indice];
+            return {
+                ...actual,
+                columnas: actual.columnas.filter((_, columnaIndice) => columnaIndice !== indice),
+                filas: actual.filas.map((fila) => {
+                    const valores = { ...fila.valores };
+                    delete valores[columna];
+                    return { ...fila, valores };
+                }),
+            };
+        });
+    };
+    const actualizarFila = (filaIndice: number, cambios: Partial<{ etiqueta: string; valores: Record<string, string> }>) => {
+        setTallas((actual) => ({
+            ...actual,
+            filas: actual.filas.map((fila, indice) => indice === filaIndice ? { ...fila, ...cambios } : fila),
+        }));
+    };
+    const agregarFila = () => {
+        setTallas((actual) => ({
+            ...actual,
+            filas: [...actual.filas, { etiqueta: '', valores: Object.fromEntries(actual.columnas.map((columna) => [columna, ''])) }],
+        }));
+    };
+    const eliminarFila = (filaIndice: number) => {
+        if (tallas.filas.length <= 1) return;
+        setTallas((actual) => ({ ...actual, filas: actual.filas.filter((_, indice) => indice !== filaIndice) }));
+    };
     const guardarPrecioTabla = (fila: Fila) => {
         const clave = `${fila.categoria}::${fila.nombre}`;
         const valor = Number(preciosTabla[clave]);
@@ -137,20 +194,32 @@ export const SubcategoriasCrudPanel = ({ access }: Props) => {
                 </div>
                 <div className="border border-zinc-200 bg-zinc-50 p-4">
                     <h4 className="font-semibold">Guía de tallas</h4>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        <input value={nuevaColumna} onChange={(event) => setNuevaColumna(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); agregarColumna(); } }} placeholder="Nueva columna" className="min-w-40 flex-1 border px-2 py-1.5 text-sm" />
+                        <button type="button" onClick={agregarColumna} className="border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium hover:border-zinc-900">Agregar columna</button>
+                        <button type="button" onClick={agregarFila} className="border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium hover:border-zinc-900">Agregar fila</button>
+                    </div>
                     <div className="mt-3 overflow-x-auto">
                         <table className="min-w-[520px] bg-white text-sm">
                             <thead>
                                 <tr>
                                     <th className="border px-2 py-2">Medida</th>
                                     {tallas.columnas.map((columna, indice) => 
-                                    <th key={`${columna}-${indice}`} className="border px-2 py-2">{columna}</th>
+                                    <th key={`${columna}-${indice}`} className="border px-2 py-2">
+                                        <div className="flex min-w-24 items-center gap-1">
+                                            <input value={columna} onChange={(event) => actualizarColumna(indice, event.target.value)} className="w-full border px-1 py-1 text-xs" aria-label={`Nombre de columna ${indice + 1}`} />
+                                            <button type="button" onClick={() => eliminarColumna(indice)} disabled={tallas.columnas.length <= 1} className="text-red-600 disabled:cursor-not-allowed disabled:opacity-30" aria-label={`Eliminar columna ${columna}`} title="Eliminar columna">×</button>
+                                        </div>
+                                    </th>
                                     )}
+                                    <th className="border px-2 py-2">Acción</th>
                                 </tr>
                             </thead>
                             <tbody>{tallas.filas.map((fila, filaIndice) => 
                                 <tr key={filaIndice}>
-                                    <td className="border px-2 py-2">{fila.etiqueta}</td>{tallas.columnas.map((columna) => 
-                                    <td key={columna} className="border px-2 py-2">{fila.valores[columna] ?? ''}</td>)}
+                                    <td className="border px-2 py-2"><input value={fila.etiqueta} onChange={(event) => actualizarFila(filaIndice, { etiqueta: event.target.value })} className="w-20 border px-1 py-1 text-xs" aria-label={`Etiqueta de fila ${filaIndice + 1}`} /></td>{tallas.columnas.map((columna) => 
+                                    <td key={columna} className="border px-2 py-2"><input value={fila.valores[columna] ?? ''} onChange={(event) => actualizarFila(filaIndice, { valores: { ...fila.valores, [columna]: event.target.value } })} className="w-24 border px-1 py-1 text-xs" aria-label={`${columna}, fila ${filaIndice + 1}`} /></td>)}
+                                    <td className="border px-2 py-2 text-center"><button type="button" onClick={() => eliminarFila(filaIndice)} disabled={tallas.filas.length <= 1} className="text-xs text-red-600 disabled:cursor-not-allowed disabled:opacity-30">Eliminar</button></td>
                                 </tr>)}
                             </tbody>
                         </table>

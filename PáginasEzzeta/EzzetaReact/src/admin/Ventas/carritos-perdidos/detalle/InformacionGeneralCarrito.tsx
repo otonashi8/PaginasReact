@@ -26,7 +26,7 @@ export const InformacionGeneralCarrito = ({ carrito }: Props) => {
                 <h3 className="text-lg font-semibold">Información general</h3>
                 <p className="mt-1 text-sm text-zinc-500">Datos clave del carrito y su estado de abandono.</p>
             </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                 <div>
                     <p className="text-sm text-zinc-500">Cliente</p>
                     <p className="font-medium">{clienteLabel}</p>

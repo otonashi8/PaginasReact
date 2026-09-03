@@ -36,49 +36,42 @@ export const FormularioPedido = ({
     };
     return (
         <>
-            {/* Cabecera */}
-            <div className="border-b px-5 py-3">
-                <h2 className="text-xl font-semibold leading-tight">
-                    {
-                        modoEdicion
-                            ? "Editar pedido"
-                            : "Nuevo pedido"
-                    }
-                </h2>
-                <p className="mt-1 text-sm text-zinc-500">Administra la información del pedido.</p>
+            <div className="border-b border-zinc-200 px-5 py-3">
+                <h2 className="text-lg font-semibold leading-tight text-zinc-900">{modoEdicion ? "Editar pedido" : "Nuevo pedido"}</h2>
+                <p className="mt-0.5 text-xs text-zinc-500">Administra la información del pedido.</p>
             </div>
-            {/* Contenido */}
             <div className="p-5">
-                {/* Información general */}
-                <section className="space-y-6">
-                    <div>
-                        <h3 className="text-lg font-semibold">Información general</h3>
-                        <p className="text-sm text-zinc-500">Datos principales del pedido.</p>
+                <section className="space-y-5">
+                    <div className="border-b border-zinc-100 pb-3">
+                        <h3 className="text-sm font-semibold text-zinc-900">Información general</h3>
+                        <p className="mt-0.5 text-xs text-zinc-500">Datos principales del pedido.</p>
                     </div>
-                    <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="grid gap-4 lg:grid-cols-2">
                         <div>
-                            <label className="mb-2 block font-medium">Número de pedido</label>
+                            <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Número de pedido</label>
                             <input
                                 type="text"
                                 value={pedido.numeroPedido}
-                                onChange={(e)=>
+                                onChange={(e) =>
                                     actualizar(
                                         "numeroPedido",
                                         e.target.value
                                     )
-                                }className="w-full rounded-lg border border-zinc-300 px-4 py-3"
+                                }
+                                className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500"
                             />
                         </div>
                         <div>
-                            <label className="mb-2 block font-medium">Estado</label>
+                            <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Estado</label>
                             <select
                                 value={pedido.estado}
-                                onChange={(e)=>
+                                onChange={(e) =>
                                     actualizar(
                                         "estado",
                                         e.target.value as Pedido["estado"]
                                     )
-                                }className="w-full rounded-lg border border-zinc-300 px-4 py-3"
+                                }
+                                className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition focus:border-zinc-500"
                             >
                                 <option value="pendiente">Pendiente</option>
                                 <option value="pagado">Pagado</option>
@@ -90,34 +83,33 @@ export const FormularioPedido = ({
                         </div>
                     </div>
                 </section>
-                {/* Cliente */}
-                <ClientePedido pedido={pedido} establecerPedido={establecerPedido}/>
-                {/* Dirección */}
-                <DireccionPedido pedido={pedido} establecerPedido={establecerPedido}/>
-                {/* Productos */}
-                <ProductosPedido pedido={pedido} establecerPedido={establecerPedido}/>
-                {/* Pago */}
-                <PagoPedido pedido={pedido} establecerPedido={establecerPedido}/>
-                {/* Totales */}
-                <TotalesPedido pedido={pedido} establecerPedido={establecerPedido}/>
-                {/* Historial de estados */}
-                <HistorialEstados pedido={pedido} establecerPedido={establecerPedido}/>
+
+                <div className="mt-6 space-y-6">
+                    {/* Cliente */}
+                    <ClientePedido pedido={pedido} establecerPedido={establecerPedido}/>
+                    {/* Dirección */}
+                    <DireccionPedido pedido={pedido} establecerPedido={establecerPedido}/>
+                    {/* Productos */}
+                    <ProductosPedido pedido={pedido} establecerPedido={establecerPedido}/>
+                    {/* Pago */}
+                    <PagoPedido pedido={pedido} establecerPedido={establecerPedido}/>
+                    {/* Totales */}
+                    <TotalesPedido pedido={pedido} establecerPedido={establecerPedido}/>
+                    {/* Historial de estados */}
+                    <HistorialEstados pedido={pedido} establecerPedido={establecerPedido}/>
+                </div>
             </div>
-            {/* Botones */}
-            <div className="flex justify-end gap-3 border-t px-5 py-3">
+            {/* Acciones */}
+            <div className="flex justify-end gap-2 border-t border-zinc-200 bg-zinc-50/50 px-5 py-3">
                 <button
                     onClick={cerrar}
-                    className="rounded-lg border border-zinc-300 px-4 py-2 text-sm"
-                >Cancelar</button>
+                    className="h-9 border border-zinc-300 bg-white px-4 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100"
+                >Cancelar
+                </button>
                 <button
                     onClick={guardar}
-                    className="rounded-lg bg-black px-4 py-2 text-sm text-white"
-                >
-                    {
-                        modoEdicion
-                            ? "Guardar cambios"
-                            : "Crear pedido"
-                    }
+                    className="h-9 bg-zinc-950 px-4 text-xs font-medium text-white transition hover:bg-zinc-800"
+                >{modoEdicion ? "Guardar cambios" : "Crear pedido"}
                 </button>
             </div>
         </>

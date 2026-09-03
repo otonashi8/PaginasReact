@@ -27,49 +27,44 @@ export const ClientePedido = ({
     };
 
     return (
-        <section className="space-y-6">
-            <div>
-                <h3 className="text-lg font-semibold">Cliente</h3>
-                <p className="text-sm text-zinc-500">Información del comprador.</p>
+        <section className="space-y-5">
+            <div className="border-b border-zinc-100 pb-3">
+                <h3 className="text-sm font-semibold text-zinc-900">Cliente</h3>
+                <p className="mt-0.5 text-xs text-zinc-500">Información del comprador.</p>
             </div>
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="grid gap-4 lg:grid-cols-3">
                 <div>
-                   <label className="mb-2 block font-medium">Nombre</label>
+                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Nombre</label>
                     <input
                         type="text"
                         value={pedido.cliente.nombre}
-                        onChange={(e)=>
-                            actualizar(
-                                "nombre",
-                                e.target.value
-                            )
-                        }className="w-full rounded-lg border border-zinc-300 px-4 py-3"
+                        onChange={(e) =>
+                            actualizar("nombre", e.target.value)
+                        }
+                        className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500"
                     />
                 </div>
                 <div>
-                    <label className="mb-2 block font-medium">Correo</label>
+                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Correo</label>
+
                     <input
                         type="email"
                         value={pedido.cliente.correo}
-                        onChange={(e)=>
-                            actualizar(
-                                "correo",
-                                e.target.value
-                            )
-                        }className="w-full rounded-lg border border-zinc-300 px-4 py-3"
+                        onChange={(e) =>
+                            actualizar("correo", e.target.value)
+                        }
+                        className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500"
                     />
                 </div>
                 <div>
-                    <label className="mb-2 block font-medium">Teléfono</label>
+                    <label className="mb-1.5 block text-[11px] font-semibold text-zinc-600">Teléfono</label>
                     <input
                         type="text"
                         value={pedido.cliente.telefono}
-                        onChange={(e)=>
-                            actualizar(
-                                "telefono",
-                                e.target.value
-                            )
-                        }className="w-full rounded-lg border border-zinc-300 px-4 py-3"
+                        onChange={(e) =>
+                            actualizar("telefono", e.target.value)
+                        }
+                        className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500"
                     />
                 </div>
             </div>

@@ -70,7 +70,7 @@ export const SalesAnalyticsPanel = () => {
       </div>
 
       <div className="rounded-none border border-zinc-200 bg-white p-4 shadow-sm">
-        <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-7">
           <label className="text-sm text-zinc-600">
             <span className="mb-1 block">Desde</span>
             <input type="date" value={filters.fechaInicio} onChange={(event) => setFilters((prev) => ({ ...prev, fechaInicio: event.target.value }))} className="w-full rounded-none border border-zinc-300 px-3 py-2" />

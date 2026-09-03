@@ -454,18 +454,10 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="rounded-full border border-zinc-200 bg-white p-2.5 text-black lg:hidden"
-          >
-            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          >{isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-
-          <Link to="/" className={`text-base font-semibold uppercase tracking-[0.3em] sm:text-xl lg:mr-auto ${headerTextClass}`}>
-            EZZETA
-          </Link>
-
-          <nav className="hidden flex-1 items-center justify-center gap-6 text-sm font-medium uppercase tracking-[0.24em] lg:flex">
-            {navigationLinks.map((link) => renderNavItem(link))}
-          </nav>
-
+          <Link to="/" className={`text-base font-semibold uppercase tracking-[0.3em] sm:text-xl lg:mr-auto ${headerTextClass}`}>EZZETA</Link>
+          <nav className="hidden flex-1 items-center justify-center gap-6 text-sm font-medium uppercase tracking-[0.24em] lg:flex">{navigationLinks.map((link) => renderNavItem(link))}</nav>
           <div className="flex items-center gap-2 sm:gap-3">
             {!isAuthenticated ? (
               <button
@@ -478,8 +470,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                   setIsLoginModalOpen(true);
                 }}
                 className={`hidden rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
-              >
-                Iniciar sesión
+              >Iniciar sesión
               </button>
             ) : null}
 
@@ -489,8 +480,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
-                >
-                  Hola, {user.username}
+                >Hola, {user.username}
                 </button>
 
                 <AnimatePresence>
@@ -521,9 +511,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                           navigate('/');
                         }}
                         className="flex w-full items-center gap-2 border-t border-black/10 px-4 py-3 text-sm font-medium text-black transition hover:bg-red-50 hover:text-red-600"
-                      >
-                        <LogOut size={16} />
-                        Cerrar sesión
+                      ><LogOut size={16} />Cerrar sesión
                       </button>
                     </motion.div>
                   )}
@@ -535,8 +523,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
               <form
                 onSubmit={handleSearch}
                 className={`hidden items-center gap-2 rounded-full px-3 py-2 text-sm md:flex ${headerSearchClass}`}
-              >
-                <Search size={16} className="text-black" />
+              ><Search size={16} className="text-black" />
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
@@ -558,13 +545,10 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                 }}
               />
             </div>
-
             <Link to="/deseados" className={`relative rounded-full border p-2.5 ${headerIconButtonClass}`}>
               <Heart size={18} />
               {favorites.length > 0 ? (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-semibold text-white">
-                  {favorites.length}
-                </span>
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-semibold text-white">{favorites.length}</span>
               ) : null}
             </Link>
 
@@ -573,8 +557,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
               aria-label="Carrito"
               className={`relative rounded-full border p-2.5 ${headerIconButtonClass}`}
               onClick={() => (onOpenCart ? onOpenCart() : toggleCart())}
-            >
-              <ShoppingBag size={18} />
+            ><ShoppingBag size={18} />
               {cart.length > 0 ? (
                 <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-semibold text-white">
                   {cart.reduce((sum, item) => sum + item.quantity, 0)}
@@ -632,9 +615,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                           navigate('/');
                         }}
                         className="flex-1 flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600"
-                      >
-                        <LogOut size={16} />
-                        Cerrar sesión
+                      ><LogOut size={16} />Cerrar sesión
                       </button>
                     </>
                   ) : (
@@ -1033,8 +1014,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                     type="button"
                     onClick={() => setLoginModalMode('register')}
                     className="mt-4 w-full block rounded-full border border-black/10 bg-white px-4 py-3 text-center text-sm font-medium text-black transition hover:border-red-600 hover:text-red-600 sm:w-auto"
-                  >
-                    Crear cuenta
+                  >Crear cuenta
                   </button>
                 </>
               ) : null}

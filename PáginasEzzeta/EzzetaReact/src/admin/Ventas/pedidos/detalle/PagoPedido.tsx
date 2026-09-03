@@ -16,7 +16,7 @@ export default function PagoPedido({
     establecerPedido
 }: Props) {
     return (
-        <section className="space-y-4">
+        <section className="space-y-4 grid lg:grid-cols-2">
             <div>
                 <h3 className="text-lg font-semibold">Método de pago</h3>
                 <p className="text-sm text-zinc-500">Selecciona la forma de pago del pedido.</p>

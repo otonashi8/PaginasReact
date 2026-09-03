@@ -3,7 +3,6 @@ import { EstadoCliente } from "./PerfilCliente/EstadoCliente";
 import { HistorialPagos } from "./PerfilCliente/HistorialPagos";
 import { HistorialPedidos } from "./PerfilCliente/HistorialPedidos";
 import { InformacionGeneral } from "./PerfilCliente/InformacionGeneral";
-import { PlanClienteSection } from "./PerfilCliente/PlanCliente";
 import { WishlistCliente } from "./PerfilCliente/WishlistCliente";
 import { CheckoutDraftCliente } from "./PerfilCliente/CheckoutDraftCliente";
 import { RecientesVistosCliente } from "./PerfilCliente/RecientesVistosCliente";
@@ -11,7 +10,6 @@ import { pagosClienteMock, pedidosClienteMock, wishlistClienteMock } from "./Dat
 import {
     calcularTicketPromedioCliente,
     calcularTotalGeneradoCliente,
-    obtenerPlanCliente,
     obtenerUltimaCompraCliente
 } from "./utils/clientesMetricas";
 
@@ -32,7 +30,6 @@ export const PerfilClientes = ({ cliente }: Props) => {
     const pagos = cliente.pagos ?? pagosClienteMock.filter((pago) => pago.clienteId === cliente.id);
     const wishlist = cliente.wishlist ?? wishlistClienteMock.filter((item) => item.clienteId === cliente.id);
     const wishlistStorageIds = cliente.wishlistStorageIds;
-    const plan = obtenerPlanCliente(cliente);
     const checkoutDraft = cliente.checkoutDraft;
     const recentlyViewedProducts = cliente.recentlyViewedProducts;
     const totalGenerado = calcularTotalGeneradoCliente(cliente, pedidos);
@@ -63,7 +60,6 @@ export const PerfilClientes = ({ cliente }: Props) => {
                 <WishlistCliente wishlist={wishlist} wishlistIds={wishlistStorageIds} />
                 <CheckoutDraftCliente checkoutDraft={checkoutDraft} />
                 <RecientesVistosCliente productos={recentlyViewedProducts} />
-                <PlanClienteSection plan={plan} />
             </div>
         </div>
     );

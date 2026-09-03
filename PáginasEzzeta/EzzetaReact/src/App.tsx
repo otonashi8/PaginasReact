@@ -72,7 +72,6 @@ function App() {
               <Route path="/registro" element={<RegisterPage />} />
               <Route path="/D-Admin/*" element={<AdminDashboardPage />} />
               <Route path="/checkout" element={<PageVisibilityGate pageKey="checkout"><CheckoutPage /></PageVisibilityGate>} />
-              <Route path="/trabajos" element={<PageVisibilityGate pageKey="unetenos"><UnetenosPage /></PageVisibilityGate>} />
               <Route element={<MainLayout />}>
                 <Route path="/" element={<PageVisibilityGate pageKey="home"><HomePage /></PageVisibilityGate>} />
                 <Route path="/tienda" element={<PageVisibilityGate pageKey="store"><StorePage /></PageVisibilityGate>} />
@@ -84,6 +83,7 @@ function App() {
                 <Route path="/politicas" element={<PageVisibilityGate pageKey="privacy"><PoliticaPrivacidadPage /></PageVisibilityGate>} />
                 <Route path="/terminos" element={<PageVisibilityGate pageKey="terms"><TerminosCondicionesPage /></PageVisibilityGate>} />
                 <Route path="/reclamaciones" element={<PageVisibilityGate pageKey="complaints"><RecommendationsPage /></PageVisibilityGate>} />
+                <Route path="/trabajos" element={<PageVisibilityGate pageKey="unetenos"><UnetenosPage /></PageVisibilityGate>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

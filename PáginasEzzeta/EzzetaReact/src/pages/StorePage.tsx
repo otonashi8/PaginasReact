@@ -263,72 +263,73 @@ export const StorePage = () => {
   return (
     <section className="relative overflow-hidden bg-white pb-8">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(circle_at_top,rgba(193,18,31,0.08),transparent_60%)]" />
-
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
-        <motion.header
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="rounded-[2rem] border border-black/10 bg-white/95 p-6 shadow-[0_16px_45px_rgba(0,0,0,0.05)] backdrop-blur"
-        >
-          <p className="text-sm uppercase tracking-[0.35em] text-black/45">Tienda</p>
-          <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl space-y-3">
-              <h1 className="text-3xl font-semibold uppercase tracking-[0.18em] text-black sm:text-4xl">Colección masculina</h1>
-              <p className="max-w-2xl text-sm leading-7 text-black/65 sm:text-base">
-                Explora piezas esenciales con una estética contemporánea y sofisticada.
-              </p>
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+          <motion.header
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="border-b border-black/10 pb-6"
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-black/45">Tienda / Colección</p>
+                <h1 className="mt-2 text-3xl font-semibold uppercase tracking-[0.12em] text-black sm:text-4xl">Colección masculina</h1>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-black/60">Explora piezas esenciales con una estética contemporánea y sofisticada.</p>
+              </div>
+              <p className="text-sm uppercase tracking-[0.18em] text-black/45">{filteredProducts.length} productos</p>
             </div>
-          </div>
-        </motion.header>
-
-        <div className="space-y-6">
+          </motion.header>
+          <div className="space-y-5">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="rounded-[1.75rem] border border-black/10 bg-white/95 p-4 shadow-[0_12px_35px_rgba(0,0,0,0.04)] backdrop-blur"
+              transition={{ duration: 0.35, ease: "easeOut" }}
+              className="flex flex-col gap-3 border-b border-black/10 pb-4 sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                <p className="text-sm uppercase tracking-[0.24em] text-black/45">
-                  {filteredProducts.length} productos
-                </p>
-                <div className="grid w-full gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-start xl:w-auto xl:justify-end">
-                  <button
-                    type="button"
-                    onClick={openFiltersModal}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition duration-300 hover:border-black hover:bg-black hover:text-white sm:w-auto"
-                  >
-                    <SlidersHorizontal size={15} />
-                    Filtros
-                  </button>
-                  <label className="sr-only" htmlFor="store-sort">Ordenar productos</label>
-                  <div className="inline-flex w-full items-stretch overflow-hidden rounded-full border border-black/10 bg-white sm:w-auto">
-                    {[1, 2, 3, 4].map((cols) => (
-                      <button
-                        key={cols}
-                        type="button"
-                        onClick={() => setProductsPerRow(cols as 1 | 2 | 3 | 4)}
-                        className={`flex-1 px-3 py-2.5 text-sm font-medium transition duration-300 sm:flex-none ${productsPerRow === cols ? 'bg-black text-white' : 'text-black hover:bg-black/5 hover:text-black'}`}
-                        aria-pressed={productsPerRow === cols}
-                      >
-                        {cols}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={resetFilters}
-                    className="w-full rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition duration-300 hover:border-black hover:bg-black hover:text-white sm:w-auto"
-                  >
-                    Limpiar filtros
-                  </button>
+              <p className="text-[16px] font-bold uppercase tracking-[0.2em] text-black/45">Explora nuestra selección</p>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+                <button
+                  type="button"
+                  onClick={openFiltersModal}
+                  className="inline-flex h-9 items-center justify-center gap-2 border border-black/15 bg-white px-4 text-sm font-medium text-black transition hover:border-black hover:bg-black hover:text-white"
+                ><SlidersHorizontal size={14} />Filtros
+                </button>
+                <label className="sr-only" htmlFor="store-sort">Productos por fila</label>
+                <div className="inline-flex h-9 overflow-hidden border border-black/15 bg-white">
+                  {[1, 2, 3, 4].map((cols) => (
+                    <button
+                      key={cols}
+                      type="button"
+                      onClick={() =>
+                        setProductsPerRow(cols as 1 | 2 | 3 | 4)
+                      }
+                      className={`min-w-9 border-r border-black/10 px-3 text-sm font-medium transition last:border-r-0 ${
+                        productsPerRow === cols
+                          ? "bg-black text-white"
+                          : "text-black hover:bg-black/5"
+                      }`}
+                      aria-pressed={productsPerRow === cols}
+                    >{cols}
+                    </button>
+                  ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="col-span-2 h-9 border border-black/15 bg-white px-4 text-sm font-medium text-black transition hover:border-black hover:bg-black hover:text-white sm:col-span-1"
+                >Limpiar filtros
+                </button>
               </div>
             </motion.div>
             {filteredProducts.length === 0 ? (
-              <div className="rounded-[1.75rem] border border-black/10 bg-zinc-50 p-8 text-sm text-black/70 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-                No hay productos que coincidan con los filtros seleccionados.
+              <div className="border border-dashed border-black/15 bg-zinc-50 p-10 text-center">
+                <p className="text-sm text-black/65">No hay productos que coincidan con los filtros seleccionados.</p>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-red-600 underline-offset-4 hover:underline"
+                >Limpiar filtros
+                </button>
               </div>
             ) : (
               <>
@@ -336,44 +337,51 @@ export const StorePage = () => {
                   key={currentPage}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
                   className={`grid gap-4 sm:gap-5 ${gridClassMap[productsPerRow]}`}
                 >
                   {paginatedProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onQuickAdd={openQuickCart} />
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onQuickAdd={openQuickCart}
+                    />
                   ))}
                 </motion.div>
-
-                <div className="flex flex-col gap-3 rounded-[1.5rem] border border-black/10 bg-white px-4 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.04)] sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm text-black/60">
-                    Mostrando {paginatedProducts.length} de {filteredProducts.length} productos
+                <div className="flex flex-col gap-3 border-t border-black/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-black/50">
+                    Mostrando{" "}
+                    <span className="font-medium text-black">
+                      {paginatedProducts.length}
+                    </span>{" "}
+                    de{" "}
+                    <span className="font-medium text-black">
+                      {filteredProducts.length}
+                    </span>{" "}
+                    productos
                   </p>
-                  <div className="flex w-full items-center gap-2 sm:w-auto">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => goToPage(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition duration-300 hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
-                    >
-                      Anterior
+                      className="h-9 border border-black/15 bg-white px-4 text-xs font-medium text-black transition hover:border-black hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+                    >Anterior
                     </button>
-                    <span className="min-w-16 text-center text-sm text-black/70 sm:text-left">
-                      {currentPage} / {pageCount}
-                    </span>
+                    <span className="min-w-16 text-center text-xs text-black/60">{currentPage} / {pageCount}</span>
                     <button
                       type="button"
                       onClick={() => goToPage(currentPage + 1)}
                       disabled={currentPage === pageCount}
-                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-medium text-black transition duration-300 hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
-                    >
-                      Siguiente
+                      className="h-9 border border-black/15 bg-white px-4 text-xs font-medium text-black transition hover:border-black hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+                    >Siguiente
                     </button>
                   </div>
                 </div>
               </>
             )}
+          </div>
         </div>
-      </div>
 
       <QuickAddModal
         product={quickCartProduct ?? (paginatedProducts[0] ?? null) as any}
@@ -394,56 +402,60 @@ export const StorePage = () => {
               initial={{ x: -420, opacity: 0.85 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -420, opacity: 0.9 }}
-              transition={{ duration: 0.28, ease: 'easeOut' }}
-              className="flex h-full w-full max-w-md flex-col border-r border-black/10 bg-white p-5 shadow-[0_26px_70px_rgba(0,0,0,0.24)]"
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              className="relative flex h-full w-full max-w-md flex-col border-r border-black/10 bg-white shadow-[0_26px_70px_rgba(0,0,0,0.24)]"
             >
-              <div className="flex items-center justify-between gap-3 border-b border-black/8 pb-4">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.32em] text-black">Filtros</h2>
+              <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
+                <div>
+                  <p className="text-[12px] font-bold uppercase tracking-[0.24em] text-black/40">Tienda</p>
+                  <h2 className="mt-1 text-sm font-semibold uppercase tracking-[0.22em] text-black">Filtros</h2>
+                </div>
                 <button
                   type="button"
                   onClick={closeFiltersModal}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-black transition hover:border-red-600 hover:text-red-600"
+                  className="inline-flex size-8 items-center justify-center border border-black/10 text-black transition hover:border-black hover:bg-black hover:text-white"
                   aria-label="Cerrar filtros"
-                >
-                  <X size={16} />
+                ><X size={15} />
                 </button>
               </div>
-
-              <div className="mt-5 flex-1 space-y-3 overflow-y-auto pr-1">
-                <div className="rounded-[1.5rem] border border-black/8 bg-white p-3 shadow-[0_8px_22px_rgba(0,0,0,0.03)]">
+              <div className="flex-1 space-y-0 overflow-y-auto px-5">
+                <div className="border-b border-black/10 py-4">
                   <motion.button
                     type="button"
-                    onClick={() => toggleSection('categories')}
+                    onClick={() => toggleSection("categories")}
                     whileTap={{ scale: 0.98 }}
-                    className="flex w-full items-center justify-between text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-black/75 transition hover:text-black"
-                  >
-                    <span>Categorías</span>
+                    className="flex w-full items-center justify-between text-[15px] font-bold uppercase tracking-[0.2em] text-black transition hover:text-red-600"
+                  ><span>Categorías</span>
                     <motion.span
-                      animate={{ rotate: openSections.categories ? 180 : 0 }}
-                      transition={{ duration: 0.25, ease: 'easeOut' }}
-                      className="inline-block"
-                    >
-                      ▽
+                      animate={{
+                        rotate: openSections.categories ? 180 : 0,
+                      }}
+                      transition={{ duration: 0.25 }}
+                      className="text-sm leading-none"
+                    >▾
                     </motion.span>
                   </motion.button>
                   <AnimatePresence initial={false}>
                     {openSections.categories ? (
                       <motion.div
-                        initial={{ height: 0, opacity: 0, y: -6 }}
-                        animate={{ height: 'auto', opacity: 1, y: 0 }}
-                        exit={{ height: 0, opacity: 0, y: -6 }}
-                        transition={{ duration: 0.25, ease: 'easeOut' }}
-                        className="overflow-hidden pt-3"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden"
                       >
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5 pt-3">
                           {categoryOptions.map((category) => (
                             <button
                               key={category}
                               type="button"
                               onClick={() => setDraftCategory(category)}
-                              className={`rounded-full border px-3 py-2 text-[0.7rem] font-medium uppercase tracking-[0.18em] transition duration-300 ${draftCategory === category ? 'border-black bg-black text-white shadow-[0_8px_18px_rgba(0,0,0,0.12)]' : 'border-black/10 bg-white text-black/70 hover:-translate-y-0.5 hover:border-black/30 hover:bg-black/5 hover:text-black'}`}
-                            >
-                              {category}
+                              className={`border px-3 py-2 text-[15px] font-medium uppercase tracking-[0.1em] transition ${
+                                draftCategory === category
+                                  ? "border-black bg-black text-white"
+                                  : "border-black/10 bg-white text-black/65 hover:border-black/40 hover:text-black"
+                              }`}
+                            >{category}
                             </button>
                           ))}
                         </div>
@@ -451,48 +463,44 @@ export const StorePage = () => {
                     ) : null}
                   </AnimatePresence>
                 </div>
-
-                <div className="rounded-[1.5rem] border border-black/8 bg-white p-3 shadow-[0_8px_22px_rgba(0,0,0,0.03)]">
+                <div className="border-b border-black/10 py-4">
                   <motion.button
                     type="button"
-                    onClick={() => toggleSection('subcategories')}
+                    onClick={() => toggleSection("subcategories")}
                     whileTap={{ scale: 0.98 }}
-                    className="flex w-full items-center justify-between text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-black/75 transition hover:text-black"
+                    className="flex w-full items-center justify-between text-[15px] font-bold uppercase tracking-[0.2em] text-black transition hover:text-red-600"
                   >
                     <span>Subcategorías</span>
                     <motion.span
-                      animate={{ rotate: openSections.subcategories ? 180 : 0 }}
-                      transition={{ duration: 0.25, ease: 'easeOut' }}
-                      className="inline-block"
-                    >
-                      ▽
+                      animate={{
+                        rotate: openSections.subcategories ? 180 : 0,
+                      }}
+                      transition={{ duration: 0.25 }}
+                      className="text-sm leading-none"
+                    >▾
                     </motion.span>
                   </motion.button>
                   <AnimatePresence initial={false}>
                     {openSections.subcategories ? (
                       <motion.div
-                        initial={{ height: 0, opacity: 0, y: -6 }}
-                        animate={{ height: 'auto', opacity: 1, y: 0 }}
-                        exit={{ height: 0, opacity: 0, y: -6 }}
-                        transition={{ duration: 0.25, ease: 'easeOut' }}
-                        className="overflow-hidden pt-3"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden"
                       >
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setDraftSubcategory('Todas')}
-                            className={`rounded-full border px-3 py-2 text-[0.7rem] font-medium uppercase tracking-[0.18em] transition duration-300 ${draftSubcategory === 'Todas' ? 'border-black bg-black text-white shadow-[0_8px_18px_rgba(0,0,0,0.12)]' : 'border-black/10 bg-white text-black/70 hover:-translate-y-0.5 hover:border-black/30 hover:bg-black/5 hover:text-black'}`}
-                          >
-                            Todas
-                          </button>
-                          {subcategories.map((subcategory) => (
+                        <div className="flex flex-wrap gap-1.5 pt-3">
+                          {["Todas", ...subcategories].map((subcategory) => (
                             <button
                               key={subcategory}
                               type="button"
                               onClick={() => setDraftSubcategory(subcategory)}
-                              className={`rounded-full border px-3 py-2 text-[0.7rem] font-medium uppercase tracking-[0.18em] transition duration-300 ${draftSubcategory === subcategory ? 'border-black bg-black text-white shadow-[0_8px_18px_rgba(0,0,0,0.12)]' : 'border-black/10 bg-white text-black/70 hover:-translate-y-0.5 hover:border-black/30 hover:bg-black/5 hover:text-black'}`}
-                            >
-                              {subcategory}
+                              className={`border px-3 py-2 text-[15px] font-medium uppercase tracking-[0.1em] transition ${
+                                draftSubcategory === subcategory
+                                  ? "border-black bg-black text-white"
+                                  : "border-black/10 bg-white text-black/65 hover:border-black/40 hover:text-black"
+                              }`}
+                            >{subcategory}
                             </button>
                           ))}
                         </div>
@@ -500,38 +508,39 @@ export const StorePage = () => {
                     ) : null}
                   </AnimatePresence>
                 </div>
-
-                <div className="rounded-[1.5rem] border border-black/8 bg-white p-3 shadow-[0_8px_22px_rgba(0,0,0,0.03)]">
+                <div className="border-b border-black/10 py-4">
                   <motion.button
                     type="button"
-                    onClick={() => toggleSection('price')}
+                    onClick={() => toggleSection("price")}
                     whileTap={{ scale: 0.98 }}
-                    className="flex w-full items-center justify-between text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-black/75 transition hover:text-black"
+                    className="flex w-full items-center justify-between text-[15px] font-bold uppercase tracking-[0.2em] text-black transition hover:text-red-600"
                   >
                     <span>Precio</span>
                     <motion.span
-                      animate={{ rotate: openSections.price ? 180 : 0 }}
-                      transition={{ duration: 0.25, ease: 'easeOut' }}
-                      className="inline-block"
-                    >
-                      ▽
+                      animate={{
+                        rotate: openSections.price ? 180 : 0,
+                      }}
+                      transition={{ duration: 0.25 }}
+                      className="text-sm leading-none"
+                    >▾
                     </motion.span>
                   </motion.button>
                   <AnimatePresence initial={false}>
                     {openSections.price ? (
                       <motion.div
-                        initial={{ height: 0, opacity: 0, y: -6 }}
-                        animate={{ height: 'auto', opacity: 1, y: 0 }}
-                        exit={{ height: 0, opacity: 0, y: -6 }}
-                        transition={{ duration: 0.25, ease: 'easeOut' }}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
                         className="space-y-4 overflow-hidden pt-4"
                       >
-                        <div className="relative flex h-8 items-center border border-black/10 bg-white px-2">
+                        <div className="relative flex h-8 items-center">
+                          <div className="absolute left-0 right-0 h-1 bg-black/10" />
                           <div
                             className="absolute h-1 bg-black"
                             style={{
-                              left: `${((draftPriceRange[0] - 30) / (200 - 30)) * 100}%`,
-                              right: `${100 - ((draftPriceRange[1] - 30) / (200 - 30)) * 100}%`,
+                              left: `${((draftPriceRange[0] - priceBounds[0]) /(priceBounds[1] - priceBounds[0])) *100}%`,
+                              right: `${100 -((draftPriceRange[1] - priceBounds[0]) /(priceBounds[1] - priceBounds[0])) *100}%`,
                             }}
                           />
                           <input
@@ -541,9 +550,13 @@ export const StorePage = () => {
                             value={draftPriceRange[0]}
                             onChange={(event) => {
                               const nextMin = Number(event.target.value);
-                              setDraftPriceRange(([_, max]) => [Math.min(nextMin, max), max]);
+
+                              setDraftPriceRange(([_, max]) => [
+                                Math.min(nextMin, max),
+                                max,
+                              ]);
                             }}
-                            className="pointer-events-none absolute h-8 w-full cursor-pointer bg-transparent outline-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-black [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-black"
+                            className="pointer-events-none absolute h-8 w-full cursor-pointer appearance-none bg-transparent outline-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-black [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-black"
                           />
                           <input
                             type="range"
@@ -552,64 +565,64 @@ export const StorePage = () => {
                             value={draftPriceRange[1]}
                             onChange={(event) => {
                               const nextMax = Number(event.target.value);
-                              setDraftPriceRange(([min]) => [min, Math.max(min, nextMax)]);
+                              setDraftPriceRange(([min]) => [
+                                min,
+                                Math.max(min, nextMax),
+                              ]);
                             }}
-                            className="pointer-events-none absolute h-8 w-full cursor-pointer bg-transparent outline-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-black [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-black"
+                            className="pointer-events-none absolute h-8 w-full cursor-pointer appearance-none bg-transparent outline-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-black [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-black"
                           />
                         </div>
-                        <div className="flex items-center justify-between text-[0.7rem] uppercase tracking-[0.18em] text-black/45">
+                        <div className="flex items-center justify-between text-[15px] uppercase tracking-[0.12em] text-black/40">
                           <span>S/ {priceBounds[0]}.00</span>
                           <span>S/ {priceBounds[1]}.00</span>
                         </div>
-                        <p className="text-center text-sm font-semibold tracking-[0.08em] text-black">
-                          S/ {draftPriceRange[0]}.00 – S/ {draftPriceRange[1]}.00
+                        <p className="text-center text-sm font-semibold tracking-[0.04em] text-black">
+                          S/ {draftPriceRange[0]}.00 – S/{" "}
+                          {draftPriceRange[1]}.00
                         </p>
                       </motion.div>
                     ) : null}
                   </AnimatePresence>
                 </div>
-
-                <div className="rounded-[1.5rem] border border-black/8 bg-white p-3 shadow-[0_8px_22px_rgba(0,0,0,0.03)]">
+                <div className="border-b border-black/10 py-4">
                   <motion.button
                     type="button"
-                    onClick={() => toggleSection('sizes')}
+                    onClick={() => toggleSection("sizes")}
                     whileTap={{ scale: 0.98 }}
-                    className="flex w-full items-center justify-between text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-black/75 transition hover:text-black"
+                    className="flex w-full items-center justify-between text-[15px] font-bold uppercase tracking-[0.2em] text-black transition hover:text-red-600"
                   >
                     <span>Tallas</span>
                     <motion.span
-                      animate={{ rotate: openSections.sizes ? 180 : 0 }}
-                      transition={{ duration: 0.25, ease: 'easeOut' }}
-                      className="inline-block"
-                    >
-                      ▽
+                      animate={{
+                        rotate: openSections.sizes ? 180 : 0,
+                      }}
+                      transition={{ duration: 0.25 }}
+                      className="text-sm leading-none"
+                    >▾
                     </motion.span>
                   </motion.button>
                   <AnimatePresence initial={false}>
                     {openSections.sizes ? (
                       <motion.div
-                        initial={{ height: 0, opacity: 0, y: -6 }}
-                        animate={{ height: 'auto', opacity: 1, y: 0 }}
-                        exit={{ height: 0, opacity: 0, y: -6 }}
-                        transition={{ duration: 0.25, ease: 'easeOut' }}
-                        className="overflow-hidden pt-3"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden"
                       >
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setDraftSize('Todas')}
-                            className={`rounded-full border px-3 py-2 text-[0.7rem] font-medium uppercase tracking-[0.18em] transition duration-300 ${draftSize === 'Todas' ? 'border-black bg-black text-white shadow-[0_8px_18px_rgba(0,0,0,0.12)]' : 'border-black/10 bg-white text-black/70 hover:-translate-y-0.5 hover:border-black/30 hover:bg-black/5 hover:text-black'}`}
-                          >
-                            Todas
-                          </button>
-                          {sizeOptions.map((size) => (
+                        <div className="grid grid-cols-4 gap-1.5 pt-3">
+                          {["Todas", ...sizeOptions].map((size) => (
                             <button
                               key={size}
                               type="button"
                               onClick={() => setDraftSize(size)}
-                              className={`rounded-full border px-3 py-2 text-[0.7rem] font-medium uppercase tracking-[0.18em] transition duration-300 ${draftSize === size ? 'border-black bg-black text-white shadow-[0_8px_18px_rgba(0,0,0,0.12)]' : 'border-black/10 bg-white text-black/70 hover:-translate-y-0.5 hover:border-black/30 hover:bg-black/5 hover:text-black'}`}
-                            >
-                              {size}
+                              className={`h-9 border text-[15px] font-medium uppercase tracking-[0.1em] transition ${
+                                draftSize === size
+                                  ? "border-black bg-black text-white"
+                                  : "border-black/10 bg-white text-black/65 hover:border-black/40 hover:text-black"
+                              }`}
+                            >{size}
                             </button>
                           ))}
                         </div>
@@ -618,25 +631,21 @@ export const StorePage = () => {
                   </AnimatePresence>
                 </div>
               </div>
-
-              <div className="mt-5 grid grid-cols-2 gap-2 border-t border-black/8 pt-4">
+              <div className="grid grid-cols-2 gap-2 border-t border-black/10 bg-white px-5 py-4">
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="rounded-full border border-black/10 bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-black transition duration-300 hover:bg-black hover:text-white"
-                >
-                  Limpiar
+                  className="h-10 border border-black/15 bg-white px-4 text-[15px] font-bold uppercase tracking-[0.14em] text-black transition hover:border-black hover:bg-black hover:text-white"
+                >Limpiar
                 </button>
                 <button
                   type="button"
                   onClick={applyFilters}
-                  className="rounded-full border border-black bg-black px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition duration-300 hover:border-red-600 hover:bg-red-600"
-                >
-                  Aplicar filtros
+                  className="h-10 border border-black bg-black px-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:border-red-600 hover:bg-red-600"
+                >Aplicar filtros
                 </button>
               </div>
             </motion.div>
-
             <button
               type="button"
               onClick={closeFiltersModal}
@@ -646,7 +655,6 @@ export const StorePage = () => {
           </motion.div>
         ) : null}
       </AnimatePresence>
-
     </section>
   );
 };

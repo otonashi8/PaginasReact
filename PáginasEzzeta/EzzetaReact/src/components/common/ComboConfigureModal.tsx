@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useWishlist } from '../../context/WishlistContext';
 import { useProductsCatalog } from '../../services/contentService';
@@ -18,6 +18,13 @@ type Selection = {
   color?: string;
   size?: string;
   sizeQuantities?: Record<string, number>;
+};
+
+type QuantitySelection = {
+  productId?: number;
+  color?: string;
+  size?: string;
+  quantity: number;
 };
 
 const parseColorEntry = (entry: string) => {
@@ -42,7 +49,7 @@ const normalizeText = (value: string) =>
     .replace(/[^a-z0-9]/g, '')
     .trim();
 
-const isProductAvailable = (product: Product) => product.stock !== 0;
+const isProductAvailable = (product: Product) => product.stock == null || Number(product.stock) > 0;
 
 const getProductSizes = (product: Product) => product.sizes;
 
@@ -55,18 +62,23 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
 
   const config: any = regla?.configuracion ?? {};
   const elementos = (config.elementos ?? []) as any[];
-  const imagenCombo = config.imagenCombo ?? '';
 
   const [selections, setSelections] = useState<Selection[]>([]);
+  const [quantitySelections, setQuantitySelections] = useState<QuantitySelection[]>([]);
+  const [activeQuantityIndex, setActiveQuantityIndex] = useState(0);
 
   const [openIndex, setOpenIndex] = useState<number>(0);
   const [openProductListIndex, setOpenProductListIndex] = useState<number | null>(null);
+  const [openQuantityProductIndex, setOpenQuantityProductIndex] = useState<number | null>(null);
 
   useEffect(() => {
     setSelections(elementos.map(() => ({})));
+    setQuantitySelections(elementos.length === 1 && Number(elementos[0]?.cantidad) > 1 ? [{ quantity: 1 }] : []);
+    setActiveQuantityIndex(0);
     setExpandedCandidates(elementos.map(() => false));
     setOpenIndex(0);
     setOpenProductListIndex(null);
+    setOpenQuantityProductIndex(null);
   }, [regla]);
 
   const carouselRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -120,14 +132,15 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
     }
   };
 
-  const isSingleProductQuantityCombo = elementos.length === 1
-    && elementos[0]?.tipo === 'producto'
+  const isSingleElementQuantityCombo = elementos.length === 1
     && Number(elementos[0]?.cantidad) > 1;
 
   const canAdd = selections.length === elementos.length && selections.every((s, index) => {
-    if (isSingleProductQuantityCombo && index === 0) {
-      const total = Object.values(s.sizeQuantities ?? {}).reduce((sum, quantity) => sum + quantity, 0);
-      return s.productId && total === Number(elementos[index].cantidad);
+    if (isSingleElementQuantityCombo && index === 0) {
+      const total = quantitySelections.reduce((sum, selection) => sum + selection.quantity, 0);
+      return quantitySelections.length > 0
+        && quantitySelections.every((selection) => selection.productId && selection.size && selection.quantity > 0)
+        && total === Number(elementos[index].cantidad);
     }
     return s.productId && s.size;
   });
@@ -136,9 +149,11 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
     if (!canAdd) return;
     selections.forEach((s, index) => {
       const cantidad = elementos[index]?.cantidad ?? 1;
-      if (isSingleProductQuantityCombo && s.productId) {
-        Object.entries(s.sizeQuantities ?? {}).forEach(([size, quantity]) => {
-          if (quantity > 0) addToCart(s.productId!, size, quantity);
+      if (isSingleElementQuantityCombo) {
+        quantitySelections.forEach((selection) => {
+          if (selection.productId && selection.size && selection.quantity > 0) {
+            addToCart(selection.productId, selection.size, selection.quantity);
+          }
         });
       } else if (s.productId && s.size) {
         addToCart(s.productId, s.size, cantidad);
@@ -154,38 +169,29 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
       {isOpen && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/35 p-2 sm:items-center sm:p-4">
           <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.18 }} className="my-0 w-full max-w-5xl max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-xl bg-white shadow-lg sm:my-4 sm:max-h-[90dvh] sm:rounded-2xl">
-            <div className="grid h-full md:grid-cols-[1.3fr_0.9fr]">
-              <div className="flex flex-col overflow-hidden border-b p-4 sm:p-4 md:border-b-0 md:border-r">
-                <div className="min-h-[150px] max-h-[25vh] flex-1 overflow-hidden rounded-md bg-zinc-50 sm:min-h-[300px] sm:max-h-[32vh] md:max-h-none">
-                  {imagenCombo ? <img src={imagenCombo} alt={regla.nombre} className="w-full h-full object-cover" /> : <div className="h-full w-full bg-zinc-100 flex items-center justify-center">Sin imagen</div>}
-                </div>
-                <div className="mt-3">
-                  <h3 className="text-lg font-semibold">{regla.nombre}</h3>
-                  <p className="mt-1 text-sm text-black/60">{regla.descripcion}</p>
-                </div>
-              </div>
-
+            <div className="grid h-full">
               <div className="overflow-visible p-4 sm:p-6">
               <div className="flex items-start justify-between gap-3">
                   <div />
                   <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-semibold">{regla.nombre}</h3>
                     <button onClick={onClose} className="inline-flex items-center justify-center rounded-full border p-2"> <X size={16} /> </button>
                   </div>
                 </div>
 
-                <div className="mt-4 space-y-4">
+                <div className="mt-6 space-y-4 w-full">
                   {elementos.map((el, idx) => {
                     const candidates = candidatesFor(el);
                     const selected = selections[idx] ?? {};
                     const isSubcategoria = el.tipo === 'subcategoria';
                     const isCategoryLike = el.tipo === 'categoria';
-                    const isQuantityBySize = isSingleProductQuantityCombo && idx === 0;
-
-                    // Category steps choose a product from the compact list before showing its options.
-                    const product = selected.productId ? products.find((p) => p.id === selected.productId) : (!isCategoryLike && !isSubcategoria ? candidates[0] : undefined);
+                    const isQuantityCombo = isSingleElementQuantityCombo && idx === 0;
+                    const quantityHeaderProduct = isQuantityCombo && quantitySelections[activeQuantityIndex]?.productId
+                      ? candidatesFor(el).find((p) => String(p.id) === String(quantitySelections[activeQuantityIndex].productId))
+                      : undefined;
+                    const product = quantityHeaderProduct
+                      ?? (selected.productId ? products.find((p) => p.id === selected.productId) : (!isCategoryLike && !isSubcategoria ? candidates[0] : undefined));
                     const sizes = product ? getProductSizes(product) : [];
-
-                    // A missing color is not a color option. Keep only distinct real colors.
                     const allColors = isSubcategoria
                       ? Array.from(new Map(
                         candidates
@@ -226,8 +232,8 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
                           <div className="p-4 border-t">
                             <div className="grid gap-4 md:grid-cols-2">
                               <div>
-                                <div className="mb-4">
-                                  {isCategoryLike ? (
+                                {!isQuantityCombo ? <div className="mb-4">
+                                  {isCategoryLike && !isQuantityCombo ? (
                                     <div className="relative">
                                       <div className="text-xs text-black/60">Seleccionar producto</div>
                                       <button
@@ -235,10 +241,9 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
                                         onClick={() => setOpenProductListIndex((current) => current === idx ? null : idx)}
                                         className="mt-2 flex w-full items-center justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2.5 text-left text-sm transition hover:border-black"
                                       >
-                                        <span className="min-w-0 truncate font-medium">{product?.name ?? 'Selecciona un producto'}</span>
-                                        <ChevronDown size={16} className={`flex-none transition-transform ${openProductListIndex === idx ? 'rotate-180' : ''}`} />
+                                        <span className="min-w-0 truncate font-medium text-black">{product?.name ?? 'Selecciona un producto'}</span>
+                                        <span className={`flex-none text-base transition-transform ${openProductListIndex === idx ? 'rotate-180' : ''}`}>⌄</span>
                                       </button>
-
                                       {openProductListIndex === idx ? (
                                         <div className="absolute left-0 right-0 top-full z-30 mt-2 max-h-64 overflow-y-auto rounded-md border border-zinc-200 bg-white p-2 shadow-[0_14px_30px_rgba(0,0,0,0.14)]">
                                           {candidates.map((cand: Product) => {
@@ -258,9 +263,9 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
                                                 className={`flex w-full items-center gap-3 rounded-md border p-2 text-left ${isChosen ? 'border-black bg-zinc-50' : 'border-transparent hover:border-zinc-200'}`}
                                               >
                                                 <div className="h-12 w-10 flex-none overflow-hidden rounded bg-zinc-100">
-                                                  {cand.image ? <ProductHoverImage product={cand} alt={cand.name} className="h-12 w-10 object-cover" /> : null}
+                                                  {cand.image ? <ProductHoverImage product={cand} alt={cand.name} className="h-12 w-10 object-cover" /> : <span className="flex h-full items-center justify-center text-[10px] text-black/40">Sin imagen</span>}
                                                 </div>
-                                                <span className="min-w-0 truncate text-sm font-medium">{cand.name}</span>
+                                                <span className="min-w-0 text-sm font-medium text-black">{cand.name}</span>
                                               </button>
                                             );
                                           })}
@@ -285,7 +290,7 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
                                             const showAll = expandedCandidates[idx];
                                             if (!showAll && cidx > 1) return null;
                                             return (
-                                              <button key={cand.id} onClick={() => { setSelections((prev) => { const copy = [...prev]; copy[idx] = { ...(copy[idx] ?? {}), productId: cand.id, color: undefined, size: undefined }; return copy; }); setExpandedCandidates((s) => { const copy = [...s]; copy[idx] = true; return copy; }); }} className={`min-w-[calc(100vw-5rem)] max-w-[220px] flex-shrink-0 flex flex-col items-start gap-2 rounded-lg border p-2 text-left sm:min-w-[180px] sm:max-w-none ${isChosen ? 'border-black bg-zinc-50' : 'border-zinc-200 bg-white'}`}>
+                                              <button key={cand.id} onClick={() => { setSelections((prev) => { const copy = [...prev]; copy[idx] = { ...(copy[idx] ?? {}), productId: cand.id, color: undefined, size: undefined }; return copy; }); setExpandedCandidates((s) => { const copy = [...s]; copy[idx] = true; return copy; }); }} className={`min-w-[calc(100vw-5rem)] max-w-[260px] flex-shrink-0 flex flex-col items-start gap-3 rounded-lg border p-3 text-left sm:min-w-[220px] sm:max-w-[260px] ${isChosen ? 'border-black bg-zinc-50' : 'border-zinc-200 bg-white'}`}>
                                                 <div className="h-28 w-full overflow-hidden rounded-md bg-zinc-100 sm:h-36">
                                                   {cand.image ? (
                                                     <ProductHoverImage product={cand} alt={cand.name} className="h-28 w-full object-cover sm:h-36" />
@@ -293,7 +298,7 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
                                                     <div className="h-28 w-full flex items-center justify-center text-xs text-black/40 sm:h-36">Sin imagen</div>
                                                   )}
                                                 </div>
-                                                <div className="text-sm font-medium">{cand.name}</div>
+                                                <div className="text-sm font-medium text-black">{cand.name}</div>
                                                 <div className="text-xs text-black/50">{getProductSizes(cand).slice(0, 6).join(' • ')}</div>
                                               </button>
                                             );
@@ -312,9 +317,9 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
                                       </div>
                                     </>
                                   ) : null}
-                                </div>
+                                </div> : null}
 
-                                {!isQuantityBySize && !isCategoryLike ? <div className="mb-4">
+                                {!isQuantityCombo && !isCategoryLike ? <div className="mb-4">
                                   <div className="text-xs text-black/60">Color</div>
                                   <div className="mt-2 flex max-h-20 flex-wrap items-center gap-1.5 overflow-y-auto sm:max-h-none sm:gap-2">
                                     {colors.map((c: string) => {
@@ -340,58 +345,140 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
                                 </div> : null}
 
                                 <div>
-                                  <div className="text-xs text-black/60">{isQuantityBySize ? 'Cantidad por talla' : 'Talla'}</div>
-                                  <div className={isQuantityBySize ? 'mt-2 space-y-2' : 'mt-2 grid grid-cols-6 gap-2'}>
-                                    {isQuantityBySize ? (
-                                      sizes.map((size) => {
-                                        const quantity = selected.sizeQuantities?.[size] ?? 0;
-                                        const sizeAvailable = product ? isSizeAvailable(product, size) : false;
+                                  <div className="text-xs text-black/60">{isQuantityCombo ? (isSubcategoria ? 'Colores, cantidades y tallas' : 'Productos, cantidades y tallas') : 'Talla'}</div>
+                                  {isQuantityCombo ? (
+                                    <div className="mt-2 space-y-3">
+                                      {quantitySelections.map((quantitySelection, quantityIndex) => {
+                                        const quantityProduct = quantitySelection.productId
+                                          ? candidates.find((item: Product) => String(item.id) === String(quantitySelection.productId))
+                                          : undefined;
+                                        const quantityColors = isSubcategoria ? allColors : [];
+                                        const quantitySizes = quantityProduct ? getProductSizes(quantityProduct) : [];
                                         return (
-                                          <label key={size} className={`flex items-center justify-between gap-3 rounded-md border border-zinc-200 px-3 py-2 text-sm ${!sizeAvailable ? 'text-black/40' : ''}`}>
-                                            <span className={`font-medium ${!sizeAvailable ? 'line-through' : ''}`}>Talla {size}</span>
-                                            <input
-                                              type="number"
-                                              min={0}
-                                              max={Number(elementos[idx].cantidad)}
-                                              value={quantity}
+                                          <div key={quantityIndex} className="space-y-2 rounded-md border border-zinc-200 p-3">
+                                            <div className="flex items-center gap-2">
+                                              {!isSubcategoria ? (
+                                                <div className="relative min-w-0 flex-1">
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      setActiveQuantityIndex(quantityIndex);
+                                                      setOpenQuantityProductIndex((current) => current === quantityIndex ? null : quantityIndex);
+                                                    }}
+                                                    className="flex flex-wrap w-full items-center justify-start gap-2 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-left text-sm"
+                                                  >
+                                                    {quantityProduct?.image ? <ProductHoverImage product={quantityProduct} alt={quantityProduct.name} className="h-8 w-7 flex-none rounded object-cover" /> : null}
+                                                    <span className="min-w-0 flex-1 truncate text-left font-medium text-black" style={{ textAlign: 'left' }}>{quantityProduct?.name ?? 'Selecciona un producto'}</span>
+                                                    <span className="ml-auto flex-none pl-1">⌄</span>
+                                                  </button>
+                                                  {openQuantityProductIndex === quantityIndex ? (
+                                                    <div className="absolute left-0 right-0 top-full z-40 mt-2 max-h-64 overflow-y-auto rounded-md border border-zinc-200 bg-white p-2 shadow-[0_14px_30px_rgba(0,0,0,0.14)]">
+                                                      {candidates.map((candidate: Product) => (
+                                                        <button
+                                                          key={candidate.id}
+                                                          type="button"
+                                                          onClick={() => {
+                                                            setActiveQuantityIndex(quantityIndex);
+                                                            setQuantitySelections((prev) => prev.map((item, itemIndex) => itemIndex === quantityIndex
+                                                              ? { ...item, productId: candidate.id, color: undefined, size: undefined }
+                                                              : item));
+                                                            setOpenQuantityProductIndex(null);
+                                                          }}
+                                                          className={`flex w-full items-center gap-2 rounded-md border p-2 text-left ${quantitySelection.productId === candidate.id ? 'border-black bg-zinc-50' : 'border-transparent hover:border-zinc-200'}`}
+                                                        >
+                                                          <div className="h-12 w-10 flex-none overflow-hidden rounded bg-zinc-100">
+                                                            {candidate.image ? <ProductHoverImage product={candidate} alt={candidate.name} className="h-12 w-10 object-cover" /> : <span className="flex h-full items-center justify-center text-[10px] text-black/40">Sin imagen</span>}
+                                                          </div>
+                                                          <span className="min-w-0 text-sm font-medium text-black">{candidate.name}</span>
+                                                        </button>
+                                                      ))}
+                                                      {candidates.length === 0 ? <div className="px-2 py-3 text-sm text-black/50">No hay productos disponibles.</div> : null}
+                                                    </div>
+                                                  ) : null}
+                                                </div>
+                                              ) : (
+                                                <span className="min-w-0 flex-1 text-sm font-medium text-zinc-700">{quantitySelection.color ? quantityProduct?.name : 'Selecciona un color'}</span>
+                                              )}
+                                              <input
+                                                type="number"
+                                                min={1}
+                                                max={Number(elementos[idx].cantidad)}
+                                                value={quantitySelection.quantity}
+                                                onChange={(event) => {
+                                                  const quantity = Math.max(1, Number(event.target.value) || 1);
+                                                  setQuantitySelections((prev) => prev.map((item, itemIndex) => itemIndex === quantityIndex ? { ...item, quantity } : item));
+                                                }}
+                                                className="w-16 rounded-md border border-zinc-300 px-2 py-2 text-center text-sm"
+                                                aria-label="Cantidad"
+                                              />
+                                              {quantitySelections.length > 1 ? (
+                                                <button type="button" onClick={() => setQuantitySelections((prev) => prev.filter((_, itemIndex) => itemIndex !== quantityIndex))} className="px-1 text-lg text-zinc-500 hover:text-red-600" aria-label="Eliminar selección">×</button>
+                                              ) : null}
+                                            </div>
+                                            {isSubcategoria ? <div className="flex flex-wrap gap-1.5">
+                                              {quantityColors.map((color) => {
+                                                const parsed = parseColorEntry(color);
+                                                const value = parsed.value ?? parsed.original ?? color;
+                                                return <button key={color} type="button" onClick={() => {
+                                                  setActiveQuantityIndex(quantityIndex);
+                                                  const colorProduct = isSubcategoria
+                                                    ? candidates.find((candidate: Product) => (candidate.colors ?? []).some((candidateColor) => normalizeText(candidateColor) === normalizeText(color)))
+                                                    : quantityProduct;
+                                                  setQuantitySelections((prev) => prev.map((item, itemIndex) => itemIndex === quantityIndex
+                                                    ? { ...item, productId: colorProduct?.id, color, size: undefined }
+                                                    : item));
+                                                }} title={parsed.label ?? value} className={`h-7 w-7 rounded-full border ${quantitySelection.color === color ? 'border-black' : 'border-zinc-200'}`} style={{ backgroundColor: isCssColor(value) ? value : '#e6e6e6' }} />;
+                                              })}
+                                            </div> : null}
+                                            {quantityProduct ? (
+                                              <>
+                                                <div className="grid grid-cols-6 gap-2">
+                                                  {quantitySizes.map((size) => {
+                                                    const available = isSizeAvailable(quantityProduct, size);
+                                                    return <button key={size} type="button" disabled={!available} onClick={() => setQuantitySelections((prev) => prev.map((item, itemIndex) => itemIndex === quantityIndex ? { ...item, size } : item))} className={`h-9 rounded-md border text-sm ${quantitySelection.size === size ? 'border-black bg-black text-white' : available ? 'border-zinc-200' : 'border-zinc-200 bg-zinc-100 text-black/40 line-through'}`}>{size}</button>;
+                                                  })}
+                                                </div>
+                                              </>
+                                            ) : null}
+                                          </div>
+                                        );
+                                      })}
+                                      {candidates.length > 0 ? <button type="button" onClick={() => setQuantitySelections((prev) => [...prev, { quantity: 1 }])} className="rounded-md border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 hover:border-black hover:text-black">+ Agregar otro producto</button> : null}
+                                    </div>
+                                  ) : (selected.color || isCategoryLike) ? (
+                                      <div className="grid grid-cols-6 gap-2">
+                                        {sizes.map((s) => {
+                                          const isSel = selected.size === s;
+                                          const sizeAvailable = product
+                                            ? isSizeAvailable(product, s)
+                                            : false;
+                                          return (
+                                            <button
+                                              key={s}
                                               disabled={!sizeAvailable}
-                                              onChange={(event) => {
-                                                const nextQuantity = Math.max(0, Number(event.target.value) || 0);
-                                                setSelections((prev) => {
-                                                  const copy = [...prev];
-                                                  copy[idx] = {
-                                                    ...(copy[idx] ?? {}),
-                                                    productId: product?.id,
-                                                    sizeQuantities: { ...(copy[idx]?.sizeQuantities ?? {}), [size]: nextQuantity },
-                                                  };
-                                                  return copy;
-                                                });
-                                              }}
-                                              className="w-16 rounded border border-zinc-300 px-2 py-1 text-center"
-                                            />
-                                          </label>
-                                        );
-                                      })
-                                    ) : (selected.color || isCategoryLike) ? (
-                                      sizes.map((s) => {
-                                        const isSel = selected.size === s;
-                                        const sizeAvailable = product ? isSizeAvailable(product, s) : false;
-                                        return (
-                                          <button key={s} disabled={!sizeAvailable} onClick={() => handleSizeChange(idx, s)} className={`h-10 rounded-md border text-sm font-medium ${isSel ? 'border-black bg-black text-white' : sizeAvailable ? 'border-zinc-200 bg-white text-black' : 'border-zinc-200 bg-zinc-100 text-black/40 line-through'}`}>{s}</button>
-                                        );
-                                      })
+                                              onClick={() => handleSizeChange(idx, s)}
+                                              className={`h-9 border text-xs font-medium transition ${
+                                                isSel
+                                                  ? 'border-black bg-black text-white'
+                                                  : sizeAvailable
+                                                    ? 'border-zinc-200 bg-white text-black hover:border-black'
+                                                    : 'border-zinc-200 bg-zinc-100 text-black/40 line-through'
+                                              }`}
+                                            >{s}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
                                     ) : (
                                       <div className="col-span-6 text-sm text-black/40">Selecciona un color para ver tallas</div>
                                     )}
-                                  </div>
                                 </div>
                               </div>
 
                               <div>
-                                {/* Right: large product image or placeholder */}
                                 <div className="w-full h-full min-h-[200px] overflow-hidden rounded-md bg-zinc-100 flex items-center justify-center">
-                                  {product?.image ? (
-                                    <ProductHoverImage product={product} alt={product?.name} className="w-full h-full object-cover" />
+                                  {(isQuantityCombo ? quantitySelections[activeQuantityIndex]?.productId ? products.find((item) => item.id === quantitySelections[activeQuantityIndex].productId) : undefined : product)?.image ? (
+                                    <ProductHoverImage product={(isQuantityCombo ? quantitySelections[activeQuantityIndex]?.productId ? candidates.find((item: Product) => String(item.id) === String(quantitySelections[activeQuantityIndex].productId)) : undefined : product)!} alt={product?.name ?? regla.nombre} className="w-full h-full object-cover" />
                                   ) : (
                                     <div className="text-sm text-black/40">Selecciona un color para ver la imagen</div>
                                   )}
@@ -407,8 +494,8 @@ export const ComboConfigureModal = ({ regla, isOpen, onClose }: Props) => {
 
                 <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm text-black/60">
-                    {isSingleProductQuantityCombo
-                      ? `${Object.values(selections[0]?.sizeQuantities ?? {}).reduce((sum, quantity) => sum + quantity, 0)} de ${elementos[0]?.cantidad ?? 0} unidades`
+                    {isSingleElementQuantityCombo
+                      ? `${quantitySelections.reduce((sum, selection) => sum + selection.quantity, 0)} de ${elementos[0]?.cantidad ?? 0} unidades`
                       : `${selections.filter(s => s.productId && s.size).length} de ${elementos.length} configuradas`}
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">

@@ -40,140 +40,136 @@ export default function TrabajosSection() {
   });
 
   return (
-    <section className="bg-vino-claro py-10 text-white md:py-10">
+    <section className="bg-white py-12 text-white md:py-16">
         <div className="mx-auto w-[min(1280px,92%)]">
-        {/* ENCABEZADO */}
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="mb-8 grid gap-5 border-b border-black/10 pb-7 md:grid-cols-[1fr_auto] md:items-end">
             <div>
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-red-400">RR.HH</p>
-            <h2 className="mt-2 font-serif text-4xl text-black md:text-5xl">Trabaja con nosotros</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-red-600">RR.HH. / Oportunidades</p>
+            <h2 className="mt-2 text-4xl leading-none text-black md:text-5xl">Trabaja con nosotros</h2>
             </div>
-            <p className="max-w-xl text-sm leading-7 text-black md:text-base">
-            Súmate a un equipo que crea productos con propósito, atención cercana
-            y una visión de crecimiento real.
-            </p>
+            <p className="max-w-md text-sm leading-6 text-black/65 md:text-right">Súmate a un equipo que crea productos con propósito, atención cercana y una visión de crecimiento real.</p>
         </div>
-
-        <div className="mb-6 max-w-xl">
-          <label className="block text-sm font-medium text-black">
-            <span className="mb-2 block text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-red-400">Buscar vacante</span>
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Busca por puesto, ubicación o palabra clave"
-              className="w-full rounded-full border border-white/10 bg-white px-4 py-3 text-sm text-black placeholder:text-black/50 outline-none ring-0 transition focus:border-orange-400"
-            />
-          </label>
+        <div className="mb-8 max-w-xl">
+            <label className="block">
+            <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-black/60">Buscar vacante</span>
+            <div className="relative">
+                <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Puesto, ubicación o palabra clave"
+                className="h-11 w-full border border-black/15 bg-white px-4 pr-10 text-sm text-black outline-none transition placeholder:text-black/35 focus:border-red-500"
+                />
+                {search && (
+                <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/45 transition hover:text-red-600"
+                    aria-label="Limpiar búsqueda"
+                >✕
+                </button>
+                )}
+            </div>
+            </label>
         </div>
-        {/* ESTADO DE CARGA */}
         {loading ? (
-            <div className="rounded-[24px] border border-white/10 bg-[#1a1a1c] p-8 text-sm text-gray-500">Cargando oportunidades...</div>
+            <div className="border border-black/10 bg-white p-8 text-center text-sm text-black/50">Cargando oportunidades...</div>
         ) : trabajosFiltrados.length === 0 ? (
-            <div className="rounded-[24px] border border-dashed border-orange-500/40 bg-vino-claro p-10 text-center text-gray-500">
-              {search ? `Todavía no hay vacantes disponibles para "${search}". Vuelve pronto.` : 'Todavía no hay vacantes disponibles. Vuelve pronto.'}
+            <div className="border border-dashed border-red-500/40 bg-white/50 p-10 text-center">
+            <p className="text-sm text-black/65">
+                {search
+                ? `Todavía no hay vacantes disponibles para "${search}".`
+                : "Todavía no hay vacantes disponibles."}
+            </p>
+            <p className="mt-1 text-xs text-black/45">Vuelve pronto para conocer nuevas oportunidades.</p>
             </div>
         ) : (
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-5 lg:grid-cols-2">
             {trabajosFiltrados.map((trabajo, index) => (
                 <article
                 key={trabajo.id}
-                className="group overflow-hidden rounded-[24px] border border-white/10 bg-vino-oscuro shadow-[0_18px_45px_-18px_rgba(0,0,0,0.8)]
-                    transition-all duration-300 hover:-translate-y-1 hover:border-white/20"
+                className="group overflow-hidden border border-black/10 bg-white shadow-[0_12px_35px_-20px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-1 hover:border-red-500/40"
                 >
-                <div className="flex flex-col md:flex-row">
+                <div className="flex h-full flex-col md:flex-row">
                     <div className="flex flex-1 flex-col p-5 md:p-6">
-                    {/* PUESTO + UBICACIÓN */}
-                    <div className="flex flex-wrap items-center gap-3">
-                        <span className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-red-300">{trabajo.puesto}</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-red-600">{trabajo.puesto}</span>
                         {trabajo.ubicacion ? (
-                        <span
-                            className="rounded-full border border-white/15 px-2.5 py-1 text-[0.6rem] font-semibold uppercase
-                            tracking-[0.12em] text-black/70"
-                        >{trabajo.ubicacion}
-                        </span>
+                        <span className="border border-black/10 bg-black/[0.03] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-black/55">{trabajo.ubicacion}</span>
                         ) : null}
                     </div>
-                    {/* NOMBRE */}
-                    <h3 className="mt-5 font-serif text-3xl leading-tight text-black md:text-4xl">{trabajo.nombre}</h3>
-                    {/* DATOS */}
-                    <div className="mt-4 flex flex-col gap-2.5 text-sm text-black/70">
+                    <h3 className="mt-4 text-3xl leading-[1.05] text-black md:text-[2.15rem]">{trabajo.nombre}</h3>
+                    <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-black/55">
                         {trabajo.horario ? (
-                        <span className="inline-flex items-center gap-2">
-                            <Clock3 className="size-4 shrink-0 text-red-400" />
-                            {trabajo.horario}
-                        </span>
+                        <span className="inline-flex items-center gap-1.5"><Clock3 className="size-3.5 text-red-600" />{trabajo.horario}</span>
                         ) : null}
                         {trabajo.ubicacion ? (
-                        <span className="inline-flex items-center gap-2">
-                            <MapPin className="size-4 shrink-0 text-red-400" />
-                            {trabajo.ubicacion}
-                        </span>
+                        <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5 text-red-600" />{trabajo.ubicacion}</span>
                         ) : null}
                     </div>
-                    {/* DESCRIPCIÓN */}
-                    <p className="mt-5 text-sm leading-6 text-black md:text-[0.95rem]">{trabajo.descripcionBreve}</p>
-                    {/* DIVISOR */}
-                    <div className="my-5 border-t border-white/10" />
-                    {/* ACCIONES */}
-                    <div className="relative flex flex-col gap-3">
+                    <p className="mt-5 text-sm leading-6 text-black/65">{trabajo.descripcionBreve}</p>
+                    <div className="mt-auto pt-6">
+                        <div className="mb-5 border-t border-black/10" />
+                        <div className="relative">
                         <button
-                        type="button"
-                        onClick={() => setOpenLinksById((current) => ({
-                            ...current,
-                            [trabajo.id]: !current[trabajo.id],
-                        }))}
-                        className={btnClass}
-                        >
-                            Postulate en
-                            <ArrowUpRight className="size-3.5" />
+                            type="button"
+                            onClick={() =>
+                            setOpenLinksById((current) => ({
+                                ...current,
+                                [trabajo.id]: !current[trabajo.id],
+                            }))
+                            }
+                            className={`${btnClass} flex h-9 w-full items-center justify-center gap-2 border border-black bg-black px-4 text-[10px] font-bold uppercase tracking-[0.14em] text-white transition hover:border-red-600 hover:bg-red-600`}
+                        >Postúlate en<ArrowUpRight className="size-3.5" />
                         </button>
-
-                        {openLinksById[trabajo.id] && trabajo.redirecciones.length > 0 ? (
-                        <div className="absolute bottom-full right-0 z-10 mb-2 w-[min(240px,calc(100vw-4rem))] origin-bottom-right rounded-[18px] border border-[rgba(125,36,56,0.12)] bg-[#fffaf8] p-3 shadow-[0_18px_40px_-20px_rgba(76,21,38,0.7)]">
+                        {openLinksById[trabajo.id] &&
+                        trabajo.redirecciones.length > 0 ? (
+                            <div className="absolute bottom-full left-0 z-20 mb-2 w-full border border-black/10 bg-white p-3 shadow-[0_15px_35px_-15px_rgba(0,0,0,0.45)]">
                             <div className="mb-2 flex items-center justify-between">
-                            <strong className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-black">Aplicar</strong>
+                                <strong className="text-[10px] font-bold uppercase tracking-[0.16em] text-black">Elige dónde aplicar</strong>
+                                <button
+                                type="button"
+                                onClick={() =>
+                                    setOpenLinksById((current) => ({
+                                    ...current,
+                                    [trabajo.id]: false,
+                                    }))
+                                }className="text-xs text-black/40 hover:text-red-600"
+                                aria-label="Cerrar opciones"
+                                >✕
+                                </button>
                             </div>
                             <div className="grid gap-2">
-                            {trabajo.redirecciones.map((redirect, redirectIndex) => (
-                                <a
-                                key={`${redirect.nombre}-${redirectIndex}`}
-                                href={redirect.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-between gap-2 rounded-xl border border-[rgba(125,36,56,0.10)] bg-white px-3 py-2.5 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-black transition-all hover:border-red-400 hover:bg-red-50"
-                                >
-                                <span>{redirect.nombre}</span>
-                                <ArrowUpRight className="size-3.5 text-red-500" />
-                                </a>
-                            ))}
+                                {trabajo.redirecciones.map(
+                                (redirect, redirectIndex) => (
+                                    <a
+                                    key={`${redirect.nombre}-${redirectIndex}`}
+                                    href={redirect.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-between gap-2 border border-black/10 bg-white px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-black transition hover:border-red-500 hover:bg-red-50"
+                                    ><span>{redirect.nombre}</span><ArrowUpRight className="size-3.5 text-red-600" />
+                                    </a>
+                                ),
+                                )}
                             </div>
-                        </div>
+                            </div>
                         ) : null}
+                        </div>
                     </div>
                     </div>
-                    <div
-                    className="relative order-first w-full shrink-0 overflow-hidden bg-[#27272a] md:order-last md:w-[42%]"
-                    >
+                    <div className="relative order-first h-64 w-full shrink-0 overflow-hidden bg-[#27272a] md:order-last md:h-auto md:min-h-[390px] md:w-[38%]">
                     {trabajo.imagenUrl ? (
                         <img
                         src={trabajo.imagenUrl}
                         alt={trabajo.puesto}
-                        className="h-[360px] w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]
-                            md:h-full md:min-h-[430px]"
+                        className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                         />
                     ) : (
-                        <div
-                        className="flex h-[360px] w-full items-center justify-center text-sm text-[#d8c3ca] md:h-full md:min-h-[430px]"
-                        >Sin imagen
-                        </div>
+                        <div className="flex h-full min-h-64 items-center justify-center text-xs uppercase tracking-[0.12em] text-white/40">Sin imagen</div>
                     )}
-                    {/* DEGRADADO */}
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-l from-black/10 via-transparent to-black/20" />
-                    {/* NÚMERO SOBRE LA IMAGEN */}
-                    <div
-                        className="absolute right-4 top-4 flex items-center justify-center rounded-full bg-red-600 px-3 py-1.5 text-[0.6rem]
-                        font-bold uppercase tracking-[0.16em] text-white shadow-lg"
-                    >{String(index + 1).padStart(2, "0")}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
+                    <div className="absolute right-4 top-4 flex size-9 items-center justify-center border border-white/30 bg-black/45 text-[10px] font-bold tracking-[0.12em] text-white backdrop-blur-sm">
+                        {String(index + 1).padStart(2, "0")}
                     </div>
                     </div>
                 </div>

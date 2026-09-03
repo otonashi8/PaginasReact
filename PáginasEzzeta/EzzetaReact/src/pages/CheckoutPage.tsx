@@ -707,13 +707,13 @@ function CheckoutPage() {
       <div className="checkout-page min-h-screen bg-crema">
         <header className="border-b border-[rgba(125,36,56,0.12)] bg-[#ffffff] px-5 py-5">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
-            <div className="font-serif text-2xl font-semibold text-vino-oscuro">Ezzeta</div>
+            <div className="text-2xl font-semibold text-vino-oscuro">Ezzeta</div>
             <span className="text-xs font-bold uppercase tracking-[0.18em] text-vino">Checkout</span>
           </div>
         </header>
         <main className="mx-auto flex w-[min(640px,92%)] flex-col items-center gap-4 py-20 text-center">
           <ShoppingBag className="h-12 w-12 text-vino-oscuro" strokeWidth={1.5} />
-          <h1 className="font-serif text-[1.6rem] font-semibold text-vino-oscuro">Tu carrito está vacío</h1>
+          <h1 className="text-[1.6rem] font-semibold text-vino-oscuro">Tu carrito está vacío</h1>
           <p className="text-[#6b4750]">Agrega el colágeno Ezzeta a tu carrito para continuar con la compra.</p>
           <Link to="/#producto" className={BTN_PRIMARIO_CLASS}>Ver producto</Link>
         </main>
@@ -731,7 +731,7 @@ function CheckoutPage() {
       ) : null}
       <header className="border-b border-[rgba(125,36,56,0.12)] bg-[#ffffff] px-5 py-5">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <div className="font-serif text-2xl font-semibold text-vino-oscuro">Ezzeta</div>
+          <div className="text-2xl font-semibold text-vino-oscuro">Ezzeta</div>
           <span className="text-xs font-bold uppercase tracking-[0.18em] text-vino">Checkout</span>
         </div>
       </header>
@@ -744,7 +744,7 @@ function CheckoutPage() {
 
         <div className="mt-4 mb-9 flex items-end justify-between gap-6 max-[720px]:mb-7 max-[560px]:block">
           <div>
-            <h1 className="font-serif text-[clamp(1.8rem,3.2vw,2.35rem)] leading-[1.05] font-semibold text-vino-oscuro">Revisa y paga tu compra</h1>
+            <h1 className="text-[clamp(1.8rem,3.2vw,2.35rem)] leading-[1.05] font-semibold text-vino-oscuro">Revisa y paga tu compra</h1>
             <p className="mt-3 max-w-125 text-[0.92rem] leading-[1.65] text-[#6b4750]">Completa tus datos y elige cómo quieres recibir tu pedido Ezzeta.</p>
           </div>
           <div className="flex shrink-0 items-center gap-2 text-[0.78rem] font-bold text-[#8a6670] max-[560px]:mt-5">
@@ -813,8 +813,7 @@ function CheckoutPage() {
                                 setContactSaved(false)
                               }}
                               className="rounded-full border border-vino px-3 py-2 text-xs font-semibold text-vino hover:bg-vino hover:text-crema"
-                            >
-                              {data.locationName || `Dirección ${index + 1}`}
+                            >{data.locationName || `Dirección ${index + 1}`}
                             </button>
                           )
                         })}
@@ -883,14 +882,11 @@ function CheckoutPage() {
                       {errors.reference ? <p className="mt-1 text-xs text-red-600">{errors.reference}</p> : null}
                     </div>
                   </div>
-
                   {isCustomer ? (
                     <>
                       <div className="flex justify-end">
                         <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-[rgba(125,36,56,0.18)] px-3 py-2.5 text-sm font-semibold text-vino-oscuro">
-                          <input type="checkbox" checked={saveLocation} onChange={(event) => setSaveLocation(event.target.checked)} className="size-4 accent-vino" />
-                          Guardar ubicación
-                        </label>
+                          <input type="checkbox" checked={saveLocation} onChange={(event) => setSaveLocation(event.target.checked)} className="size-4 accent-vino" />Guardar ubicación</label>
                       </div>
 
                       {saveLocation ? (
@@ -901,7 +897,6 @@ function CheckoutPage() {
                       ) : null}
                     </>
                   ) : null}
-
                   <Button className={`${BTN_PRIMARIO_CLASS} w-full justify-center sm:w-auto`} onClick={handleSaveContact}>Guardar y continuar</Button>
                 </div>
               ) : (
@@ -1036,7 +1031,7 @@ function CheckoutPage() {
             <div className="flex items-center justify-between border-b border-[rgba(125,36,56,0.1)] pb-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-vino">Resumen</p>
-                <h3 className="mt-2 font-serif text-2xl font-semibold text-vino-oscuro">Tu pedido</h3>
+                <h3 className="mt-2  text-2xl font-semibold text-vino-oscuro">Tu pedido</h3>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-vino text-crema">
                 <ShoppingBag className="h-5 w-5" />

@@ -4,7 +4,7 @@ export function CheckoutHeader() {
   return (
     <header className="border-b border-[rgba(125,36,56,0.12)] bg-[#ffffff] px-5 py-5">
       <div className="mx-auto flex max-w-6xl items-center justify-between">
-        <div className="font-serif text-2xl font-semibold text-vino-oscuro">Ezzeta</div>
+        <div className="text-2xl font-semibold text-vino-oscuro">Ezzeta</div>
         <span className="text-xs font-bold uppercase tracking-[0.18em] text-vino">Checkout</span>
       </div>
     </header>

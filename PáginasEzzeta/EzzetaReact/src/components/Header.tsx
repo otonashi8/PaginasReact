@@ -349,10 +349,10 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
   }, []);
 
   const headerTextClass = 'text-black';
-  const headerBackgroundClass = 'border-white/10 bg-transparent';
-  const headerButtonClass = 'border-white bg-white/60 text-black hover:border-red-600 hover:text-red-600';
+  const headerBackgroundClass = 'border-black/10 bg-white/95';
+  const headerButtonClass = 'border-black/15 bg-white text-black hover:border-red-600 hover:text-red-600';
   const headerIconButtonClass = 'border-black/20 bg-white/80 text-black hover:border-red-500 hover:text-red-500';
-  const headerSearchClass = 'border-white/20 text-white placeholder:text-black/70';
+  const headerSearchClass = 'border-black/15 text-black placeholder:text-black/50';
   const headerNavLinkClass = (isActive: boolean) =>
     isActive
       ? 'text-black'
@@ -453,7 +453,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className={`rounded-full border p-2.5 ${isScrolled ? 'border-white/20 bg-white/5 text-white' : 'border-zinc-200 bg-white text-black'} lg:hidden`}
+            className="rounded-full border border-zinc-200 bg-white p-2.5 text-black lg:hidden"
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>

@@ -119,10 +119,7 @@ export type CartDiscountResolution = {
 };
 
 export const obtenerMayorDescuentoCombo = (comboInfo: CartComboInfo): number => (
-  comboInfo.combosAplicados.reduce(
-    (mayorDescuento, combo) => Math.max(mayorDescuento, combo.descuentoTotal),
-    0,
-  )
+  comboInfo.combosAplicados.reduce((totalDescuento, combo) => totalDescuento + combo.descuentoTotal, 0)
 );
 
 export const resolverDescuentosCarrito = (
@@ -255,16 +252,37 @@ export const detectarCombosEnCarrito = (
   const productMap = new Map(products.map(p => [p.id, p]));
 
   // Get all combo rules
-  const comboRules = reglas.filter(r => r.tipo === 'combo' && r.estado);
+  const comboRules = reglas
+    .filter(r => r.tipo === 'combo' && r.estado)
+    .sort((a, b) => Number(a.configuracion?.precioCombo ?? 0) - Number(b.configuracion?.precioCombo ?? 0));
 
   const combosAplicados: ComboApplied[] = [];
   const combosIncompletos: ComboApplied[] = [];
   let descuentoTotalCombos = 0;
+  const productosUsadosPorCombos = new Set<number>();
 
   for (const regla of comboRules) {
     const deteccion = detectarCombo(cartItems, regla, products);
 
     if (!deteccion) continue;
+
+    const elementos = regla.configuracion?.elementos ?? [];
+    const productosDelCombo = new Set(
+      cartItems
+        .filter((item) => {
+          const producto = productMap.get(item.productId);
+          return producto && elementos.some((elemento) => (
+            (elemento.tipo === 'producto' && String(producto.id) === elemento.valor)
+            || (elemento.tipo === 'categoria' && producto.category === elemento.valor)
+            || (elemento.tipo === 'subcategoria' && producto.subcategory === elemento.valor)
+          ));
+        })
+        .map((item) => item.productId),
+    );
+
+    if (deteccion.instancias > 0 && Array.from(productosDelCombo).some((productId) => productosUsadosPorCombos.has(productId))) {
+      continue;
+    }
 
     const elementosFaltantes = deteccion.elementosFaltantes.map(el => ({
       tipo: el.tipo,
@@ -283,11 +301,13 @@ export const detectarCombosEnCarrito = (
     if (deteccion.instancias > 0) {
       // Calcular el descuento
       const precioCombo = Number(regla.configuracion?.precioCombo ?? 0);
-      const elementos = regla.configuracion?.elementos ?? [];
+      productosDelCombo.forEach((productId) => productosUsadosPorCombos.add(productId));
 
       let precioNormalTotal = 0;
       for (const elemento of elementos) {
+        let cantidadPendiente = elemento.cantidad * deteccion.instancias;
         for (const item of cartItems) {
+          if (cantidadPendiente <= 0) break;
           const producto = productMap.get(item.productId);
           if (!producto) continue;
 
@@ -300,19 +320,20 @@ export const detectarCombosEnCarrito = (
           );
 
           if (coincide) {
-            const cantidadAUsar = Math.min(item.quantity, elemento.cantidad);
+            const cantidadAUsar = Math.min(item.quantity, cantidadPendiente);
             const precioEfectivo = resolveProductPrice(
               producto,
               { cantidad: item.quantity },
               reglas,
             ).precioFinal;
             precioNormalTotal += precioEfectivo * cantidadAUsar;
+            cantidadPendiente -= cantidadAUsar;
           }
         }
       }
 
-      const descuentoPorInstancia = Math.max(0, precioNormalTotal - precioCombo);
-      comboInfo.descuentoTotal = descuentoPorInstancia * deteccion.instancias;
+      const descuentoTotal = Math.max(0, precioNormalTotal - (precioCombo * deteccion.instancias));
+      comboInfo.descuentoTotal = Math.min(precioNormalTotal, descuentoTotal);
       descuentoTotalCombos += comboInfo.descuentoTotal;
 
       combosAplicados.push(comboInfo);

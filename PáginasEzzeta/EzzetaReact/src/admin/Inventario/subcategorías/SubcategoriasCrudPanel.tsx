@@ -19,6 +19,8 @@ export const SubcategoriasCrudPanel = ({ access }: Props) => {
   const [lavado, setLavado] = useState<GuiaLavadoSubcategoria>({ url: '', nombre: '' });
   const [tallas, setTallas] = useState<GuiaTallasSubcategoria>(crearGuiaTallasBase());
   const [niveles, setNiveles] = useState<NivelMayoristaSubcategoria[]>([]);
+    const [precio, setPrecio] = useState('');
+    const [preciosTabla, setPreciosTabla] = useState<Record<string, string>>({});
   const categorias = Object.keys(clasificaciones.categorias);
   const filas = Object.entries(clasificaciones.categorias).flatMap(([categoriaFila, subcategorias]) => subcategorias.map((nombre) => ({ categoria: categoriaFila, nombre })));
   const permisos = { ver: access.actions.view ? hasPermission(access.actions.view) : true, crear: access.actions.create ? hasPermission(access.actions.create) : false, editar: access.actions.update ? hasPermission(access.actions.update) : false, eliminar: access.actions.delete ? hasPermission(access.actions.delete) : false };
@@ -30,12 +32,21 @@ export const SubcategoriasCrudPanel = ({ access }: Props) => {
     setLavado(metadata.guiaLavado ?? { url: '', nombre: '' });
     setTallas(metadata.guiaTallas ?? crearGuiaTallasBase());
     setNiveles(metadata.nivelesMayoristas ?? []);
+    setPrecio(metadata.precio !== undefined ? String(metadata.precio) : '');
   };
   const guardar = () => {
     if (!editando) return;
-    guardarMetadataSubcategoria(editando.categoria, editando.nombre, { guiaLavado: lavado, guiaTallas: tallas, nivelesMayoristas: niveles.filter((nivel) => nivel.cantidad > 0 && nivel.precio >= 0).sort((a, b) => a.cantidad - b.cantidad) });
+    const precioNumerico = Number(precio);
+    guardarMetadataSubcategoria(editando.categoria, editando.nombre, { precio: Number.isFinite(precioNumerico) && precioNumerico > 0 ? precioNumerico : 0, guiaLavado: lavado, guiaTallas: tallas, nivelesMayoristas: niveles.filter((nivel) => nivel.cantidad > 0 && nivel.precio >= 0).sort((a, b) => a.cantidad - b.cantidad) });
     setEditando(null);
   };
+    const guardarPrecioTabla = (fila: Fila) => {
+        const clave = `${fila.categoria}::${fila.nombre}`;
+        const valor = Number(preciosTabla[clave]);
+        if (!Number.isFinite(valor) || valor <= 0) return;
+        guardarMetadataSubcategoria(fila.categoria, fila.nombre, { precio: valor });
+        setPreciosTabla((actual) => ({ ...actual, [clave]: '' }));
+    };
 
   if (!permisos.ver) return <div className="rounded-none border border-red-200 bg-red-50 p-4 text-sm text-red-700">No tienes permiso para visualizar este módulo.</div>;
   return (
@@ -52,6 +63,7 @@ export const SubcategoriasCrudPanel = ({ access }: Props) => {
                 <tr>
                     <th className="px-4 py-3">Subcategoría</th>
                     <th className="px-4 py-3">Categoría</th>
+                    <th className="px-4 py-3">Precio base</th>
                     <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
             </thead>
@@ -59,6 +71,7 @@ export const SubcategoriasCrudPanel = ({ access }: Props) => {
                 <tr key={`${fila.categoria}-${fila.nombre}`} className="border-t border-zinc-100">
                     <td className="px-4 py-3 font-medium">{fila.nombre}</td>
                     <td className="px-4 py-3 text-zinc-500">{fila.categoria}</td>
+                    <td className="min-w-52 px-4 py-3"><div className="flex gap-2"><input type="number" min="0.01" step="0.01" value={preciosTabla[`${fila.categoria}::${fila.nombre}`] ?? (obtenerMetadataSubcategoria(fila.categoria, fila.nombre).precio ?? '')} onChange={(event) => setPreciosTabla((actual) => ({ ...actual, [`${fila.categoria}::${fila.nombre}`]: event.target.value }))} className="w-28 border border-zinc-300 px-2 py-1.5 text-sm" /><button type="button" onClick={() => guardarPrecioTabla(fila)} className="border border-zinc-300 px-2 py-1.5 text-xs font-medium hover:border-zinc-900">Guardar</button></div></td>
                     <td className="px-4 py-3 text-right">
                         <div className="flex justify-end">
                             {permisos.editar || permisos.eliminar ? <TablaAcciones>
@@ -96,6 +109,11 @@ export const SubcategoriasCrudPanel = ({ access }: Props) => {
                         reader.readAsDataURL(file); }} className="mt-3 w-full text-sm" />{lavado.url ? 
                         <a href={lavado.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-red-600">Ver PDF actual</a> 
                         : null}
+                    </div>
+                    <div className="border border-zinc-200 bg-zinc-50 p-4">
+                        <h4 className="font-semibold">Precio del producto</h4>
+                        <p className="text-xs text-zinc-500">Se aplicará a todos los productos de esta subcategoría al guardar.</p>
+                        <input type="number" min="0.01" step="0.01" value={precio} onChange={(event) => setPrecio(event.target.value)} className="mt-3 w-full border px-2 py-2 text-sm" placeholder="Precio base" />
                     </div>
                     <div className="border border-zinc-200 bg-zinc-50 p-4">
                         <h4 className="font-semibold">Venta al por mayor</h4>

@@ -33,6 +33,7 @@ export const StorageKeys = {
 	MARKETING_BANNERS_ROTATION: 'ezzeta.marketing.banners.rotation',
 	MARKETING_POPUPS: 'ezzeta.marketing.popups',
 	CONFIGURACION: 'maxeta.configuracion',
+	INVENTARIO_CATEGORIAS_VISUALES: 'maxeta.inventario.categorias.visuales',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

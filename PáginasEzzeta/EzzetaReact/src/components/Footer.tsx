@@ -264,17 +264,11 @@ export const Footer = () => {
         </div>
       </div>
 
-      <div className="border-t border-white/10 bg-black/90">
+      <div className="border-t border-white/10 bg-black/90 pb-40">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-4 text-sm text-white/60 sm:flex-row lg:px-8">
-
           <p>© 2026 EZZETA. Todos los derechos reservados.</p>
-
-          <Link
-            to="/tienda"
-            className="inline-flex items-center gap-2 text-white/80 hover:text-white"
-          >
-            Ver colección
-            <ArrowRight size={16}/>
+          <Link to="/tienda" className="inline-flex items-center gap-2 text-white/80 hover:text-white">
+            Ver colección<ArrowRight size={16}/>
           </Link>
 
         </div>

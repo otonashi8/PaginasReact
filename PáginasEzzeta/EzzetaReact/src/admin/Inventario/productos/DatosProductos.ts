@@ -33,6 +33,7 @@ export type NivelMayoristaSubcategoria = {
 };
 
 export type MetaSubcategoria = {
+    precio?: number;
     guiaLavado?: GuiaLavadoSubcategoria;
     guiaTallas?: GuiaTallasSubcategoria;
     nivelesMayoristas?: NivelMayoristaSubcategoria[];
@@ -45,6 +46,7 @@ export type ClasificacionesProductos = {
     beneficiosDisponibles: string[];
     tallasPorTipo: Record<TallaTipo, string[]>;
     subcategoriasMetadata: Record<string, MetaSubcategoria>;
+    tallasEliminadas?: string[];
 };
 
 export const crearGuiaTallasBase = (): GuiaTallasSubcategoria => ({
@@ -191,6 +193,7 @@ const cargarClasificaciones = (): ClasificacionesProductos => {
             ...(clasificacionesIniciales.subcategoriasMetadata ?? {}),
             ...(guardadas?.subcategoriasMetadata ?? {}),
         };
+        const tallasEliminadas = new Set((guardadas?.tallasEliminadas ?? []).map(normalizarTexto));
 
         const letrasGuardadas = Array.isArray(guardadas?.tallasPorTipo?.letras)
             ? guardadas.tallasPorTipo.letras
@@ -203,13 +206,13 @@ const cargarClasificaciones = (): ClasificacionesProductos => {
             ...clasificacionesIniciales.tallasPorTipo.letras,
             ...(guardadas?.tallasDisponibles ?? []).filter((talla) => inferirTipoTalla(talla) === 'letras'),
             ...letrasGuardadas,
-        ].map(normalizarTexto).filter(Boolean)));
+        ].map(normalizarTexto).filter((talla) => talla && !tallasEliminadas.has(talla))));
 
         const tallasNumeros = Array.from(new Set([
             ...clasificacionesIniciales.tallasPorTipo.numeros,
             ...(guardadas?.tallasDisponibles ?? []).filter((talla) => inferirTipoTalla(talla) === 'numeros'),
             ...numerosGuardados,
-        ].map(normalizarTexto).filter(Boolean)));
+        ].map(normalizarTexto).filter((talla) => talla && !tallasEliminadas.has(talla))));
 
         const tallasCombinadas = Array.from(new Set([...tallasLetras, ...tallasNumeros]));
 
@@ -223,6 +226,7 @@ const cargarClasificaciones = (): ClasificacionesProductos => {
                 numeros: tallasNumeros,
             },
             subcategoriasMetadata: metadataCombinada,
+            tallasEliminadas: [...tallasEliminadas],
         };
     } catch {
         return { ...clasificacionesIniciales };
@@ -279,6 +283,7 @@ export function guardarSubcategoriaMetadata(categoria: string, subcategoria: str
         ...(clasificaciones.subcategoriasMetadata ?? {}),
         [clave]: {
             ...metadataExistente,
+            ...(metadata.precio !== undefined ? { precio: metadata.precio } : {}),
             ...(metadata.guiaLavado ? { guiaLavado: metadata.guiaLavado } : {}),
             ...(metadata.guiaTallas ? { guiaTallas: metadata.guiaTallas } : {}),
             ...(metadata.nivelesMayoristas ? { nivelesMayoristas: metadata.nivelesMayoristas } : {}),
@@ -286,6 +291,17 @@ export function guardarSubcategoriaMetadata(categoria: string, subcategoria: str
     };
 
     guardarClasificacionesProductos(clasificaciones);
+
+    if (metadata.precio !== undefined && Number.isFinite(metadata.precio) && metadata.precio > 0) {
+        const precioAplicado = metadata.precio;
+        const productos = obtenerProductos().map((producto) =>
+            producto.categoria.trim().toLowerCase() === categoriaNormalizada.toLowerCase()
+            && producto.subcategoria.trim().toLowerCase() === subcategoriaNormalizada.toLowerCase()
+                ? normalizarProducto({ ...producto, precio: precioAplicado })
+                : producto,
+        );
+        guardarProductos(productos);
+    }
 }
 
 export function obtenerClasificacionesProductos(): ClasificacionesProductos {
@@ -462,6 +478,9 @@ export function agregarTalla(talla: string, tipo: TallaTipo = inferirTipoTalla(t
     }
 
     const clasificaciones = obtenerClasificacionesProductos();
+    clasificaciones.tallasEliminadas = (clasificaciones.tallasEliminadas ?? []).filter(
+        (tallaActual) => tallaActual.toLowerCase() !== tallaNormalizada.toLowerCase(),
+    );
     if (clasificaciones.tallasDisponibles.some((tallaActual) => tallaActual.toLowerCase() === tallaNormalizada.toLowerCase())) {
         return;
     }
@@ -487,6 +506,10 @@ export function eliminarTalla(talla: string) {
     }
 
     const clasificaciones = obtenerClasificacionesProductos();
+    clasificaciones.tallasEliminadas = Array.from(new Set([
+        ...(clasificaciones.tallasEliminadas ?? []),
+        tallaNormalizada,
+    ]));
     const tipoTalla = inferirTipoTalla(tallaNormalizada);
 
     clasificaciones.tallasDisponibles = clasificaciones.tallasDisponibles.filter(

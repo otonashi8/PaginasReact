@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useState } from 'react';
 import type { Producto } from '../TiposProductos';
-import { estaTallaAgotada, generosDisponibles, inferirTipoTalla } from '../DatosProductos';
+import { estaTallaAgotada, generosDisponibles, inferirTipoTalla, obtenerSubcategoriaMetadata } from '../DatosProductos';
 import { crearSlugProducto } from '../utils/productoMapper';
 import { ExtrasProducto } from './ExtrasProducto';
 import { SelectorCategorias } from './SelectorCategorias';
@@ -46,6 +46,9 @@ export const FormularioProducto = ({
     };
 
     const tallasVisibles = producto.tallas.filter((talla) => debeMostrarTalla(talla));
+    const precioSubcategoria = producto.categoria && producto.subcategoria
+        ? obtenerSubcategoriaMetadata(producto.categoria, producto.subcategoria).precio
+        : undefined;
 
     const actualizarCampo = <Campo extends keyof Producto>(
         campo: Campo,
@@ -324,7 +327,14 @@ export const FormularioProducto = ({
                             actualizarCampo("categoria", categoria)
                         }
                         actualizarSubcategoria={(subcategoria) =>
-                            actualizarCampo("subcategoria", subcategoria)
+                            setProducto((productoAnterior) => {
+                                const precio = obtenerSubcategoriaMetadata(productoAnterior.categoria, subcategoria).precio;
+                                return {
+                                    ...productoAnterior,
+                                    subcategoria,
+                                    ...(precio !== undefined ? { precio } : {}),
+                                };
+                            })
                         }
                     />
 
@@ -388,6 +398,7 @@ export const FormularioProducto = ({
                             }
                             className="w-full rounded-none border border-zinc-300 px-3 py-2 text-sm outline-none transition focus:border-red-600 focus:ring-1 focus:ring-red-600/20"
                         />
+                        {precioSubcategoria !== undefined ? <span className="mt-1 block text-xs text-zinc-500">Precio de subcategoría: S/ {precioSubcategoria.toFixed(2)}. Puedes editarlo.</span> : null}
                     </label>
                     <div className="border border-zinc-200 bg-zinc-50 px-3 py-2">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">Stock total</p>

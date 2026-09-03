@@ -26,7 +26,7 @@ export function OrderSummary({
       <div className="flex items-center justify-between border-b border-[rgba(125,36,56,0.1)] pb-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-vino">Resumen</p>
-          <h3 className="mt-2 font-serif text-2xl font-semibold text-vino-oscuro">Tu pedido</h3>
+          <h3 className="mt-2 text-2xl font-semibold text-vino-oscuro">Tu pedido</h3>
         </div>
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-vino text-crema">
           <ShoppingBag className="h-5 w-5" />

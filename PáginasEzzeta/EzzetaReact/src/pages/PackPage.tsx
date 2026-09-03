@@ -147,109 +147,147 @@ export const PacksPage = () => {
 
   return (
     <section className="space-y-8 pb-10">
-      <div className="space-y-5 pd-10">
-        <div className="flex flex-wrap items-center justify-between gap-50">
-          <h2 className="text-2xl font-semibold uppercase tracking-[0.16em] text-black">Catálogo de Packs</h2>
-          <p className="text-sm text-black/60">{outfitProducts.length} productos disponibles</p>
+        {/* ENCABEZADO */}
+        <div className="space-y-5">
+            <div className="flex flex-col gap-4 border-b border-zinc-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-red-600">Compra inteligente</p>
+                    <h2 className="text-2xl font-semibold uppercase tracking-[0.12em] text-black sm:text-3xl">Catálogo de Packs</h2>
+                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-500">Combina tus productos favoritos y obtén un precio especial automáticamente.</p>
+                </div>
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">{outfitProducts.length} productos disponibles</p>
+            </div>
+            {/* INFORMACIÓN DEL PACK */}
+            <div className="grid gap-px overflow-hidden border border-zinc-200 bg-zinc-200 sm:grid-cols-3">
+                <div className="bg-black px-5 py-4 text-white">
+                    <div className="mb-2 flex items-center gap-2">
+                        <ShoppingBag size={15} />
+                        <span className="text-[15px] font-semibold uppercase tracking-[0.16em] text-white/60">Paso 01</span>
+                    </div>
+                    <p className="text-sm font-semibold">Selecciona tus productos</p>
+                    <p className="mt-1 text-sm leading-relaxed text-white/60">Elige las prendas incluidas en el pack.</p>
+                </div>
+                <div className="bg-white px-5 py-4">
+                    <div className="mb-2 flex items-center gap-2">
+                        <span className="text-sm font-bold text-red-600">+</span>
+                        <span className="text-[15px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Paso 02</span>
+                    </div>
+                    <p className="text-sm font-semibold text-zinc-900">Configura tu combinación</p>
+                    <p className="mt-1 text-sm leading-relaxed text-zinc-500">Selecciona tallas, colores y cantidades disponibles.</p>
+                </div>
+                <div className="bg-white px-5 py-4">
+                    <div className="mb-2 flex items-center gap-2">
+                        <span className="text-sm font-bold text-red-600">✓</span>
+                        <span className="text-[15px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Paso 03</span>
+                    </div>
+                    <p className="text-sm font-semibold text-zinc-900">Descuento automático</p>
+                    <p className="mt-1 text-sm leading-relaxed text-zinc-500">El precio especial se aplicará automáticamente al completar el pack.</p>
+                </div>
+            </div>
         </div>
-
+        {/* CATÁLOGO */}
         {comboRules.length === 0 ? (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-black/70">No hay packs activos disponibles.</div>
+            <div className="border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center">
+                <p className="text-sm font-medium text-zinc-700">No hay packs activos disponibles.</p>
+                <p className="mt-1 text-sm text-zinc-500">Vuelve pronto para descubrir nuevas combinaciones.</p>
+            </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-            {comboRules.map((regla) => {
-              const config: any = regla.configuracion ?? {};
-              const elementos = Array.isArray(config.elementos) ? config.elementos : [];
-
-              const imagen =
-                config.imagenCombo ||
-                (() => {
-                  const firstProd = elementos.find((el: any) => el.tipo === 'producto');
-                  if (!firstProd) return '';
-                  const product = products.find((p) => String(p.id) === String(firstProd.valor));
-                  return product?.image ?? '';
-                })();
-
-              const handleBuy = (event?: any) => {
-                if (event) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                }
-                setComboToConfigure(regla);
-              };
-
-              return (
-                <article
-                  key={regla.id}
-                  className="group overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-white shadow-[0_12px_35px_rgba(0,0,0,0.04)]"
-                >
-                  <div className="relative h-80 w-full overflow-hidden bg-zinc-100">
-                    {imagen ? (
-                      <img src={imagen} alt={regla.nombre} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-sm text-black/40">
-                        Sin imagen
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs uppercase tracking-[0.18em] text-black/50">Combo</p>
-                        <h3 className="mt-2 text-xl font-semibold text-black">{regla.nombre}</h3>
-                        <p className="mt-2 text-sm text-black/70">{regla.descripcion}</p>
-                      </div>
-
-                      <div className="text-right">
-                        {config.precioCombo ? (
-                          <div className="text-lg font-bold text-red-600">
-                            S/{Number(config.precioCombo).toFixed(2)}
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <div className="min-w-0 text-xs text-black/60">
-                        {elementos.length > 0
-                          ? `${elementos.length} piezas incluidas`
-                          : 'Pack personalizado'}
-                      </div>
-
-                      <PermissionGate permission={PERMISSIONS.salesCreate}>
-                        <button
-                          onClick={handleBuy}
-                          className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-red-600"
-                        ><ShoppingBag size={14} />
-                        </button>
-                      </PermissionGate>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                {comboRules.map((regla) => {
+                    const config: any = regla.configuracion ?? {};
+                    const elementos = Array.isArray(config.elementos)
+                        ? config.elementos
+                        : [];
+                    const imagen =
+                        config.imagenCombo ||
+                        (() => {
+                            const firstProd = elementos.find((el: any) => el.tipo === 'producto');
+                            if (!firstProd) return '';
+                            const product = products.find((p) => String(p.id) === String(firstProd.valor));
+                            return product?.image ?? '';
+                        })();
+                    const handleBuy = (event?: any) => {
+                        if (event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }setComboToConfigure(regla);
+                    };
+                    return (
+                        <article
+                            key={regla.id}
+                            className="group overflow-hidden border border-zinc-200 bg-white transition duration-300 hover:-translate-y-1 hover:border-black hover:shadow-[0_18px_45px_rgba(0,0,0,0.08)]"
+                        >
+                            {/* IMAGEN */}
+                            <div className="relative h-72 w-full overflow-hidden bg-zinc-100 sm:h-80">
+                                {imagen ? (
+                                    <img
+                                        src={imagen}
+                                        alt={regla.nombre}
+                                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                                    />
+                                ) : (
+                                    <div className="flex h-full items-center justify-center text-xs uppercase tracking-[0.12em] text-zinc-400">Sin imagen</div>
+                                )}
+                                {/* ETIQUETA */}
+                                {config.precioCombo ? (
+                                    <div className="absolute bottom-3 right-3 bg-white px-3 py-2 shadow-sm">
+                                        <span className="block text-[9px] uppercase tracking-[0.12em] text-zinc-400">Precio pack</span>
+                                        <span className="text-base font-bold text-red-600">S/{Number(config.precioCombo).toFixed(2)}</span>
+                                    </div>
+                                ) : null}
+                            </div>
+                            {/* INFORMACIÓN */}
+                            <div className="space-y-4 p-4">
+                                <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-red-600">Combo</p>
+                                    <h3 className="mt-1.5 line-clamp-2 text-lg font-semibold leading-tight text-black">{regla.nombre}</h3>
+                                    <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-zinc-500">{regla.descripcion}</p>
+                                </div>
+                                <div className="flex items-center justify-between gap-3 border-t border-zinc-100 pt-3">
+                                    <div>
+                                        <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Incluye</p>
+                                        <p className="mt-0.5 text-xs font-medium text-zinc-700">
+                                            {elementos.length > 0
+                                                ? `${elementos.length} piezas`
+                                                : 'Pack personalizado'}
+                                        </p>
+                                    </div>
+                                    <PermissionGate permission={PERMISSIONS.salesCreate}>
+                                        <button
+                                            onClick={handleBuy}
+                                            className="inline-flex h-9 items-center gap-2 bg-black px-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-red-600"
+                                        ><ShoppingBag size={14} /><span>Elegir pack</span>
+                                        </button>
+                                    </PermissionGate>
+                                </div>
+                            </div>
+                        </article>
+                    );
+                })}
+            </div>
         )}
-      </div>
-
-      <AnimatePresence>
-        {quickBuyProduct ? (
-          <QuickAddModal product={quickBuyProduct} isOpen={Boolean(quickBuyProduct)} onClose={closeQuickBuy} />
-        ) : null}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {comboToConfigure ? (
-          <ComboConfigureModal
-            regla={comboToConfigure}
-            isOpen={Boolean(comboToConfigure)}
-            onClose={() => setComboToConfigure(null)}
-          />
-        ) : null}
-      </AnimatePresence>
+        {/* MODAL PRODUCTO */}
+        <AnimatePresence>
+            {quickBuyProduct ? (
+                <QuickAddModal
+                    product={quickBuyProduct}
+                    isOpen={Boolean(quickBuyProduct)}
+                    onClose={closeQuickBuy}
+                />
+            ) : null}
+        </AnimatePresence>
+        {/* MODAL CONFIGURACIÓN DEL COMBO */}
+        <AnimatePresence>
+            {comboToConfigure ? (
+                <ComboConfigureModal
+                    regla={comboToConfigure}
+                    isOpen={Boolean(comboToConfigure)}
+                    onClose={() => setComboToConfigure(null)}
+                />
+            ) : null}
+        </AnimatePresence>
     </section>
-  );
+);
 };
 
 export default PacksPage;

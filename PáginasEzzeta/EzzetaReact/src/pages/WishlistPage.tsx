@@ -172,15 +172,14 @@ export const WishlistPage = () => {
       ) : (
         <>
           <div className="flex flex-col gap-4 rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-            <h2 className="text-xl font-semibold uppercase tracking-[0.2em] text-black">Tus piezas favoritas</h2>
+            <h2 className="text-xl font-semibold uppercase tracking-[0.2em] text-black">Lista de deseos / Tus favoritos</h2>
             {isAuthenticated ? (
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setMenuOpen((open) => !open)}
                   className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border border-black/10 bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-red-600"
-                >
-                  <Share2 size={16} /> Compartir lista
+                ><Share2 size={16} /> Compartir lista
                 </button>
 
                 {menuOpen ? (
@@ -190,29 +189,25 @@ export const WishlistPage = () => {
                         type="button"
                         onClick={() => { setMenuOpen(false); void shareToNetwork('whatsapp'); }}
                         className="flex items-center justify-between rounded-full bg-[#25D366] px-3 py-2 text-sm font-medium text-white"
-                      >
-                        <span className="flex items-center gap-2"><MessageCircle size={15} /> WhatsApp</span>
+                      ><span className="flex items-center gap-2"><MessageCircle size={15} /> WhatsApp</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => { setMenuOpen(false); void shareToNetwork('facebook'); }}
                         className="flex items-center justify-between rounded-full bg-[#1877F2] px-3 py-2 text-sm font-medium text-white"
-                      >
-                        <span className="flex items-center gap-2"><Share2 size={15} /> Facebook</span>
+                      ><span className="flex items-center gap-2"><Share2 size={15} /> Facebook</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => { setMenuOpen(false); void shareToNetwork('instagram'); }}
                         className="flex items-center justify-between rounded-full bg-gradient-to-r from-[#f58529] via-[#dd2a7b] to-[#8134af] px-3 py-2 text-sm font-medium text-white"
-                      >
-                        <span className="flex items-center gap-2"><Camera size={15} /> Instagram</span>
+                      ><span className="flex items-center gap-2"><Camera size={15} /> Instagram</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => { setMenuOpen(false); void shareToNetwork('copy'); }}
                         className="flex items-center justify-between rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-medium text-black"
-                      >
-                        <span className="flex items-center gap-2"><Copy size={15} /> Copiar enlace</span>
+                      ><span className="flex items-center gap-2"><Copy size={15} /> Copiar enlace</span>
                         {shareStatus.includes('copiado') ? <Check size={15} className="text-green-600" /> : null}
                       </button>
                     </div>

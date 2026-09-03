@@ -175,190 +175,236 @@ export const EnvioCrudPanel = ({ access }: { access: PermissionAccess }) => {
   const puedeEliminar = Boolean(access.actions.delete);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Envío</h1>
-          <p className="text-zinc-500">Configura envío gratis y tarifas según ubicación.</p>
-        </div>
-        <button
-          type="button"
-          onClick={comenzarCreacion}
-          disabled={!puedeCrear}
-          className="inline-flex items-center gap-2 rounded-lg bg-black px-5 py-3 text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
-        >
-          <Plus size={18} /> Nueva tarifa
-        </button>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold">Envío gratis desde</h2>
-            <p className="text-sm text-zinc-500">Define el monto mínimo para aplicar envío gratuito.</p>
-          </div>
-
-          <label className="grid gap-2">
-            <span className="text-sm font-medium">Monto mínimo</span>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={configuracion.montoMinimoEnvioGratis.toFixed(2)}
-              onChange={(event) => {
-                const valor = Number(event.target.value);
-                if (!Number.isNaN(valor) && valor >= 0) {
-                  actualizarMontoEnvioGratis(valor);
-                }
-              }}
-              className="w-full rounded-lg border border-zinc-300 px-4 py-3"
-            />
-          </label>
-
-          <label className="grid gap-2">
-            <span className="text-sm font-medium">Tarifa general</span>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={configuracion.tarifaGeneral !== null ? configuracion.tarifaGeneral : ''}
-              onChange={(event) => {
-                const value = event.target.value;
-                if (value.trim() === '') {
-                  actualizarTarifaGeneral(null);
-                  return;
-                }
-                const valor = Number(value);
-                if (!Number.isNaN(valor) && valor >= 0) {
-                  actualizarTarifaGeneral(valor);
-                }
-              }}
-              placeholder="Dejar en blanco para no usar tarifa general"
-              className="w-full rounded-lg border border-zinc-300 px-4 py-3"
-            />
-            <p className="text-xs text-zinc-500">Se utiliza cuando no existe una tarifa específica por departamento.</p>
-          </label>
-        </div>
-
-        <aside className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div>
-            <h2 className="text-xl font-semibold">Estado del envío</h2>
-            <p className="mt-2 text-sm text-zinc-500">Los valores se guardan automáticamente en la configuración del sistema.</p>
-          </div>
-          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
-            <p className="font-semibold">Envío gratis desde</p>
-            <p>{formatoMoneda(configuracion.montoMinimoEnvioGratis)}</p>
-          </div>
-          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
-            <p className="font-semibold">Tarifa general</p>
-            <p>{configuracion.tarifaGeneral !== null ? formatoMoneda(configuracion.tarifaGeneral) : 'No configurada'}</p>
-          </div>
-        </aside>
-      </div>
-
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">Tarifas por ubicación</h2>
-            <p className="text-sm text-zinc-500">Crea, edita o elimina tarifas de envío según la ubicación.</p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="grid gap-2">
-              <span className="text-sm font-medium">Ubicación</span>
-              <select
-                value={ubicacion}
-                onChange={(event) => setUbicacion(event.target.value)}
-                className="w-full rounded-lg border border-zinc-300 px-4 py-3"
-              >
-                <option value="">Selecciona un departamento</option>
-                {tarifaEditando && ubicacion && !departamentosPeru.some((departamento) => departamento.name === ubicacion) ? (
-                  <option value={ubicacion}>{ubicacion}</option>
-                ) : null}
-                {departamentosPeru.map((departamento) => (
-                  <option key={departamento.code} value={departamento.name}>
-                    {departamento.name}
-                  </option>
-                ))}
-              </select>
-              {errores.ubicacion ? <p className="text-xs text-red-600">{errores.ubicacion}</p> : null}
-            </label>
-            <label className="grid gap-2">
-              <span className="text-sm font-medium">Costo</span>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={costo}
-                onChange={(event) => setCosto(event.target.value)}
-                className="w-full rounded-lg border border-zinc-300 px-4 py-3"
-              />
-              {errores.costo ? <p className="text-xs text-red-600">{errores.costo}</p> : null}
-            </label>
-            <div className="flex items-end gap-3">
+      <div className="space-y-6">
+          {/* HEADER */}
+          <div className="flex flex-col gap-4 border-b border-zinc-200 pb-5 md:flex-row md:items-end md:justify-between">
+              <div>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-red-600">Configuración logística</p>
+                  <h1 className="text-2xl font-semibold uppercase tracking-[0.12em] text-black">Envío</h1>
+                  <p className="mt-1 text-sm text-zinc-500">Configura envío gratis y tarifas según ubicación.</p>
+              </div>
               <button
-                type="button"
-                onClick={guardarTarifa}
-                disabled={!puedeCrear && !puedeEditar}
-                className="rounded-lg bg-black px-5 py-3 text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
-              >
-                {tarifaEditando ? 'Guardar cambios' : 'Agregar tarifa'}
+                  type="button"
+                  onClick={comenzarCreacion}
+                  disabled={!puedeCrear}
+                  className="inline-flex h-9 items-center justify-center gap-2 bg-black px-4 text-xs font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-zinc-300"
+              ><Plus size={15} />Nueva tarifa
               </button>
-            </div>
           </div>
-        </div>
-
-        <div className="mt-6 overflow-hidden rounded-xl border border-zinc-200 bg-white">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-zinc-100">
-                <tr>
-                  <th className="px-4 py-3">Ubicación</th>
-                  <th className="px-4 py-3">Costo</th>
-                  <th className="px-4 py-3 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginaTarifas.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-zinc-500">No hay tarifas registradas.</td>
-                  </tr>
-                ) : (
-                  paginaTarifas.map((tarifa) => (
-                    <tr key={tarifa.id} className="border-t border-zinc-200 hover:bg-zinc-50">
-                      <td className="px-4 py-3 font-semibold tracking-[0.01em]">{tarifa.ubicacion}</td>
-                      <td className="px-4 py-3">{formatoMoneda(tarifa.costo)}</td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => comenzarEdicion(tarifa)}
-                            className="rounded-lg border border-blue-500 px-3 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-500 hover:text-white"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => borrarTarifa(tarifa.id)}
-                            disabled={!puedeEliminar}
-                            className="rounded-lg border border-red-500 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:border-zinc-300 disabled:text-zinc-400"
-                          >
-                            <Trash2 size={14} /> Eliminar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+              {/* FORMULARIO */}
+              <section className="space-y-5 border border-zinc-200 bg-white p-4">
+                  <div>
+                      <h2 className="text-sm font-semibold text-zinc-900">Configuración general</h2>
+                      <p className="mt-1 text-xs text-zinc-500">Define cuándo se aplicará el envío gratuito y la tarifa general.</p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                      {/* ENVÍO GRATIS */}
+                      <label className="grid gap-1.5">
+                          <span className="text-[11px] font-medium text-zinc-700">Envío gratis desde</span>
+                          <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400">S/</span>
+                              <input
+                                  type="number"
+                                  min={0}
+                                  step="0.01"
+                                  value={configuracion.montoMinimoEnvioGratis.toFixed(2)}
+                                  onChange={(event) => {
+                                      const valor = Number(event.target.value);
+                                      if (!Number.isNaN(valor) && valor >= 0) {
+                                          actualizarMontoEnvioGratis(valor);
+                                      }
+                                  }}
+                                  className="h-9 w-full border border-zinc-300 pl-8 pr-2.5 text-xs outline-none transition focus:border-zinc-500"
+                              />
+                          </div>
+                          <p className="text-[10px] text-zinc-400">Monto mínimo para activar el envío gratuito.</p>
+                      </label>
+                      {/* TARIFA GENERAL */}
+                      <label className="grid gap-1.5">
+                          <span className="text-[11px] font-medium text-zinc-700">Tarifa general</span>
+                          <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400">S/</span>
+                              <input
+                                  type="number"
+                                  min={0}
+                                  step="0.01"
+                                  value={
+                                      configuracion.tarifaGeneral !== null
+                                          ? configuracion.tarifaGeneral
+                                          : ''
+                                  }
+                                  onChange={(event) => {
+                                      const value = event.target.value;
+                                      if (value.trim() === '') {
+                                          actualizarTarifaGeneral(null);
+                                          return;
+                                      }
+                                      const valor = Number(value);
+                                      if (!Number.isNaN(valor) && valor >= 0) {
+                                          actualizarTarifaGeneral(valor);
+                                      }
+                                  }}
+                                  placeholder="Sin tarifa general"
+                                  className="h-9 w-full border border-zinc-300 pl-8 pr-2.5 text-xs outline-none transition focus:border-zinc-500"
+                              />
+                          </div>
+                          <p className="text-[10px] text-zinc-400">Se usa cuando no existe una tarifa específica.</p>
+                      </label>
+                  </div>
+              </section>
+              {/* RESUMEN */}
+              <aside className="space-y-4 border border-zinc-200 bg-white p-4">
+                  <div>
+                      <h2 className="text-sm font-semibold text-zinc-900">Estado del envío</h2>
+                      <p className="mt-1 text-xs text-zinc-500">Valores actuales de la configuración del sistema.</p>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                      <div className="border border-zinc-200 bg-zinc-50 px-3 py-2.5">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Envío gratis desde</p>
+                          <p className="mt-1 text-sm font-semibold text-zinc-900">{formatoMoneda(configuracion.montoMinimoEnvioGratis)}</p>
+                      </div>
+                      <div className="border border-zinc-200 bg-zinc-50 px-3 py-2.5">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Tarifa general</p>
+                          <p className="mt-1 text-sm font-semibold text-zinc-900">
+                              {configuracion.tarifaGeneral !== null
+                                  ? formatoMoneda(configuracion.tarifaGeneral)
+                                  : 'No configurada'}
+                          </p>
+                      </div>
+                  </div>
+              </aside>
           </div>
-        </div>
+          {/* TARIFAS POR UBICACIÓN */}
+          <section className="space-y-5 border border-zinc-200 bg-white p-4">
+              <div className="flex flex-col gap-3 border-b border-zinc-100 pb-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                      <h2 className="text-sm font-semibold text-zinc-900">Tarifas por ubicación</h2>
+                      <p className="mt-1 text-xs text-zinc-500">Crea, edita o elimina tarifas según el departamento.</p>
+                  </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end">
+                  <label className="grid gap-1.5">
+                      <span className="text-[11px] font-medium text-zinc-700">Ubicación</span>
+                      <select
+                          value={ubicacion}
+                          onChange={(event) => setUbicacion(event.target.value)}
+                          className="h-9 w-full border border-zinc-300 bg-white px-2.5 text-xs outline-none transition focus:border-zinc-500"
+                      >
+                          <option value="">Selecciona un departamento</option>
+                          {tarifaEditando &&
+                          ubicacion &&
+                          !departamentosPeru.some(
+                              (departamento) => departamento.name === ubicacion
+                          ) ? (
+                              <option value={ubicacion}>{ubicacion}</option>
+                          ) : null}
+                          {departamentosPeru.map((departamento) => (
+                              <option
+                                  key={departamento.code}
+                                  value={departamento.name}
+                              >{departamento.name}
+                              </option>
+                          ))}
+                      </select>
+                      {errores.ubicacion ? (
+                          <p className="text-[10px] text-red-600">{errores.ubicacion}</p>
+                      ) : null}
+                  </label>
+                  {/* COSTO */}
+                  <label className="grid gap-1.5">
+                      <span className="text-[11px] font-medium text-zinc-700">Costo</span>
+                      <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400">S/</span>
+                          <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={costo}
+                              onChange={(event) => setCosto(event.target.value)}
+                              className="h-9 w-full border border-zinc-300 pl-8 pr-2.5 text-xs outline-none transition focus:border-zinc-500"
+                          />
+                      </div>
+                      {errores.costo ? (
+                          <p className="text-[10px] text-red-600">{errores.costo}</p>
+                      ) : null}
+                  </label>
+                  {/* ACCIÓN */}
+                  <div className="flex items-end">
+                      <button
+                          type="button"
+                          onClick={guardarTarifa}
+                          disabled={!puedeCrear && !puedeEditar}
+                          className="h-9 w-full bg-black px-4 text-xs font-semibold uppercase tracking-[0.06em] text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-zinc-300 sm:w-auto"
+                      >
+                          {tarifaEditando
+                              ? 'Guardar cambios'
+                              : 'Agregar tarifa'}
+                      </button>
+                  </div>
+              </div>
+              {/* TABLA */}
+              <div className="overflow-hidden border border-zinc-200">
+                  <div className="overflow-x-auto">
+                      <table className="min-w-full table-auto text-xs">
+                          <thead className="bg-zinc-50">
+                              <tr className="text-left">
+                                  <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Ubicación</th>
+                                  <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Costo</th>
+                                  <th className="px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Acciones</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-100">
+                              {paginaTarifas.length === 0 ? (
+                                  <tr>
+                                      <td
+                                          colSpan={3}
+                                          className="px-4 py-8 text-center text-xs text-zinc-500"
+                                      >No hay tarifas registradas.
+                                      </td>
+                                  </tr>
+                              ) : (
+                                  paginaTarifas.map((tarifa) => (
+                                      <tr
+                                          key={tarifa.id}
+                                          className="transition-colors hover:bg-zinc-50/70"
+                                      >
+                                          <td className="px-4 py-2.5 text-xs font-semibold text-zinc-900">{tarifa.ubicacion}</td>
+                                          <td className="px-4 py-2.5 text-xs text-zinc-700">{formatoMoneda(tarifa.costo)}</td>
+                                          <td className="px-4 py-2.5">
+                                              <div className="flex justify-end gap-1.5">
+                                                  <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                          comenzarEdicion(tarifa)
+                                                      }className="h-8 border border-zinc-300 bg-white px-3 text-[10px] font-medium text-zinc-700 transition hover:bg-zinc-100"
+                                                  >Editar
+                                                  </button>
+                                                  <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                          borrarTarifa(tarifa.id)
+                                                      }
+                                                      disabled={!puedeEliminar}
+                                                      className="inline-flex h-8 items-center gap-1.5 border border-red-200 bg-white px-3 text-[10px] font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-zinc-300 disabled:text-zinc-400"
+                                                  ><Trash2 size={13} />Eliminar
+                                                  </button>
+                                              </div>
+                                          </td>
+                                      </tr>
+                                  ))
+                              )}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </section>
+          {/* PAGINACIÓN */}
+          <PaginacionClientes
+              paginaActual={paginaActual}
+              paginaTope={paginaTope}
+              onPaginaChange={setPaginaActual}
+          />
       </div>
-      <PaginacionClientes
-        paginaActual={paginaActual}
-        paginaTope={paginaTope}
-        onPaginaChange={setPaginaActual}
-      />
-    </div>
   );
 };

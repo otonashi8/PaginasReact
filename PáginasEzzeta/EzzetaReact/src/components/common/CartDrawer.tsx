@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -12,7 +12,6 @@ import { obtenerPromoCodes } from '../../data/promoCodes';
 import { storageManager, StorageKeys } from '../../storage';
 import CartCheckout from './CartCheckout';
 import CartItemsList from './CartItemsList';
-import CartCombos from './CartCombos';
 import CartSummary from './CartSummary';
 import { PermissionGate } from '../PermissionGate';
 import { PERMISSIONS } from '../../utils/permissionCodes';
@@ -63,6 +62,7 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
   };
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ productId: number; size: string } | null>(null);
+  const [clearCartConfirm, setClearCartConfirm] = useState(false);
   const [deletedCartItem, setDeletedCartItem] = useState<DeletedCartItem | null>(null);
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'checkout' | 'payment'>('cart');
   const [promoCodeInput, setPromoCodeInput] = useState('');
@@ -153,7 +153,6 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
   const selectedProductsOriginalSubtotal = selectedProducts.reduce((sum, item) => sum + ((item as any).__precioOriginal ?? item.price) * item.quantity, 0);
 
   const productLevelDiscountTotal = selectedProducts.reduce((sum, item) => sum + ((item as any).__precioOriginal ?? item.price) * item.quantity - item.price * item.quantity, 0);
-  const automaticDiscountAmount = Number(Math.max(0, selectedProductsOriginalSubtotal - selectedProductsSubtotal).toFixed(2));
   const configuracionEnvio = obtenerConfiguracionEnvioActual();
 
   const cartItemsForComboDetection: CartItem[] = cart.map((item) => ({
@@ -340,6 +339,21 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
               </motion.button>
             </div>
 
+            {checkoutStep === 'cart' && selectedProducts.length > 0 ? (
+              <div className="flex justify-end border-b border-black/10 px-5 py-3 sm:px-7">
+                <PermissionGate permission={PERMISSIONS.salesDelete}>
+                  <button
+                    type="button"
+                    onClick={() => setClearCartConfirm(true)}
+                    className="inline-flex items-center gap-2 text-xs font-semibold text-red-600 transition hover:text-red-700"
+                  >
+                    <Trash2 size={14} />
+                    Borrar todo
+                  </button>
+                </PermissionGate>
+              </div>
+            ) : null}
+
             <div className="min-h-0 flex-1 overflow-y-auto bg-white px-5 py-6 sm:px-7 sm:py-7">
               {deletedCartItem ? (
                 <motion.div
@@ -385,15 +399,6 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
                 )
               ) : null}
 
-              {checkoutStep === 'cart' && selectedProducts.length > 0 && (
-                <div className="mt-5">
-                  <CartCombos
-                    combosAplicados={comboInfo.combosAplicados}
-                    combosIncompletos={comboInfo.combosIncompletos}
-                  />
-                </div>
-              )}
-
               {checkoutStep === 'checkout' || checkoutStep === 'payment' ? (
                 <CartCheckout
                   selectedProducts={selectedProducts}
@@ -416,8 +421,6 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
               <div className="max-h-[48vh] shrink-0 overflow-y-auto border-t border-black/10 bg-white px-5 pb-5 sm:px-7 sm:pb-7">
                 <CartSummary
                   subtotal={selectedProductsOriginalSubtotal}
-                  promoDiscountAmount={promoDiscountAmount}
-                  automaticDiscountAmount={automaticDiscountAmount}
                   shipping={shipping}
                   shippingLabel={shippingResult.shippingLabel}
                   montoMinimoEnvioGratis={shippingResult.montoMinimoEnvioGratis}
@@ -428,6 +431,7 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
                   departamentoError={departamentoError}
                   discountedSubtotal={discountedSubtotal}
                   discountedTotal={discountedTotal}
+                  combosAplicados={comboInfo.combosAplicados}
                   totalSavings={totalSavings}
                   onApplyPromo={applyPromoCode}
                   promoMessage={promoMessage}
@@ -479,6 +483,48 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
                       >
                         Eliminar
                       </motion.button>
+                    </PermissionGate>
+                  </div>
+                </motion.div>
+              </motion.div>
+            ) : null}
+            {clearCartConfirm ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/45 px-4 py-4 backdrop-blur-[2px]"
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="my-auto w-full max-w-sm rounded-[1.5rem] border border-black/10 bg-white p-5 shadow-[0_26px_70px_rgba(0,0,0,0.2)] sm:p-6"
+                >
+                  <h3 className="text-lg font-semibold text-black">¿Borrar todo el carrito?</h3>
+                  <p className="mt-2 text-sm text-black/70">Se eliminarán todos los productos de tu carrito. Esta acción no se puede deshacer.</p>
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => setClearCartConfirm(false)}
+                      className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-black/5"
+                    >
+                      Cancelar
+                    </button>
+                    <PermissionGate permission={PERMISSIONS.salesDelete}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          clearCart();
+                          setClearCartConfirm(false);
+                          storageManager.cart.appliedCoupon.clear();
+                          setAppliedCoupon(null);
+                          setPromoCodeInput('');
+                        }}
+                        className="flex-1 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                      >
+                        Borrar todo
+                      </button>
                     </PermissionGate>
                   </div>
                 </motion.div>

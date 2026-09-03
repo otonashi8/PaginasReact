@@ -102,7 +102,7 @@ export const MainLayout = () => {
   };
 
   return (
-    <div className="max-h-screen bg-white text-black">
+    <div className="min-h-screen bg-white text-black">
       <Header />
       <AnimatePresence>
         {showPurchaseToast ? (

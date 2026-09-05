@@ -275,14 +275,11 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 14 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="my-0 max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] overflow-y-auto rounded-2xl border border-zinc-200/90 bg-white shadow-[0_26px_70px_rgba(0,0,0,0.16)] sm:my-4 sm:max-h-[92dvh] sm:max-w-4xl sm:rounded-[1.75rem]"
+            className="my-0 max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] overflow-y-auto border border-zinc-200/90 bg-white shadow-[0_26px_70px_rgba(0,0,0,0.16)] sm:my-4 sm:max-h-[92dvh] sm:max-w-4xl"
           >
             <div className="grid md:grid-cols-[1.05fr_0.95fr]">
               <div className="relative flex h-[clamp(16rem,55vw,22rem)] items-center justify-center border-b border-zinc-100 bg-zinc-50 md:h-[min(70vh,34rem)] md:min-h-[30rem] md:border-b-0 md:border-r">
                 <img src={currentProduct.image} alt={currentProduct.name} className="h-full w-full object-contain p-4 sm:p-6 md:p-8" />
-                <div className="absolute left-3 top-3 rounded-full border border-zinc-200 bg-white/90 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.15em] text-black/70 backdrop-blur sm:left-4 sm:top-4 sm:px-3 sm:text-[10px] sm:tracking-[0.2em]">
-                  Compra Rápida
-                </div>
               </div>
 
               <div className="flex flex-col p-4 sm:p-6 md:p-7">
@@ -307,7 +304,7 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                     <button
                       type="button"
                       onClick={onClose}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-white text-black transition hover:border-zinc-400"
+                      className="inline-flex h-10 w-10 items-center justify-center text-black transition hover:border-zinc-400"
                       aria-label="Cerrar"
                     >
                       <X size={16} />
@@ -317,7 +314,7 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
 
                 <div className="mt-5 grid gap-4 sm:mt-6 sm:gap-5">
                   <div>
-                    <label className="text-xs font-medium uppercase tracking-[0.16em] text-black/60">Color</label>
+                    <label className="text-sm font-medium uppercase tracking-[0.16em] text-black/60">Color</label>
                     <div className="mt-3 flex flex-wrap gap-2.5">
                       {availableColors.map((color) => {
                         const isSelected = color === selColor;
@@ -334,12 +331,12 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                             key={color}
                             type="button"
                             onClick={() => handleColorChange(color)}
-                            className={`flex items-center gap-2 rounded-xl border px-2.5 py-2 transition ${isSelected ? 'border-black bg-zinc-50 shadow-[0_0_0_1px_rgba(0,0,0,0.12)]' : 'border-zinc-200 bg-white hover:border-zinc-400'}`}
+                            className={`flex items-center gap-2 rounded-full border px-1 py-1 transition ${isSelected ? 'border-black bg-zinc-50 shadow-[0_0_0_1px_rgba(0,0,0,0.12)]' : 'border-zinc-200 bg-white hover:border-zinc-400'}`}
                             aria-label={`Seleccionar color ${titleText}`}
                             title={titleText}
                           >
                             <span
-                              className="h-5 w-5 rounded-full border border-black/10 flex items-center justify-center text-xs font-semibold"
+                              className="h-6 w-6 rounded-full border border-black/10 flex items-center justify-center text-sm font-semibold"
                               style={{ backgroundColor: bg, color: fg }}
                             >
                               {displayChar ? displayChar.toUpperCase() : null}
@@ -351,7 +348,7 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                   </div>
 
                   <div>
-                    <label className="text-xs font-medium uppercase tracking-[0.16em] text-black/60">Talla</label>
+                    <label className="text-sm font-medium uppercase tracking-[0.16em] text-black/60">Talla</label>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {sizeOptions.length ? sizeOptions.map((size) => {
                         const isAvailable = availableSizes.includes(size);
@@ -382,7 +379,7 @@ export const QuickAddModal = ({ product, initialSize, isOpen, onClose }: QuickAd
                   </div>
 
                   <div>
-                    <label className="text-xs font-medium uppercase tracking-[0.16em] text-black/60">Cantidad</label>
+                    <label className="text-sm font-medium uppercase tracking-[0.16em] text-black/60">Cantidad</label>
                     <div className="mt-2 inline-flex h-12 items-center rounded-xl border border-zinc-200 bg-white p-1">
                       <button
                         type="button"

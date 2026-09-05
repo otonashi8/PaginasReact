@@ -88,14 +88,14 @@ export const RecommendationsPage = () => {
           </div>
         </div>
       </section>
-      <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:py-12">
+      <section className="mx-auto max-w-9xl px-5 py-8 sm:px-8 lg:py-12">
         {/* INFORMACIÓN DE EMPRESA */}
         <div className="border border-zinc-200 bg-white">
           <div className="grid gap-0 lg:grid-cols-[0.8fr_1.2fr]">
             <div className="border-b border-zinc-200 bg-zinc-950 p-6 lg:border-b-0 lg:border-r">
               <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-red-500">Información legal</p>
               <h2 className="mt-3 text-xl font-semibold uppercase tracking-[0.08em] text-white">Datos de la empresa</h2>
-              <p className="mt-4 max-w-xs text-sm leading-6 text-white/65">Información oficial de la empresa responsable de la atención de tu solicitud.</p>
+              <p className="mt-4 max-w-sm text-sm leading-6 text-white/65">Información oficial de la empresa responsable de la atención de tu solicitud.</p>
             </div>
             <div className="grid gap-x-8 gap-y-5 p-6 sm:grid-cols-2 lg:grid-cols-3">
               <div>
@@ -184,7 +184,7 @@ export const RecommendationsPage = () => {
                   <button
                     type="button"
                     onClick={() => setEnviado(false)}
-                    className="mt-7 inline-flex h-10 items-center justify-center border border-zinc-950 bg-zinc-950 px-6 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600"
+                    className="mt-7 inline-flex h-10 items-center justify-center border border-zinc-950 bg-zinc-950 px-6 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600"
                   >Enviar otra solicitud
                   </button>
                 </div>
@@ -194,10 +194,10 @@ export const RecommendationsPage = () => {
                 <div>
                   <div className="mb-4 flex items-center gap-3">
                     <span className="text-[10px] font-semibold text-red-600">01</span>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-950">Motivo de la solicitud</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-950">Motivo de la solicitud</p>
                   </div>
                   <label className="block">
-                    <span className="mb-2 block text-xs font-semibold text-zinc-800">Selecciona una opción
+                    <span className="mb-2 block text-sm font-semibold text-zinc-800">Selecciona una opción
                       <b className="ml-1 text-red-600">*</b>
                     </span>
                     <select
@@ -218,11 +218,11 @@ export const RecommendationsPage = () => {
                 <div className="border-t border-zinc-100 pt-6">
                   <div className="mb-4 flex items-center gap-3">
                     <span className="text-[10px] font-semibold text-red-600">02</span>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-950">Datos de contacto</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-950">Datos de contacto</p>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block">
-                      <span className="mb-2 block text-xs font-semibold text-zinc-800">Nombre
+                      <span className="mb-2 block text-sm font-semibold text-zinc-800">Nombre
                         <b className="ml-1 text-red-600">*</b>
                       </span>
                       <input
@@ -233,7 +233,7 @@ export const RecommendationsPage = () => {
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-2 block text-xs font-semibold text-zinc-800">Correo
+                      <span className="mb-2 block text-sm font-semibold text-zinc-800">Correo
                         <b className="ml-1 text-red-600">*</b>
                       </span>
                       <input
@@ -245,7 +245,7 @@ export const RecommendationsPage = () => {
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-2 block text-xs font-semibold text-zinc-800">N.º de pedido</span>
+                      <span className="mb-2 block text-sm font-semibold text-zinc-800">N.º de pedido</span>
                       <input
                         value={pedido}
                         onChange={(event) => setPedido(event.target.value)}
@@ -254,7 +254,7 @@ export const RecommendationsPage = () => {
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-2 block text-xs font-semibold text-zinc-800">Teléfono
+                      <span className="mb-2 block text-sm font-semibold text-zinc-800">Teléfono
                         <b className="ml-1 text-red-600">*</b>
                       </span>
                       <input
@@ -270,10 +270,10 @@ export const RecommendationsPage = () => {
                 <div className="border-t border-zinc-100 pt-6">
                   <div className="mb-4 flex items-center gap-3">
                     <span className="text-[10px] font-semibold text-red-600">03</span>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-950">Detalle de la solicitud</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-950">Detalle de la solicitud</p>
                   </div>
                   <label className="block">
-                    <span className="mb-2 block text-xs font-semibold text-zinc-800">Describe tu problema o queja
+                    <span className="mb-2 block text-sm font-semibold text-zinc-800">Describe tu problema o queja
                       <b className="ml-1 text-red-600">*</b>
                     </span>
                     <textarea
@@ -286,7 +286,7 @@ export const RecommendationsPage = () => {
                   </label>
                 </div>
                 {error && (
-                  <div className="flex items-start gap-2 border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+                  <div className="flex items-start gap-2 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     <span className="font-bold">!</span>
                     <span>{error}</span>
                   </div>
@@ -294,7 +294,7 @@ export const RecommendationsPage = () => {
                 <button
                   type="button"
                   onClick={enviarSolicitud}
-                  className="inline-flex h-11 w-full items-center justify-center gap-2 border border-zinc-950 bg-zinc-950 px-5 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600"
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 border border-zinc-950 bg-zinc-950 px-5 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600"
                 ><Send size={15} />Enviar solicitud
                 </button>
                 <div className="grid gap-3 border-t border-zinc-100 pt-5 sm:grid-cols-2">
@@ -306,7 +306,7 @@ export const RecommendationsPage = () => {
                   ><Phone size={17} className="text-zinc-500 transition-colors group-hover:text-red-600"/>
                     <div className="min-w-0">
                       <p className="text-[10px] uppercase tracking-[0.15em] text-zinc-400">WhatsApp</p>
-                      <p className="truncate text-xs font-medium text-zinc-800">{contacto.telefono}</p>
+                      <p className="truncate text-sm font-medium text-zinc-800">{contacto.telefono}</p>
                     </div>
                   </a>
                   <a
@@ -316,7 +316,7 @@ export const RecommendationsPage = () => {
                     <Mail size={17} className="text-zinc-500 transition-colors group-hover:text-red-600"/>
                     <div className="min-w-0">
                       <p className="text-[10px] uppercase tracking-[0.15em] text-zinc-400">Correo electrónico</p>
-                      <p className="truncate text-xs font-medium text-zinc-800">{contacto.email}</p>
+                      <p className="truncate text-sm font-medium text-zinc-800">{contacto.email}</p>
                     </div>
                   </a>
                 </div>

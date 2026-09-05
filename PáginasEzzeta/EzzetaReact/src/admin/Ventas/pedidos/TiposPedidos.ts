@@ -65,6 +65,7 @@ export interface Pedido {
     numeroPedido: string;
     carritoId: null;
     cliente: ClientePedido;
+    modalidadEntrega?: "standard" | "pickup";
     direccion: DireccionPedido;
     productos: ProductoPedido[];
     descuentos: DescuentoPedido[];

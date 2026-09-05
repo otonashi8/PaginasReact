@@ -19,7 +19,7 @@ export default function CartCombos({ combosAplicados }: CartCombosProps) {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-[1.2rem] border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+          className="border border-green-200 bg-green-50 p-4 text-sm text-green-800"
         >
           <div className="flex items-center gap-2 font-semibold">
             <span>✓ Combo aplicado</span>

@@ -142,13 +142,16 @@ const mapearProductoPersistido = (producto: Record<string, unknown>): Product | 
       : typeof producto.Imagen === 'string'
         ? producto.Imagen
         : '';
-  const miniImage = Array.isArray(producto.miniImagenes)
+  const miniImageValues = Array.isArray(producto.miniImagenes)
     ? (producto.miniImagenes as string[]).filter(Boolean)
     : Array.isArray(producto['mini-image'])
       ? (producto['mini-image'] as string[]).filter(Boolean)
       : Array.isArray(producto.miniImagenesPersistidas)
         ? (producto.miniImagenesPersistidas as string[]).filter(Boolean)
         : [];
+  const miniImage = image
+    ? [image, ...miniImageValues.filter((miniImageValue) => miniImageValue !== image)]
+    : miniImageValues;
   const colors = Array.isArray(producto.colores)
     ? (producto.colores as string[]).filter(Boolean)
     : Array.isArray(producto.colors)
@@ -310,19 +313,13 @@ export const getRelatedProducts = (productId: number): Product[] => {
     return [];
   }
 
-  const related = product.relatedIds?.length
-    ? source.filter((item) => item.id !== productId && product.relatedIds?.includes(item.id))
-    : [];
+  const categoriaProducto = product.category.trim().toLowerCase();
 
-  if (related.length >= 3) {
-    return related.slice(0, 3);
-  }
-
-  const fallback = source
-    .filter((item) => item.id !== productId && !related.some((relatedItem) => relatedItem.id === item.id))
-    .slice(0, 3 - related.length);
-
-  return [...related, ...fallback];
+  return source
+    .filter((item) => (
+      item.id !== productId
+      && item.category.trim().toLowerCase() === categoriaProducto
+    ));
 };
 
 export const getAboutContent = (): PageContent => about as PageContent;

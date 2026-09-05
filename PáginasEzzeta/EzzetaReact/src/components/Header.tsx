@@ -5,6 +5,8 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import { CartDrawer } from './common/CartDrawer';
+import { HeaderAuthModal } from './common/HeaderAuthModal';
+import { HeaderNavigation } from './HeaderNavigation';
 import { SearchDropdown } from './SearchDropdown';
 import { getProducts } from '../services/contentService';
 import { StorageKeys } from '../storage';
@@ -448,8 +450,32 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
 
   return (
     <>
-      <header className={`sticky top-0 z-50 w-full border-b backdrop-blur-xl transition duration-300 ${headerBackgroundClass}`}>
-        <div className="mx-auto flex w-full max-w-[1920px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+      <HeaderNavigation
+        isMobileMenuOpen={isMobileMenuOpen}
+        onToggleMobileMenu={() => setIsMobileMenuOpen((open) => !open)}
+        onCloseMobileMenu={() => setIsMobileMenuOpen(false)}
+        isUserMenuOpen={isUserMenuOpen}
+        onToggleUserMenu={() => setIsUserMenuOpen((open) => !open)}
+        onOpenAccount={() => {
+          setIsAccountModalOpen(true);
+          setIsUserMenuOpen(false);
+        }}
+        onOpenLogin={() => {
+          setLoginIdentifier('');
+          setLoginPassword('');
+          setLoginError('');
+          setLoginModalMode('login');
+          setIsLoginModalOpen(true);
+        }}
+        search={search}
+        onSearchChange={setSearch}
+        searchResults={searchResults}
+        onSearch={handleSearch}
+        onOpenCart={onOpenCart}
+      />
+
+      {false && isAuthenticated && user && <header className={`sticky top-0 z-50 w-full border-b backdrop-blur-xl transition duration-300 ${headerBackgroundClass}`}>
+        <div className="mx-auto flex w-full max-w-[1920px] items-center justify-between gap-4 px-4 py-2 sm:px-3 lg:px-4">
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -480,7 +506,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition sm:inline-flex ${headerButtonClass}`}
-                >Hola, {user.username}
+                >Hola, {user?.username}
                 </button>
 
                 <AnimatePresence>
@@ -673,7 +699,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
             </motion.div>
           )}
         </AnimatePresence>
-      </header>
+      </header>}
 
       <CartDrawer />
 
@@ -691,7 +717,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 24, opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-5xl max-h-[92dvh] overflow-y-auto rounded-[1.5rem] border border-black/10 bg-white p-5 shadow-2xl sm:rounded-[2rem] sm:p-8"
+              className="w-full max-w-5xl max-h-[92dvh] overflow-y-auto border border-black/10 bg-white p-5 shadow-2xl sm:p-8"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mb-6 flex items-center justify-between gap-4">
@@ -699,22 +725,22 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                   <p className="text-sm uppercase tracking-[0.3em] text-black/60">Cuenta</p>
                   <h2 className="mt-2 text-2xl font-semibold text-black">{user.username}</h2>
                 </div>
-                <button type="button" onClick={() => setIsAccountModalOpen(false)} className="rounded-full border border-black/10 p-2 text-black/70 hover:border-red-600 hover:text-red-600">
+                <button type="button" onClick={() => setIsAccountModalOpen(false)} className="border border-black/10 p-2 text-black/70 hover:border-red-600 hover:text-red-600">
                   <X size={18} />
                 </button>
               </div>
 
-              <div className="mb-6 grid grid-cols-2 rounded-xl border border-black/10 bg-[#fffaf9] p-1">
-                <button type="button" onClick={() => setAccountSection('payments')} className={`rounded-lg px-3 py-3 text-xs font-semibold uppercase tracking-[0.16em] transition ${accountSection === 'payments' ? 'bg-black text-white' : 'text-black/60 hover:text-red-600'}`}>
+              <div className="mb-6 grid grid-cols-2 border border-black/10 bg-[#fffaf9] p-1">
+                <button type="button" onClick={() => setAccountSection('payments')} className={`px-3 py-3 text-xs font-semibold uppercase tracking-[0.16em] transition ${accountSection === 'payments' ? 'bg-black text-white' : 'text-black/60 hover:text-red-600'}`}>
                   Métodos de pago
                 </button>
-                <button type="button" onClick={() => setAccountSection('addresses')} className={`rounded-lg px-3 py-3 text-xs font-semibold uppercase tracking-[0.16em] transition ${accountSection === 'addresses' ? 'bg-black text-white' : 'text-black/60 hover:text-red-600'}`}>
+                <button type="button" onClick={() => setAccountSection('addresses')} className={`px-3 py-3 text-xs font-semibold uppercase tracking-[0.16em] transition ${accountSection === 'addresses' ? 'bg-black text-white' : 'text-black/60 hover:text-red-600'}`}>
                   Libreta de direcciones
                 </button>
               </div>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <section style={{ display: accountSection === 'payments' ? undefined : 'none' }} className="min-w-0 rounded-2xl border border-black/10 bg-[#ffffff] p-4">
+                <section style={{ display: accountSection === 'payments' ? undefined : 'none' }} className="min-w-0 border border-black/10 bg-[#ffffff] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-black/80">Métodos de pago</h3>
                     <span className="text-xs text-black/45">{savedAccountData.metodosPago.length} guardados</span>
@@ -731,7 +757,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                         const isYape = type === 'yape' || Boolean(yapeNumber);
 
                         return (
-                          <div key={`${type}-${id}`} onClick={() => { setSelectedPaymentId(id); setEditingPaymentId(id); setPaymentDraft({ type: isYape ? 'yape' : 'tarjeta', ownerName, yapeNumber, cardNumber, cardExpiry: typeof metodo.cardExpiry === 'string' ? metodo.cardExpiry : '', last4 }); }} className={`cursor-pointer rounded-xl border p-3 text-sm text-black/80 transition ${id === (selectedPaymentId ?? String((savedAccountData.metodosPago[0] as { id?: string | number }).id ?? '0')) ? 'border-red-600 bg-[#fff4f1]' : 'border-black/10 bg-white hover:border-red-300'}`}>
+                          <div key={`${type}-${id}`} onClick={() => { setSelectedPaymentId(id); setEditingPaymentId(id); setPaymentDraft({ type: isYape ? 'yape' : 'tarjeta', ownerName, yapeNumber, cardNumber, cardExpiry: typeof metodo.cardExpiry === 'string' ? metodo.cardExpiry : '', last4 }); }} className={`cursor-pointer border p-3 text-sm text-black/80 transition ${id === (selectedPaymentId ?? String((savedAccountData.metodosPago[0] as { id?: string | number }).id ?? '0')) ? 'border-red-600 bg-[#fff4f1]' : 'border-black/10 bg-white hover:border-red-300'}`}>
                             <div className="flex items-start justify-between gap-3">
                               <div>
                                 <p className="font-semibold text-black">{isYape ? 'Yape' : 'Tarjeta'}</p>
@@ -749,28 +775,28 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                   )}
                   {editingPaymentId !== null ? (
                     <div className="mt-4 hidden space-y-3 rounded-xl border border-black/10 bg-[#fffaf9] p-3">
-                      <select value={paymentDraft.type} onChange={(event) => setPaymentDraft((current) => ({ ...current, type: event.target.value }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm">
+                      <select value={paymentDraft.type} onChange={(event) => setPaymentDraft((current) => ({ ...current, type: event.target.value }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm">
                         <option value="tarjeta">Tarjeta</option>
                         <option value="yape">Yape</option>
                       </select>
                       {paymentDraft.type === 'tarjeta' ? (
                         <>
-                          <input value={paymentDraft.ownerName} onChange={(event) => setPaymentDraft((current) => ({ ...current, ownerName: event.target.value }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Titular" />
-                          <input value={paymentDraft.cardNumber} onChange={(event) => setPaymentDraft((current) => ({ ...current, cardNumber: event.target.value, last4: event.target.value.replace(/\D/g, '').slice(-4) }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Número de tarjeta" />
-                          <input value={paymentDraft.cardExpiry} onChange={(event) => setPaymentDraft((current) => ({ ...current, cardExpiry: event.target.value }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Fecha de caducidad (MM/AA)" />
+                          <input value={paymentDraft.ownerName} onChange={(event) => setPaymentDraft((current) => ({ ...current, ownerName: event.target.value }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Titular" />
+                          <input value={paymentDraft.cardNumber} onChange={(event) => setPaymentDraft((current) => ({ ...current, cardNumber: event.target.value, last4: event.target.value.replace(/\D/g, '').slice(-4) }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Número de tarjeta" />
+                          <input value={paymentDraft.cardExpiry} onChange={(event) => setPaymentDraft((current) => ({ ...current, cardExpiry: event.target.value }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Fecha de caducidad (MM/AA)" />
                         </>
                       ) : (
-                        <input value={paymentDraft.yapeNumber} onChange={(event) => setPaymentDraft((current) => ({ ...current, yapeNumber: event.target.value }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Número de Yape" />
+                        <input value={paymentDraft.yapeNumber} onChange={(event) => setPaymentDraft((current) => ({ ...current, yapeNumber: event.target.value }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Número de Yape" />
                       )}
                       <div className="flex gap-2">
-                        <button type="button" onClick={saveEditedPayment} className="rounded-full bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600">Guardar</button>
+                        <button type="button" onClick={saveEditedPayment} className="bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600">Guardar</button>
                         <button type="button" onClick={() => { setEditingPaymentId(null); setPaymentDraft({ type: 'tarjeta', ownerName: '', yapeNumber: '', cardNumber: '', cardExpiry: '', last4: '' }); }} className="rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold text-black">Cancelar</button>
                       </div>
                     </div>
                   ) : null}
                 </section>
 
-                <section style={{ display: accountSection === 'payments' ? undefined : 'none' }} className="min-w-0 rounded-2xl border border-black/10 bg-[#ffffff] p-4">
+                <section style={{ display: accountSection === 'payments' ? undefined : 'none' }} className="min-w-0 border border-black/10 bg-[#ffffff] p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/50">Información del método</p>
                   {savedAccountData.metodosPago.length > 0 ? (() => {
                     const selected = savedAccountData.metodosPago.find((metodo, index) => String((metodo as { id?: string | number }).id ?? `${index}`) === (selectedPaymentId ?? String((savedAccountData.metodosPago[0] as { id?: string | number }).id ?? '0'))) ?? savedAccountData.metodosPago[0];
@@ -782,23 +808,23 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                       <div className="mt-4 text-sm text-black/80">
                         <p className="text-xl font-semibold text-black">{isYape ? 'Yape' : 'Tarjeta guardada'}</p>
                         <div className="mt-4 space-y-3">
-                          {isYape ? <input value={paymentDraft.yapeNumber} onChange={(event) => setPaymentDraft((current) => ({ ...current, yapeNumber: event.target.value }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Número de Yape" /> : <>
-                            <input value={paymentDraft.ownerName} onChange={(event) => setPaymentDraft((current) => ({ ...current, ownerName: event.target.value }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Titular" />
-                            <input value={paymentDraft.cardNumber} onChange={(event) => setPaymentDraft((current) => ({ ...current, cardNumber: event.target.value, last4: event.target.value.replace(/\D/g, '').slice(-4) }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Número de tarjeta" />
-                            <input value={paymentDraft.cardExpiry} onChange={(event) => setPaymentDraft((current) => ({ ...current, cardExpiry: event.target.value }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Fecha de caducidad (MM/AA)" />
+                          {isYape ? <input value={paymentDraft.yapeNumber} onChange={(event) => setPaymentDraft((current) => ({ ...current, yapeNumber: event.target.value }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Número de Yape" /> : <>
+                            <input value={paymentDraft.ownerName} onChange={(event) => setPaymentDraft((current) => ({ ...current, ownerName: event.target.value }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Titular" />
+                            <input value={paymentDraft.cardNumber} onChange={(event) => setPaymentDraft((current) => ({ ...current, cardNumber: event.target.value, last4: event.target.value.replace(/\D/g, '').slice(-4) }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Número de tarjeta" />
+                            <input value={paymentDraft.cardExpiry} onChange={(event) => setPaymentDraft((current) => ({ ...current, cardExpiry: event.target.value }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Fecha de caducidad (MM/AA)" />
                           </>}
                         </div>
                         <div className="mt-6 flex gap-2">
-                          <button type="button" onClick={saveEditedPayment} className="rounded-full bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600">Guardar</button>
-                          <button type="button" onClick={() => setEditingPaymentId(null)} className="rounded-full border border-black/10 px-2.5 py-1 text-xs font-medium text-black">Cancelar</button>
-                          <button type="button" onClick={() => deleteSavedAccountEntry('metodosPago', selectedId)} className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100">Eliminar</button>
+                          <button type="button" onClick={saveEditedPayment} className="bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600">Guardar</button>
+                          <button type="button" onClick={() => setEditingPaymentId(null)} className="border border-black/10 px-2.5 py-1 text-xs font-medium text-black">Cancelar</button>
+                          <button type="button" onClick={() => deleteSavedAccountEntry('metodosPago', selectedId)} className="border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100">Eliminar</button>
                         </div>
                       </div>
                     );
                   })() : <p className="mt-4 text-sm text-black/80">Selecciona un método para ver su información.</p>}
                 </section>
 
-                <section style={{ display: accountSection === 'addresses' ? undefined : 'none' }} className="min-w-0 rounded-2xl border border-black/10 bg-[#ffffff] p-4 lg:col-span-2 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-6">
+                <section style={{ display: accountSection === 'addresses' ? undefined : 'none' }} className="min-w-0 border border-black/10 bg-[#ffffff] p-4 lg:col-span-2 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-6">
                   <div className="flex items-center justify-between gap-3 lg:col-span-2">
                     <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-black/80">Direcciones guardadas</h3>
                     <span className="text-xs text-black/45">Selecciona una ubicación</span>
@@ -812,7 +838,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                         const isSelected = id === (selectedAddressId ?? String((savedAccountData.direcciones[0] as { id?: string | number }).id ?? '0'));
 
                         return (
-                          <button key={`${nombre}-${id}`} type="button" onClick={() => { const selectedLocation = resolveDisplayLocation(direccion as Record<string, unknown>); setSelectedAddressId(id); setEditingAddressId(id); setAddressDraft({ nombre, departamento: selectedLocation.department, provincia: selectedLocation.province, distrito: selectedLocation.district, direccion: typeof direccion.direccion === 'string' ? direccion.direccion : '', referencia: typeof direccion.referencia === 'string' ? direccion.referencia : '' }); }} className={`h-[88px] self-start overflow-hidden rounded-xl border p-3 text-left text-sm transition ${isSelected ? 'border-red-600 bg-[#fff4f1]' : 'border-black/10 bg-white hover:border-red-300'}`}>
+                          <button key={`${nombre}-${id}`} type="button" onClick={() => { const selectedLocation = resolveDisplayLocation(direccion as Record<string, unknown>); setSelectedAddressId(id); setEditingAddressId(id); setAddressDraft({ nombre, departamento: selectedLocation.department, provincia: selectedLocation.province, distrito: selectedLocation.district, direccion: typeof direccion.direccion === 'string' ? direccion.direccion : '', referencia: typeof direccion.referencia === 'string' ? direccion.referencia : '' }); }} className={`h-[88px] self-start overflow-hidden border p-3 text-left text-sm transition ${isSelected ? 'border-red-600 bg-[#fff4f1]' : 'border-black/10 bg-white hover:border-red-300'}`}>
                             <p className="font-semibold text-black">{nombre}</p>
                             <p className="mt-1 text-black/60">{location.department} / {location.province} / {location.district}</p>
                           </button>
@@ -831,26 +857,26 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/50">Información de ubicación</p>
                         <p className="mt-2 text-lg font-semibold text-black">{typeof selected.nombre === 'string' ? selected.nombre : `Ubicación ${selectedIndex + 1}`}</p>
                         <div className="mt-4 space-y-3">
-                          <input value={addressDraft.nombre} onChange={(event) => setAddressDraft((current) => ({ ...current, nombre: event.target.value }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Nombre de la dirección" />
-                          <select value={addressDraft.departamento} onChange={(event) => setAddressDraft((current) => ({ ...current, departamento: event.target.value, provincia: '', distrito: '' }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm">
+                          <input value={addressDraft.nombre} onChange={(event) => setAddressDraft((current) => ({ ...current, nombre: event.target.value }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Nombre de la dirección" />
+                          <select value={addressDraft.departamento} onChange={(event) => setAddressDraft((current) => ({ ...current, departamento: event.target.value, provincia: '', distrito: '' }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm">
                             <option value="">Departamento</option>
                             {peruDepartments.map((item) => <option key={item.code} value={item.name}>{item.name}</option>)}
                           </select>
-                          <select value={addressDraft.provincia} onChange={(event) => setAddressDraft((current) => ({ ...current, provincia: event.target.value, distrito: '' }))} disabled={!addressDraft.departamento} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm disabled:bg-black/5">
+                          <select value={addressDraft.provincia} onChange={(event) => setAddressDraft((current) => ({ ...current, provincia: event.target.value, distrito: '' }))} disabled={!addressDraft.departamento} className="w-full border border-black/10 bg-white px-3 py-2 text-sm disabled:bg-black/5">
                             <option value="">Provincia</option>
                             {peruProvinces.map((item) => <option key={item.code} value={item.name}>{item.name}</option>)}
                           </select>
-                          <select value={addressDraft.distrito} onChange={(event) => setAddressDraft((current) => ({ ...current, distrito: event.target.value }))} disabled={!addressDraft.provincia} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm disabled:bg-black/5">
+                          <select value={addressDraft.distrito} onChange={(event) => setAddressDraft((current) => ({ ...current, distrito: event.target.value }))} disabled={!addressDraft.provincia} className="w-full border border-black/10 bg-white px-3 py-2 text-sm disabled:bg-black/5">
                             <option value="">Distrito</option>
                             {peruDistricts.map((item) => <option key={item.code} value={item.name}>{item.name}</option>)}
                           </select>
-                          <input value={addressDraft.direccion} onChange={(event) => setAddressDraft((current) => ({ ...current, direccion: event.target.value }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Dirección" />
-                          <input value={addressDraft.referencia} onChange={(event) => setAddressDraft((current) => ({ ...current, referencia: event.target.value }))} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Referencia" />
+                          <input value={addressDraft.direccion} onChange={(event) => setAddressDraft((current) => ({ ...current, direccion: event.target.value }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Dirección" />
+                          <input value={addressDraft.referencia} onChange={(event) => setAddressDraft((current) => ({ ...current, referencia: event.target.value }))} className="w-full border border-black/10 bg-white px-3 py-2 text-sm" placeholder="Referencia" />
                         </div>
                         <div className="mt-4 flex gap-2">
-                          <button type="button" onClick={saveEditedAddress} className="rounded-full bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600">Guardar</button>
-                          <button type="button" onClick={() => setEditingAddressId(null)} className="rounded-full border border-black/10 px-2.5 py-1 text-xs font-medium text-black">Cancelar</button>
-                          <button type="button" onClick={() => deleteSavedAccountEntry('direcciones', selectedId)} className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100">Eliminar</button>
+                          <button type="button" onClick={saveEditedAddress} className="bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600">Guardar</button>
+                          <button type="button" onClick={() => setEditingAddressId(null)} className="border border-black/10 px-2.5 py-1 text-xs font-medium text-black">Cancelar</button>
+                          <button type="button" onClick={() => deleteSavedAccountEntry('direcciones', selectedId)} className="border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100">Eliminar</button>
                         </div>
                       </div>
                     );
@@ -886,7 +912,7 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {isLoginModalOpen ? (
+        {false && isLoginModalOpen ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1022,6 +1048,25 @@ export const Header = ({ onOpenCart }: { onOpenCart?: () => void } = {}) => {
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      <HeaderAuthModal
+        isOpen={isLoginModalOpen}
+        mode={loginModalMode}
+        onClose={() => setIsLoginModalOpen(false)}
+        onModeChange={setLoginModalMode}
+        loginIdentifier={loginIdentifier}
+        loginPassword={loginPassword}
+        loginError={loginError}
+        isLoginSubmitting={isLoginSubmitting}
+        onLoginIdentifierChange={setLoginIdentifier}
+        onLoginPasswordChange={setLoginPassword}
+        onLoginSubmit={handleLoginSubmit}
+        registerForm={registerForm}
+        registerError={registerError}
+        isRegisterSubmitting={isRegisterSubmitting}
+        onRegisterChange={handleRegisterChange}
+        onRegisterSubmit={handleRegisterSubmit}
+      />
     </>
   );
 };

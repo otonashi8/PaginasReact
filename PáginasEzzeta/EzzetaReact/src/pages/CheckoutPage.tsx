@@ -17,7 +17,7 @@ import { descontarStockPorTalla } from '@/admin/Inventario/productos/DatosProduc
 import { validarStockDelCarrito } from '@/utils/cartHelpers'
 import ubigeoPeru from 'ubigeo-peru'
 
-const BTN_PRIMARIO_CLASS = 'inline-flex items-center justify-center gap-2 rounded-full bg-vino px-4 py-2.5 text-sm font-semibold text-crema transition hover:bg-vino-oscuro disabled:cursor-not-allowed disabled:opacity-60'
+const BTN_PRIMARIO_CLASS = 'inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60'
 
 const DEPARTAMENTOS = getPeruDepartments().map((item) => ({
   departamento: item.code,
@@ -82,6 +82,9 @@ const PAYMENT_METHODS = [
   { value: 'yape', label: 'Yape', icon: ShieldCheck },
 ] as const
 
+const PICKUP_ADDRESS = 'Ezzeta Company, Q3G3+MHH, Villa EL Salvador 15837'
+const PICKUP_MAPS_URL = 'https://www.google.com/maps/place/EZZETA+COMPANY/@-12.2233803,-76.9460663,20z/data=!4m6!3m5!1s0x9105bb003c4b0635:0xdb26c6068cf6d30e!8m2!3d-12.2233088!4d-76.9460224!16s%2Fg%2F11ybgfdczt?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D'
+
 type FormValues = {
   fullName: string
   email: string
@@ -94,6 +97,7 @@ type FormValues = {
   locationName: string
   postalCode: string
   reference: string
+  shippingMethod: 'standard' | 'pickup'
   paymentMethod: 'tarjeta' | 'yape'
   cardOwner: string
   cardNumber: string
@@ -114,6 +118,7 @@ const DEFAULT_VALUES: FormValues = {
   locationName: '',
   postalCode: '',
   reference: '',
+  shippingMethod: 'standard',
   paymentMethod: 'tarjeta',
   cardOwner: '',
   cardNumber: '',
@@ -128,7 +133,6 @@ const getGuestId = () => {
     const guest = stored ? JSON.parse(stored) as { id?: string } : null
     if (guest?.id) return guest.id
   } catch {
-    // ignore invalid guest data
   }
 
   const id = `guest-${crypto.randomUUID()}`
@@ -158,6 +162,7 @@ const parseStoredCheckout = (): Partial<FormValues> => {
       locationText: typeof parsed.address === 'string' ? parsed.address : '',
       postalCode: typeof parsed.postalCode === 'string' ? parsed.postalCode : '',
       reference: typeof parsed.reference === 'string' ? parsed.reference : '',
+      shippingMethod: parsed.shippingMethod === 'pickup' ? 'pickup' : 'standard',
       paymentMethod: parsed.paymentMethod === 'yape' ? 'yape' : 'tarjeta',
     }
   } catch {
@@ -327,6 +332,7 @@ function CheckoutPage() {
   const pricingRules = usePricingRules()
   const [form, setForm] = useState<FormValues>({ ...DEFAULT_VALUES, ...parseStoredCheckout() })
   const [contactSaved, setContactSaved] = useState(false)
+  const [shippingSaved, setShippingSaved] = useState(false)
   const [paymentSaved, setPaymentSaved] = useState(false)
   const [saveLocation, setSaveLocation] = useState(false)
   const [savePayment, setSavePayment] = useState(false)
@@ -337,6 +343,8 @@ function CheckoutPage() {
   const [couponMessage, setCouponMessage] = useState('')
   const [confirmingOrder, setConfirmingOrder] = useState(false)
   const [confirmError, setConfirmError] = useState('')
+  const [checkoutStep, setCheckoutStep] = useState<1 | 2 | 3>(1)
+  const [stepAnimationKey, setStepAnimationKey] = useState(0)
   const [productsExpanded, setProductsExpanded] = useState(true)
   const [savedAccount, setSavedAccount] = useState<{ direcciones: Array<Record<string, unknown>>; metodosPago: Array<Record<string, unknown>> }>({ direcciones: [], metodosPago: [] })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -368,6 +376,10 @@ function CheckoutPage() {
   }, [couponResolution.rule, totalPrice])
 
   const shippingResult = useMemo(() => {
+    if (form.shippingMethod === 'pickup') {
+      return { shippingAmount: 0, shippingLabel: 'Retiro en almacén' }
+    }
+
     const baseConfig = shippingConfig ?? obtenerConfiguracionEnvioActual()
     const result = calcularCostoEnvio({
       subtotal: totalPrice,
@@ -393,7 +405,7 @@ function CheckoutPage() {
       shippingAmount: form.department === '15' ? 15 : 25,
       shippingLabel: `S/ ${(form.department === '15' ? 15 : 25).toFixed(2)}`,
     }
-  }, [appliedCouponCode, couponResolution.freeShipping, form.department, selectedDepartmentName, shippingConfig, totalPrice])
+  }, [appliedCouponCode, couponResolution.freeShipping, form.department, form.shippingMethod, selectedDepartmentName, shippingConfig, totalPrice])
 
   const comboDiscount = useMemo(() => {
     const cartItems = items.map((item) => ({
@@ -455,6 +467,7 @@ function CheckoutPage() {
       address: form.locationText,
       postalCode: form.postalCode,
       reference: form.reference,
+      shippingMethod: form.shippingMethod,
       paymentMethod: form.paymentMethod,
       couponCode: appliedCouponCode,
       subtotal: subtotalConDescuento,
@@ -475,12 +488,20 @@ function CheckoutPage() {
     setErrors((current) => ({ ...current, [field]: '' }))
   }
 
+  const replayStepAnimation = () => setStepAnimationKey((current) => current + 1)
+
   const validateContact = () => {
     const nextErrors: Record<string, string> = {}
     if (form.fullName.trim().length < 2) nextErrors.fullName = 'Ingresa tu nombre completo.'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'Correo inválido.'
     if (form.phone.trim().length < 7) nextErrors.phone = 'Ingresa un teléfono válido.'
     if (form.document.trim().length < 8) nextErrors.document = 'Ingresa tu documento.'
+    return nextErrors
+  }
+
+  const validateShipping = () => {
+    const nextErrors: Record<string, string> = {}
+    if (form.shippingMethod === 'pickup') return nextErrors
     if (!form.department) nextErrors.department = 'Selecciona un departamento.'
     if (!form.province) nextErrors.province = 'Selecciona una provincia.'
     if (!form.district) nextErrors.district = 'Selecciona un distrito.'
@@ -507,6 +528,17 @@ function CheckoutPage() {
     setErrors((current) => ({ ...current, ...nextErrors }))
     if (Object.keys(nextErrors).length > 0) return
 
+    setContactSaved(true)
+    setConfirmError('')
+    replayStepAnimation()
+    setCheckoutStep(2)
+  }
+
+  const handleSaveShipping = () => {
+    const nextErrors = validateShipping()
+    setErrors((current) => ({ ...current, ...nextErrors }))
+    if (Object.keys(nextErrors).length > 0) return
+
     if (isCustomer && saveLocation) {
       const addressPayload = {
         id: Date.now(),
@@ -530,8 +562,10 @@ function CheckoutPage() {
       setLocationMessage('Ubicación guardada correctamente.')
     }
 
-    setContactSaved(true)
+    setShippingSaved(true)
     setConfirmError('')
+    replayStepAnimation()
+    setCheckoutStep(3)
   }
 
   const handleSavePayment = () => {
@@ -558,6 +592,8 @@ function CheckoutPage() {
     }
 
     setPaymentSaved(true)
+  replayStepAnimation()
+    setCheckoutStep(3)
     setConfirmError('')
   }
 
@@ -609,9 +645,9 @@ function CheckoutPage() {
           department: selectedDepartmentName,
           province: form.province,
           district: form.district,
-          address: form.locationText,
-          postalCode: form.postalCode,
-          reference: form.reference,
+          address: form.shippingMethod === 'pickup' ? PICKUP_ADDRESS : form.locationText,
+          postalCode: form.shippingMethod === 'pickup' ? '15837' : form.postalCode,
+          reference: form.shippingMethod === 'pickup' ? 'Retiro en almacén Ezzeta Company' : form.reference,
         })
       }
 
@@ -628,13 +664,14 @@ function CheckoutPage() {
           correo: form.email,
           telefono: form.phone,
         },
+        modalidadEntrega: form.shippingMethod,
         direccion: {
-          departamento: selectedDepartmentName,
-          provincia: formatUbigeoCodeName(form.department, form.province),
-          codigoPostal: form.postalCode,
-          distrito: formatUbigeoCodeName(form.department, form.province, form.district),
-          direccion: form.locationText,
-          referencia: form.reference,
+          departamento: form.shippingMethod === 'pickup' ? 'Lima' : selectedDepartmentName,
+          provincia: form.shippingMethod === 'pickup' ? 'Lima' : formatUbigeoCodeName(form.department, form.province),
+          codigoPostal: form.shippingMethod === 'pickup' ? '15837' : form.postalCode,
+          distrito: form.shippingMethod === 'pickup' ? 'Villa El Salvador' : formatUbigeoCodeName(form.department, form.province, form.district),
+          direccion: form.shippingMethod === 'pickup' ? PICKUP_ADDRESS : form.locationText,
+          referencia: form.shippingMethod === 'pickup' ? 'Retiro de almacén' : form.reference,
         },
         productos: items.map((item) => ({
           productoId: Number(item.id),
@@ -682,6 +719,7 @@ function CheckoutPage() {
         address: form.locationText,
         postalCode: form.postalCode,
         reference: form.reference,
+        shippingMethod: form.shippingMethod,
         paymentMethod: form.paymentMethod,
         couponCode: appliedCouponCode,
         updatedAt: now,
@@ -697,10 +735,7 @@ function CheckoutPage() {
   }
 
   const paymentSummary = paymentSaved ? (form.paymentMethod === 'tarjeta' ? `Tarjeta •••• ${form.cardNumber.replace(/\s/g, '').slice(-4) || '0000'}` : `Yape · ${form.yapePhone}`) : undefined
-  const locationLabel = form.department && form.province && form.district
-    ? `${formatUbigeoCodeName(form.department)} / ${formatUbigeoCodeName(form.department, form.province)} / ${formatUbigeoCodeName(form.department, form.province, form.district)}`
-    : `${selectedDepartmentName || form.department} / ${form.province || ''} / ${form.district || ''}`
-  const contactSummary = contactSaved ? `${form.fullName} · ${form.locationText} · Ref.: ${form.reference}` : undefined
+  const contactSummary = contactSaved ? `${form.fullName} · ${form.email} · ${form.phone}` : undefined
 
   if (items.length === 0) {
     return (
@@ -708,7 +743,7 @@ function CheckoutPage() {
         <header className="border-b border-[rgba(125,36,56,0.12)] bg-[#ffffff] px-5 py-5">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div className="text-2xl font-semibold text-vino-oscuro">Ezzeta</div>
-            <span className="text-xs font-bold uppercase tracking-[0.18em] text-vino">Checkout</span>
+            <span className="text-sm font-bold uppercase tracking-[0.18em] text-vino">Checkout</span>
           </div>
         </header>
         <main className="mx-auto flex w-[min(640px,92%)] flex-col items-center gap-4 py-20 text-center">
@@ -724,7 +759,7 @@ function CheckoutPage() {
   return (
     <div className="checkout-page min-h-screen bg-crema">
       {!isCustomer ? (
-        <div className="fixed right-4 top-4 z-30 max-w-sm rounded-2xl border border-vino/20 bg-white px-4 py-3 text-sm text-vino-oscuro shadow-lg" role="status">
+        <div className="fixed right-4 top-4 z-30 max-w-sm border border-vino/20 bg-white px-4 py-3 text-sm text-vino-oscuro shadow-lg" role="status">
           <strong className="block font-semibold">Beneficio para clientes registrados</strong>
           <span className="mt-1 block text-[#6b4750]">Inicia sesión o regístrate para acceder a precios de mayorista.</span>
         </div>
@@ -732,7 +767,7 @@ function CheckoutPage() {
       <header className="border-b border-[rgba(125,36,56,0.12)] bg-[#ffffff] px-5 py-5">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="text-2xl font-semibold text-vino-oscuro">Ezzeta</div>
-          <span className="text-xs font-bold uppercase tracking-[0.18em] text-vino">Checkout</span>
+          <span className="text-sm font-bold uppercase tracking-[0.18em] text-vino">Checkout</span>
         </div>
       </header>
 
@@ -748,53 +783,140 @@ function CheckoutPage() {
             <p className="mt-3 max-w-125 text-[0.92rem] leading-[1.65] text-[#6b4750]">Completa tus datos y elige cómo quieres recibir tu pedido Ezzeta.</p>
           </div>
           <div className="flex shrink-0 items-center gap-2 text-[0.78rem] font-bold text-[#8a6670] max-[560px]:mt-5">
-            <span className="flex size-7 items-center justify-center rounded-full bg-verde text-blanco"><Check className="size-4" /></span>
-            <span>1. Envío</span>
+            <span className="flex size-7 items-center justify-center bg-verde text-blanco"><Check className="size-4" /></span>
+            <span>1. Contacto</span>
             <span className="h-px w-7 bg-[rgba(125,36,56,0.18)]" />
-            <span className="flex size-7 items-center justify-center rounded-full bg-vino text-crema">2</span>
+            <span className="flex size-7 items-center justify-center bg-vino text-crema">2</span>
+            <span>Envío</span>
+            <span className="h-px w-7 bg-[rgba(125,36,56,0.18)]" />
+            <span className="flex size-7 items-center justify-center bg-vino text-crema">3</span>
             <span>Pago</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-[1.35fr_1fr] items-start gap-7 max-[720px]:grid-cols-1">
+        <div className="grid grid-cols-[1.35fr_1fr] items-start gap-5 max-[720px]:grid-cols-1">
           <div className="grid gap-5">
-            <section className="overflow-hidden rounded-[28px] border border-[rgba(125,36,56,0.15)] bg-[#fffdfd] shadow-[0_18px_60px_rgba(80,26,34,0.06)]">
-              <div className="flex items-center justify-between gap-3 border-b border-[rgba(125,36,56,0.08)] bg-[rgb(255, 255, 255)] px-5 py-4">
+            {checkoutStep >= 2 ? (
+              <section key={`contact-summary-${stepAnimationKey}`} className="checkout-step-panel overflow-hidden border border-black">
+                <div className="flex items-center justify-between gap-3 border-b border-black px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center bg-verde text-sm font-bold text-blanco"><Check className="size-4" /></span>
+                    <div>
+                      <h2 className="text-lg font-semibold text-vino-oscuro">Datos de contacto</h2>
+                      {contactSummary ? <p className="text-sm text-[#7b5e63]">{contactSummary}</p> : null}
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => {
+                    setContactSaved(false)
+                    setShippingSaved(false)
+                    setPaymentSaved(false)
+                    replayStepAnimation()
+                    setCheckoutStep(1)
+                  }} className="text-sm font-bold uppercase tracking-[0.12em] text-vino hover:text-vino-oscuro">Editar</button>
+                </div>
+                <div className="p-5 text-sm text-[#6b4750]">
+                  <p className="font-semibold text-vino-oscuro">Datos de contacto guardados</p>
+                  <p className="mt-2">{form.fullName}</p>
+                  <p>{form.email}</p>
+                  <p>{form.phone}</p>
+                  <p>{form.document}</p>
+                </div>
+              </section>
+            ) : null}
+
+            <section key={`active-step-${stepAnimationKey}`} className="checkout-step-panel overflow-hidden border border-black">
+              <div className="flex items-center justify-between gap-3 border-b border-black px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-vino text-sm font-bold text-crema">1</span>
+                  <span className="flex h-8 w-8 items-center justify-center bg-vino text-sm font-bold text-crema">{checkoutStep === 1 ? '1' : '2'}</span>
                   <div>
-                    <h2 className="text-lg font-semibold text-vino-oscuro">Datos de contacto y envío</h2>
-                    {contactSummary ? <p className="text-xs text-[#7b5e63]">{contactSummary}</p> : null}
+                    <h2 className="text-lg font-semibold text-vino-oscuro">{checkoutStep === 1 ? 'Datos de contacto' : 'Envío'}</h2>
+                    {checkoutStep === 1 && contactSummary ? <p className="text-sm text-[#7b5e63]">{contactSummary}</p> : null}
                   </div>
                 </div>
-                <button type="button" onClick={() => setContactSaved(false)} className="text-xs font-bold uppercase tracking-[0.12em] text-vino hover:text-vino-oscuro">Editar</button>
+                <button type="button" onClick={() => {
+                  setShippingSaved(false)
+                  setPaymentSaved(false)
+                  replayStepAnimation()
+                  setCheckoutStep(2)
+                }} disabled={checkoutStep < 2} className="text-sm font-bold uppercase tracking-[0.12em] text-vino hover:text-vino-oscuro disabled:cursor-not-allowed disabled:opacity-40">Editar</button>
               </div>
-              {!contactSaved ? (
+              {checkoutStep === 1 && contactSaved ? (
+                <div className="p-5 text-sm text-[#6b4750]">
+                  <p className="font-semibold text-vino-oscuro">Datos de contacto guardados</p>
+                  <p className="mt-2">{form.fullName}</p>
+                  <p>{form.email}</p>
+                  <p>{form.phone}</p>
+                  <p>{form.document}</p>
+                </div>
+              ) : checkoutStep === 3 ? (
+                <div className="p-5 text-sm text-[#6b4750]">
+                  <p className="font-semibold text-vino-oscuro">Envío guardado</p>
+                  {form.shippingMethod === 'pickup' ? (
+                    <>
+                      <p className="mt-2">Retiro de almacén</p>
+                      <p>{PICKUP_ADDRESS}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mt-2">Envío</p>
+                      <p>{form.locationText}</p>
+                      <p>{form.postalCode || 'Sin código postal'}</p>
+                      <p className="mt-2">Referencia: {form.reference || 'Sin referencia'}</p>
+                    </>
+                  )}
+                </div>
+              ) : (
                 <div className="grid gap-4 p-5">
+                  {checkoutStep === 1 ? <>
                   <div>
                     <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Nombre completo</label>
-                    <input value={form.fullName} onChange={(event) => updateField('fullName', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.fullName ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Tu nombre" />
-                    {errors.fullName ? <p className="mt-1 text-xs text-red-600">{errors.fullName}</p> : null}
+                    <input value={form.fullName} onChange={(event) => updateField('fullName', event.target.value)} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.fullName ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Tu nombre" />
+                    {errors.fullName ? <p className="mt-1 text-sm text-red-600">{errors.fullName}</p> : null}
                   </div>
                   <div>
                     <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Correo electrónico</label>
-                    <input type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.email ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="ejemplo@mail.com" />
-                    {errors.email ? <p className="mt-1 text-xs text-red-600">{errors.email}</p> : null}
+                    <input type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.email ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="ejemplo@mail.com" />
+                    {errors.email ? <p className="mt-1 text-sm text-red-600">{errors.email}</p> : null}
                   </div>
                   <div>
                     <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Teléfono</label>
-                    <input value={form.phone} onChange={(event) => updateField('phone', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.phone ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="+51 9XXXXXXXX" />
-                    {errors.phone ? <p className="mt-1 text-xs text-red-600">{errors.phone}</p> : null}
+                    <input value={form.phone} onChange={(event) => updateField('phone', event.target.value)} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.phone ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="+51 9XXXXXXXX" />
+                    {errors.phone ? <p className="mt-1 text-sm text-red-600">{errors.phone}</p> : null}
                   </div>
                   <div>
                     <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">DNI / RUC / CE</label>
-                    <input value={form.document} onChange={(event) => updateField('document', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.document ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Número de documento" />
-                    {errors.document ? <p className="mt-1 text-xs text-red-600">{errors.document}</p> : null}
+                    <input value={form.document} onChange={(event) => updateField('document', event.target.value)} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.document ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Número de documento" />
+                    {errors.document ? <p className="mt-1 text-sm text-red-600">{errors.document}</p> : null}
                   </div>
-                  
+                  <Button className={`${BTN_PRIMARIO_CLASS} w-full justify-center sm:w-auto`} onClick={handleSaveContact}>Guardar y continuar</Button>
+                  </> : <>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className={`flex cursor-pointer items-start gap-3 border p-4 ${form.shippingMethod === 'standard' ? 'border-vino bg-[rgba(125,36,56,0.06)]' : 'border-[rgba(125,36,56,0.16)] bg-white'}`}>
+                      <input type="radio" name="shippingMethod" checked={form.shippingMethod === 'standard'} onChange={() => updateField('shippingMethod', 'standard')} className="mt-1 accent-vino" />
+                      <span>
+                        <span className="block font-semibold text-vino-oscuro">Envío estándar</span>
+                        <span className="mt-1 block text-sm text-[#7b5e63]">Usaremos la ubicación del formulario para entregar tu pedido.</span>
+                      </span>
+                    </label>
+                    <label className={`flex cursor-pointer items-start gap-3 border p-4 ${form.shippingMethod === 'pickup' ? 'border-vino bg-[rgba(125,36,56,0.06)]' : 'border-[rgba(125,36,56,0.16)] bg-white'}`}>
+                      <input type="radio" name="shippingMethod" checked={form.shippingMethod === 'pickup'} onChange={() => updateField('shippingMethod', 'pickup')} className="mt-1 accent-vino" />
+                      <span>
+                        <span className="block font-semibold text-vino-oscuro">Retiro de almacén</span>
+                        <span className="mt-1 block text-sm text-[#7b5e63]">Recoge tu pedido en Ezzeta Company.</span>
+                      </span>
+                    </label>
+                  </div>
+                  {form.shippingMethod === 'pickup' ? (
+                    <div className="border border-[rgba(125,36,56,0.16)] bg-white p-4 text-sm text-[#6b4750]">
+                      <p className="font-semibold text-vino-oscuro">Dirección de recojo</p>
+                      <p className="mt-2">{PICKUP_ADDRESS}</p>
+                      <a href={PICKUP_MAPS_URL} target="_blank" rel="noreferrer" className="mt-3 inline-flex font-semibold text-vino underline hover:text-vino-oscuro">Ver ubicación en Google Maps</a>
+                    </div>
+                  ) : null}
+                  {form.shippingMethod === 'standard' ? <>
                   {isCustomer && savedAccount.direcciones.length > 0 ? (
                     <div className="space-y-2">
-                      <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-vino">Usar dirección guardada</p>
+                      <p className="mb-2 text-sm font-bold uppercase tracking-[0.12em] text-vino">Usar dirección guardada</p>
                       <div className="flex flex-wrap gap-2">
                         {savedAccount.direcciones.map((direccion, index) => {
                           const data = getSavedAddressData(direccion as Record<string, unknown>)
@@ -812,7 +934,7 @@ function CheckoutPage() {
                                 updateField('reference', data.reference)
                                 setContactSaved(false)
                               }}
-                              className="rounded-full border border-vino px-3 py-2 text-xs font-semibold text-vino hover:bg-vino hover:text-crema"
+                              className="border border-vino px-3 py-2 text-sm font-semibold text-vino hover:bg-vino hover:text-crema"
                             >{data.locationName || `Dirección ${index + 1}`}
                             </button>
                           )
@@ -828,13 +950,13 @@ function CheckoutPage() {
                         updateField('department', event.target.value)
                         updateField('province', '')
                         updateField('district', '')
-                      }} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.department ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
+                      }} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.department ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
                         <option value="">Selecciona</option>
                         {DEPARTAMENTOS.map((item) => (
                           <option key={item.departamento} value={item.departamento}>{item.nombre}</option>
                         ))}
                       </select>
-                      {errors.department ? <p className="mt-1 text-xs text-red-600">{errors.department}</p> : null}
+                      {errors.department ? <p className="mt-1 text-sm text-red-600">{errors.department}</p> : null}
                     </div>
 
                     <div className="min-w-0">
@@ -842,31 +964,31 @@ function CheckoutPage() {
                       <select value={form.province} onChange={(event) => {
                         updateField('province', event.target.value)
                         updateField('district', '')
-                      }} disabled={!form.department} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60 ${errors.province ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
+                      }} disabled={!form.department} className={`h-11 w-full border px-3.5 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60 ${errors.province ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
                         <option value="">Selecciona</option>
                         {provincias.map((item) => (
                           <option key={`${item.departamento}-${item.provincia}`} value={item.provincia}>{item.nombre}</option>
                         ))}
                       </select>
-                      {errors.province ? <p className="mt-1 text-xs text-red-600">{errors.province}</p> : null}
+                      {errors.province ? <p className="mt-1 text-sm text-red-600">{errors.province}</p> : null}
                     </div>
 
                     <div className="min-w-0">
                       <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Distrito</label>
-                      <select value={form.district} onChange={(event) => updateField('district', event.target.value)} disabled={!form.province} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60 ${errors.district ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
+                      <select value={form.district} onChange={(event) => updateField('district', event.target.value)} disabled={!form.province} className={`h-11 w-full  border px-3.5 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60 ${errors.district ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`}>
                         <option value="">Selecciona</option>
                         {distritos.map((item) => (
                           <option key={`${item.departamento}-${item.provincia}-${item.distrito}`} value={item.distrito}>{item.nombre}</option>
                         ))}
                       </select>
-                      {errors.district ? <p className="mt-1 text-xs text-red-600">{errors.district}</p> : null}
+                      {errors.district ? <p className="mt-1 text-sm text-red-600">{errors.district}</p> : null}
                     </div>
                   </div>
 
                   <div>
                     <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Dirección</label>
-                    <input value={form.locationText} onChange={(event) => updateField('locationText', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.locationText ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Av., jr., calle, número, referencia o interior" />
-                    {errors.locationText ? <p className="mt-1 text-xs text-red-600">{errors.locationText}</p> : null}
+                    <input value={form.locationText} onChange={(event) => updateField('locationText', event.target.value)} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.locationText ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Av., jr., calle, número, referencia o interior" />
+                    {errors.locationText ? <p className="mt-1 text-sm text-red-600">{errors.locationText}</p> : null}
                   </div>
 
                   {locationMessage ? <p className="text-sm font-semibold text-verde">{locationMessage}</p> : null}
@@ -874,64 +996,84 @@ function CheckoutPage() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Código postal</label>
-                      <input value={form.postalCode} onChange={(event) => updateField('postalCode', event.target.value)} className="h-11 w-full rounded-xl border border-[rgba(125,36,56,0.18)] bg-white px-3.5 text-sm outline-none focus:border-vino" placeholder="Ej. 15001" />
+                      <input value={form.postalCode} onChange={(event) => updateField('postalCode', event.target.value)} className="h-11 w-full border border-[rgba(125,36,56,0.18)] bg-white px-3.5 text-sm outline-none focus:border-vino" placeholder="Ej. 15001" />
                     </div>
                     <div>
                       <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Referencia</label>
-                      <input value={form.reference} onChange={(event) => updateField('reference', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.reference ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Ej. frente al parque" />
-                      {errors.reference ? <p className="mt-1 text-xs text-red-600">{errors.reference}</p> : null}
+                      <input value={form.reference} onChange={(event) => updateField('reference', event.target.value)} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.reference ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Ej. frente al parque" />
+                      {errors.reference ? <p className="mt-1 text-sm text-red-600">{errors.reference}</p> : null}
                     </div>
                   </div>
                   {isCustomer ? (
                     <>
-                      <div className="flex justify-end">
-                        <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-[rgba(125,36,56,0.18)] px-3 py-2.5 text-sm font-semibold text-vino-oscuro">
-                          <input type="checkbox" checked={saveLocation} onChange={(event) => setSaveLocation(event.target.checked)} className="size-4 accent-vino" />Guardar ubicación</label>
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        <label className="flex h-11 cursor-pointer items-center gap-2 border border-[rgba(125,36,56,0.18)] px-3 py-2.5 text-sm font-semibold text-vino-oscuro">
+                          <input
+                            type="checkbox"
+                            checked={saveLocation}
+                            onChange={(event) => setSaveLocation(event.target.checked)}
+                            className="size-4 accent-vino"
+                          />Guardar ubicación
+                        </label>
+                        {saveLocation ? (
+                          <div className="w-full sm:w-64">
+                            <input
+                              value={form.locationName}
+                              onChange={(event) =>updateField("locationName", event.target.value)}
+                              className="h-11 w-full border border-[rgba(125,36,56,0.18)] bg-white px-3.5 text-sm outline-none focus:border-vino"
+                              placeholder="Nombre de la ubicación"
+                            />
+                          </div>
+                        ) : null}
                       </div>
-
-                      {saveLocation ? (
-                        <div>
-                          <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Nombre de la ubicación</label>
-                          <input value={form.locationName} onChange={(event) => updateField('locationName', event.target.value)} className="h-11 w-full rounded-xl border border-[rgba(125,36,56,0.18)] bg-white px-3.5 text-sm outline-none focus:border-vino" placeholder="Ej. Casa o trabajo" />
-                        </div>
-                      ) : null}
                     </>
                   ) : null}
-                  <Button className={`${BTN_PRIMARIO_CLASS} w-full justify-center sm:w-auto`} onClick={handleSaveContact}>Guardar y continuar</Button>
-                </div>
-              ) : (
-                <div className="p-5 text-sm text-[#6b4750]">
-                  <p className="font-semibold text-vino-oscuro">Datos de envío guardados</p>
-                  <p className="mt-2">{form.fullName}</p>
-                  <p>{form.locationText}</p>
-                  <p>{locationLabel}</p>
-                  <p className="mt-3 text-xs text-[#7b5e63]">Referencia: {form.reference || 'Sin referencia'}</p>
+                  <Button className={`${BTN_PRIMARIO_CLASS} w-full justify-center sm:w-auto`} onClick={handleSaveShipping}>Guardar ubicación y continuar</Button>
+                  </> : null}
+                  {form.shippingMethod === 'pickup' ? <Button className={`${BTN_PRIMARIO_CLASS} w-full justify-center sm:w-auto`} onClick={handleSaveShipping}>Guardar retiro y continuar</Button> : null}
+                  </>}
                 </div>
               )}
             
             </section>
 
+            {checkoutStep === 1 ? (
+              <section key={`shipping-pending-${stepAnimationKey}`} className="checkout-step-panel overflow-hidden border border-black">
+                <div className="flex items-center gap-3 border-b border-black px-5 py-4">
+                  <span className="flex h-8 w-8 items-center justify-center bg-vino text-sm font-bold text-crema">2</span>
+                  <h2 className="text-lg font-semibold text-vino-oscuro">Envío</h2>
+                </div>
+                <p className="p-5 text-sm text-[#7b5e63]">Completa tus datos de contacto para elegir cómo recibir tu pedido.</p>
+              </section>
+            ) : null}
+
             
 
-            <section className="overflow-hidden rounded-[28px] border border-[rgba(125,36,56,0.15)] bg-[#fffdfd] shadow-[0_18px_60px_rgba(80,26,34,0.06)]">
+            <section key={`payment-step-${stepAnimationKey}`} className="checkout-step-panel overflow-hidden border border-black">
               <div className="flex items-center justify-between gap-3 border-b border-[rgba(125,36,56,0.08)] bg-[rgba(255, 255, 255, 0.72)] px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-vino text-sm font-bold text-crema">2</span>
+                  <span className="flex h-8 w-8 items-center justify-center bg-vino text-sm font-bold text-crema">3</span>
                   <div>
                     <h2 className="text-lg font-semibold text-vino-oscuro">Método de pago</h2>
-                    {paymentSummary ? <p className="text-xs text-[#7b5e63]">{paymentSummary}</p> : null}
+                    {paymentSummary ? <p className="text-sm text-[#7b5e63]">{paymentSummary}</p> : null}
                   </div>
                 </div>
-                <button type="button" onClick={() => setPaymentSaved(false)} className="text-xs font-bold uppercase tracking-[0.12em] text-vino hover:text-vino-oscuro">Editar</button>
+                <button type="button" onClick={() => {
+                  setPaymentSaved(false)
+                  replayStepAnimation()
+                  setCheckoutStep(3)
+                }} disabled={!contactSaved || !shippingSaved} className="text-sm font-bold uppercase tracking-[0.12em] text-vino hover:text-vino-oscuro disabled:cursor-not-allowed disabled:opacity-40">Editar</button>
               </div>
-              {!paymentSaved ? (
+              {checkoutStep !== 3 ? (
+                <p className="p-5 text-sm text-[#7b5e63]">Completa el paso de envío para elegir tu método de pago.</p>
+              ) : !paymentSaved ? (
                 <div className="grid gap-4 p-5">
                   <div className="grid grid-cols-2 gap-3">
                     {PAYMENT_METHODS.map((method) => {
                       const active = form.paymentMethod === method.value
                       const Icon = method.icon
                       return (
-                        <label key={method.value} className={`flex cursor-pointer flex-col items-center gap-2 rounded-[18px] border px-4 py-5 text-black transition ${active ? 'border-dorado bg-[rgba(247, 57, 57, 0.53)]' : 'border-[rgba(125,36,56,0.16)] bg-[rgb(255, 255, 255)]'}`}>
+                        <label key={method.value} className={`flex cursor-pointer flex-col items-center gap-2 border px-4 py-5 text-black transition ${active ? 'border-dorado bg-[rgba(247, 57, 57, 0.53)]' : 'border-[rgba(125,36,56,0.16)] bg-[rgb(255, 255, 255)]'}`}>
                           <Icon className="h-5 w-5" />
                           <span className="flex items-center gap-2 text-[0.9rem] font-semibold">
                             <input type="radio" name="paymentMethod" checked={active} onChange={() => updateField('paymentMethod', method.value)} className="accent-vino" />
@@ -944,7 +1086,7 @@ function CheckoutPage() {
 
                   {isCustomer && savedAccount.metodosPago.length > 0 ? (
                     <div>
-                      <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-vino">Usar método guardado</p>
+                      <p className="mb-2 text-sm font-bold uppercase tracking-[0.12em] text-vino">Usar método guardado</p>
                       <div className="flex flex-wrap gap-2">
                         {savedAccount.metodosPago.map((method, index) => (
                           <button type="button" key={`${String(method.type ?? 'pago')}-${index}`} onClick={() => {
@@ -963,7 +1105,7 @@ function CheckoutPage() {
                             updateField('cardExpiry', String(method.cardExpiry ?? ''))
                             updateField('cardCvv', '')
                             updateField('yapePhone', '')
-                          }} className="rounded-full border border-vino px-3 py-2 text-xs font-semibold text-vino hover:bg-vino hover:text-crema">
+                          }} className="border border-vino px-3 py-2 text-sm font-semibold text-vino hover:bg-vino hover:text-crema">
                             {method.type === 'yape' || method.yapeNumber ? `Yape ${method.yapeNumber ?? ''}` : `Tarjeta •••• ${String(method.last4 ?? '')}`}
                           </button>
                         ))}
@@ -984,24 +1126,24 @@ function CheckoutPage() {
                     <div className="grid gap-4.5">
                       <div>
                         <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Nombre del propietario</label>
-                        <input value={form.cardOwner} onChange={(event) => updateField('cardOwner', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardOwner ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Nombre en la tarjeta" />
-                        {errors.cardOwner ? <p className="mt-1 text-xs text-red-600">{errors.cardOwner}</p> : null}
+                        <input value={form.cardOwner} onChange={(event) => updateField('cardOwner', event.target.value)} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.cardOwner ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="Nombre en la tarjeta" />
+                        {errors.cardOwner ? <p className="mt-1 text-sm text-red-600">{errors.cardOwner}</p> : null}
                       </div>
                       <div>
                         <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Número de tarjeta</label>
-                        <input value={form.cardNumber} onChange={(event) => updateField('cardNumber', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardNumber ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="0000 0000 0000 0000" />
-                        {errors.cardNumber ? <p className="mt-1 text-xs text-red-600">{errors.cardNumber}</p> : null}
+                        <input value={form.cardNumber} onChange={(event) => updateField('cardNumber', event.target.value)} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.cardNumber ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="0000 0000 0000 0000" />
+                        {errors.cardNumber ? <p className="mt-1 text-sm text-red-600">{errors.cardNumber}</p> : null}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Expiración</label>
-                          <input value={form.cardExpiry} onChange={(event) => updateField('cardExpiry', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardExpiry ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="MM/AA" />
-                          {errors.cardExpiry ? <p className="mt-1 text-xs text-red-600">{errors.cardExpiry}</p> : null}
+                          <input value={form.cardExpiry} onChange={(event) => updateField('cardExpiry', event.target.value)} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.cardExpiry ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="MM/AA" />
+                          {errors.cardExpiry ? <p className="mt-1 text-sm text-red-600">{errors.cardExpiry}</p> : null}
                         </div>
                         <div>
                           <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">CVV</label>
-                          <input value={form.cardCvv} onChange={(event) => updateField('cardCvv', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.cardCvv ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="123" />
-                          {errors.cardCvv ? <p className="mt-1 text-xs text-red-600">{errors.cardCvv}</p> : null}
+                          <input value={form.cardCvv} onChange={(event) => updateField('cardCvv', event.target.value)} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.cardCvv ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="123" />
+                          {errors.cardCvv ? <p className="mt-1 text-sm text-red-600">{errors.cardCvv}</p> : null}
                         </div>
                       </div>
                     </div>
@@ -1009,8 +1151,8 @@ function CheckoutPage() {
                     <div className="grid gap-4.5">
                       <div>
                         <label className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.12em] text-vino">Número de Yape</label>
-                        <input value={form.yapePhone} onChange={(event) => updateField('yapePhone', event.target.value)} className={`h-11 w-full rounded-xl border px-3.5 text-sm outline-none ${errors.yapePhone ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="+51 9XXXXXXXX" />
-                        {errors.yapePhone ? <p className="mt-1 text-xs text-red-600">{errors.yapePhone}</p> : null}
+                        <input value={form.yapePhone} onChange={(event) => updateField('yapePhone', event.target.value)} className={`h-11 w-full border px-3.5 text-sm outline-none ${errors.yapePhone ? 'border-red-500 bg-red-50' : 'border-[rgba(125,36,56,0.18)] bg-white focus:border-vino'}`} placeholder="+51 9XXXXXXXX" />
+                        {errors.yapePhone ? <p className="mt-1 text-sm text-red-600">{errors.yapePhone}</p> : null}
                       </div>
                       <p className="text-[0.9rem] text-[#7a5560]">En este flujo simulado, recibirás la confirmación por WhatsApp.</p>
                     </div>
@@ -1027,13 +1169,13 @@ function CheckoutPage() {
             </section>
           </div>
 
-          <aside className="rounded-[30px] border border-[rgba(125,36,56,0.12)] bg-[#ffffff] p-5 shadow-[0_22px_70px_rgba(91,31,38,0.08)]">
+          <aside className="border border-black p-5">
             <div className="flex items-center justify-between border-b border-[rgba(125,36,56,0.1)] pb-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-vino">Resumen</p>
+                <p className="text-sm font-bold uppercase tracking-[0.18em] text-vino">Resumen</p>
                 <h3 className="mt-2  text-2xl font-semibold text-vino-oscuro">Tu pedido</h3>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-vino text-crema">
+              <div className="flex h-10 w-10 items-center justify-center bg-vino text-crema">
                 <ShoppingBag className="h-5 w-5" />
               </div>
             </div>
@@ -1047,11 +1189,11 @@ function CheckoutPage() {
               {productsExpanded ? (
                 <div className="space-y-3">
                   {items.map((item) => (
-                    <div key={`${item.id}-${item.size}`} className="flex gap-3 rounded-2xl border border-[rgba(125,36,56,0.08)] bg-white p-3">
-                      <img src={item.image} alt={item.name} className="h-16 w-16 rounded-xl object-cover" />
+                    <div key={`${item.id}-${item.size}`} className="flex gap-3 border border-[rgba(125,36,56,0.08)] bg-white p-3">
+                      <img src={item.image} alt={item.name} className="h-16 w-16 object-cover" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-vino-oscuro">{item.name}</p>
-                        <p className="mt-1 text-xs text-[#7b5e63]">Talla {item.size || 'Única'} · {item.quantity} und.</p>
+                        <p className="mt-1 text-sm text-[#7b5e63]">Talla {item.size || 'Única'} · {item.quantity} und.</p>
                         <p className="mt-2 text-sm font-bold text-vino">S/ {(item.unitPrice * item.quantity).toFixed(2)}</p>
                       </div>
                     </div>
@@ -1062,11 +1204,11 @@ function CheckoutPage() {
 
             <div className="mt-5 rounded-2xl border border-[rgba(125,36,56,0.08)] bg-white p-4">
               <div className="flex gap-2">
-                <input value={couponInput} onChange={(event) => setCouponInput(event.target.value)} placeholder="Código promocional" className="h-11 flex-1 rounded-xl border border-[rgba(125,36,56,0.16)] bg-[#fffaf7] px-3 text-sm outline-none focus:border-vino" />
-                <Button onClick={handleApplyCoupon} className="h-11 rounded-xl px-3">Aplicar</Button>
+                <input value={couponInput} onChange={(event) => setCouponInput(event.target.value)} placeholder="Código promocional" className="h-11 flex-1 border border-[rgba(125,36,56,0.16)] bg-[#fffaf7] px-3 text-sm outline-none focus:border-vino" />
+                <Button onClick={handleApplyCoupon} className="h-11 px-3">Aplicar</Button>
               </div>
-              {couponMessage ? <p className="mt-2 text-xs text-[#7a5560]">{couponMessage}</p> : null}
-              {appliedCouponCode ? <p className="mt-2 text-xs font-semibold text-verde">Cupón activo: {appliedCouponCode}</p> : null}
+              {couponMessage ? <p className="mt-2 text-sm text-[#7a5560]">{couponMessage}</p> : null}
+              {appliedCouponCode ? <p className="mt-2 text-sm font-semibold text-verde">Cupón activo: {appliedCouponCode}</p> : null}
             </div>
 
             <div className="mt-5 space-y-3 text-sm text-[#6b4750]">
@@ -1074,8 +1216,8 @@ function CheckoutPage() {
               {automaticDiscount > 0 ? <div className="flex justify-between text-green-600"><span>Descuento automático</span><span>-S/ {automaticDiscount.toFixed(2)}</span></div> : null}
               {couponDiscount > 0 ? <div className="flex justify-between text-green-600"><span>Descuento cupón</span><span>-S/ {couponDiscount.toFixed(2)}</span></div> : null}
               {descuentosCarrito.descuentoCombos > 0 ? <div className="flex justify-between text-green-600"><span>Descuento combo</span><span>-S/ {descuentosCarrito.descuentoCombos.toFixed(2)}</span></div> : null}
-              <div className="flex justify-between"><span>Envío</span><span>{etiquetaEnvio}</span></div>
-              <div className="flex justify-between"><span>Departamento</span><span>{selectedDepartmentName || 'Sin seleccionar'}</span></div>
+              <div className="flex justify-between"><span>{form.shippingMethod === 'pickup' ? 'Retiro de almacén' : 'Envío estándar'}</span><span>{etiquetaEnvio}</span></div>
+              <div className="flex justify-between"><span>{form.shippingMethod === 'pickup' ? 'Recojo en' : 'Departamento'}</span><span>{form.shippingMethod === 'pickup' ? 'Villa El Salvador' : (selectedDepartmentName || 'Sin seleccionar')}</span></div>
             </div>
 
             <div className="mt-5 rounded-2xl bg-[rgba(99, 91, 91, 0.66)] p-4">
@@ -1084,16 +1226,12 @@ function CheckoutPage() {
                 <span>S/ {checkoutTotal.toFixed(2)}</span>
               </div>
             </div>
-
-            <Button onClick={handleConfirm} disabled={!(contactSaved && paymentSaved) || confirmingOrder} className="mt-5 h-12 w-full rounded-full bg-vino text-crema hover:bg-vino-oscuro disabled:cursor-not-allowed disabled:opacity-60">
+            <Button onClick={handleConfirm} disabled={!(contactSaved && paymentSaved) || confirmingOrder} className="mt-5 h-12 w-full bg-vino text-crema hover:bg-vino-oscuro disabled:cursor-not-allowed disabled:opacity-60">
               {confirmingOrder ? 'Confirmando...' : 'Confirmar compra'}
             </Button>
-
             {confirmError ? <p className="mt-3 text-sm font-medium text-red-600">{confirmError}</p> : null}
-
-            <div className="mt-5 flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#7a5560]">
-              <ShieldCheck className="h-4 w-4 text-verde" />
-              Compra segura
+            <div className="mt-5 flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-[#7a5560]">
+              <ShieldCheck className="h-4 w-4 text-verde" />Compra segura
             </div>
           </aside>
         </div>

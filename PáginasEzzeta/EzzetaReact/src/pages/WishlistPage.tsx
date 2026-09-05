@@ -81,19 +81,19 @@ export const WishlistPage = () => {
 
   if (!isAuthenticated) {
     return (
-      <section className="mx-auto max-w-2xl rounded-[2rem] border border-black/10 bg-white p-8 text-center shadow-sm sm:p-12">
+      <section className="mx-auto max-w-2xl rounded-[2rem] p-8 text-center sm:p-12">
         <p className="text-sm uppercase tracking-[0.3em] text-black/60">Lista de Deseados</p>
         <h1 className="mt-3 text-2xl font-semibold uppercase tracking-[0.12em] text-black sm:text-3xl">
           Regístrate para acceder a tus favoritos
         </h1>
         <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-black/70">
-          Regístrate para acceder a la función de favoritos/deseados y compartirla con tus conocid@s.
+          Regístrate para acceder a la función de favoritos❤️/deseados✨ y compartir tu lista con tus conocid@s. ✨
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <button type="button" onClick={() => openAuthModal('register')} className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-red-600">
+          <button type="button" onClick={() => openAuthModal('register')} className="inline-flex items-center gap-2 bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-red-600">
             Registrarme <ArrowRight size={16} />
           </button>
-          <button type="button" onClick={() => openAuthModal('login')} className="inline-flex items-center rounded-full border border-black/15 px-5 py-3 text-sm font-medium text-black transition hover:border-black hover:bg-black hover:text-white">
+          <button type="button" onClick={() => openAuthModal('login')} className="inline-flex items-center border border-black/15 px-5 py-3 text-sm font-medium text-black transition hover:border-black hover:bg-black hover:text-white">
             Iniciar sesión
           </button>
         </div>
@@ -165,48 +165,48 @@ export const WishlistPage = () => {
         <div className="rounded-[2rem] border border-black/10 bg-white p-10 text-center shadow-sm">
           <h2 className="text-xl font-semibold text-black">Tu lista está vacía</h2>
           <p className="mt-3 text-sm text-black/70">Guarda tus prendas favoritas y vuelve a ellas cuando quieras.</p>
-          <Link to="/tienda" className="mt-6 inline-flex items-center gap-2 rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-red-600">
+          <Link to="/tienda" className="mt-6 inline-flex items-center gap-2 bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-red-600">
             Volver a la tienda <ArrowRight size={16} />
           </Link>
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-4 rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 border border-black/10 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold uppercase tracking-[0.2em] text-black">Lista de deseos / Tus favoritos</h2>
             {isAuthenticated ? (
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setMenuOpen((open) => !open)}
-                  className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full border border-black/10 bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-red-600"
+                  className="inline-flex w-full sm:w-auto justify-center items-center gap-2 border border-black/10 bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-red-600"
                 ><Share2 size={16} /> Compartir lista
                 </button>
 
                 {menuOpen ? (
-                  <div className="absolute right-0 z-20 mt-3 w-64 rounded-[1.5rem] border border-black/10 bg-white p-3 shadow-lg">
+                  <div className="absolute right-0 z-20 mt-3 w-44 border border-black/10 bg-white p-3 shadow-lg">
                     <div className="grid gap-2">
                       <button
                         type="button"
                         onClick={() => { setMenuOpen(false); void shareToNetwork('whatsapp'); }}
-                        className="flex items-center justify-between rounded-full bg-[#25D366] px-3 py-2 text-sm font-medium text-white"
+                        className="flex items-center justify-between bg-[#25D366] px-3 py-2 text-sm font-medium text-white"
                       ><span className="flex items-center gap-2"><MessageCircle size={15} /> WhatsApp</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => { setMenuOpen(false); void shareToNetwork('facebook'); }}
-                        className="flex items-center justify-between rounded-full bg-[#1877F2] px-3 py-2 text-sm font-medium text-white"
+                        className="flex items-center justify-between bg-[#1877F2] px-3 py-2 text-sm font-medium text-white"
                       ><span className="flex items-center gap-2"><Share2 size={15} /> Facebook</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => { setMenuOpen(false); void shareToNetwork('instagram'); }}
-                        className="flex items-center justify-between rounded-full bg-gradient-to-r from-[#f58529] via-[#dd2a7b] to-[#8134af] px-3 py-2 text-sm font-medium text-white"
+                        className="flex items-center justify-between bg-gradient-to-r from-[#f58529] via-[#dd2a7b] to-[#8134af] px-3 py-2 text-sm font-medium text-white"
                       ><span className="flex items-center gap-2"><Camera size={15} /> Instagram</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => { setMenuOpen(false); void shareToNetwork('copy'); }}
-                        className="flex items-center justify-between rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-medium text-black"
+                        className="flex items-center justify-between border border-black/10 bg-white px-3 py-2 text-sm font-medium text-black"
                       ><span className="flex items-center gap-2"><Copy size={15} /> Copiar enlace</span>
                         {shareStatus.includes('copiado') ? <Check size={15} className="text-green-600" /> : null}
                       </button>
@@ -225,10 +225,10 @@ export const WishlistPage = () => {
           />
 
           {shareStatus ? (
-            <div className="rounded-[1.5rem] border border-black/10 bg-white p-4 text-sm text-black/70">{shareStatus}</div>
+            <div className="bg-white text-sm text-green-700">{shareStatus}</div>
           ) : null}
 
-          <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
+          <div className="grid lg:grid-cols-2 xl:grid-cols-4">
             {paginatedItems.map((product) => (
               <ProductCard key={product.id} product={product} onQuickAdd={setSelectedQuickProduct} />
             ))}
@@ -242,8 +242,7 @@ export const WishlistPage = () => {
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                 disabled={currentPage === 1}
                 className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Anterior
+              >Anterior
               </button>
               <span className="text-center text-sm text-black/70 sm:text-left">{currentPage} / {pageCount}</span>
               <button
@@ -251,8 +250,7 @@ export const WishlistPage = () => {
                 onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
                 disabled={currentPage === pageCount}
                 className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Siguiente
+              >Siguiente
               </button>
             </div>
           </div>

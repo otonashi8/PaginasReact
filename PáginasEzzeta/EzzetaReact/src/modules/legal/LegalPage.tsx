@@ -10,9 +10,9 @@ export const LegalPage = ({ pageKey }: { pageKey: LegalPageKey }) => {
 
   if (!visible) {
     return (
-      <main className="flex min-h-[70vh] items-center justify-center bg-crema px-6 text-center">
+      <main className="flex min-h-[70vh] items-center justify-center px-6 text-center">
         <div>
-          <h1 className="text-3xl font-semibold text-vino-oscuro">Página en mantenimiento</h1>
+          <h1 className="text-3xl font-semibold text-black">Página en mantenimiento</h1>
           <p className="mt-3 text-[#6b4750]">Regresa más tarde para consultar esta información.</p>
         </div>
       </main>
@@ -22,39 +22,114 @@ export const LegalPage = ({ pageKey }: { pageKey: LegalPageKey }) => {
   const isPrivacy = pageKey === 'privacy';
 
   return (
-    <main className="bg-crema">
-      <section className={`relative overflow-hidden px-5 pb-10 pt-10 ${isPrivacy ? 'bg-dorado text-black' : 'bg-white text-black'}`}>
-        <div className="mx-auto w-[min(1000px,92%)]">
-          <span className="inline-flex items-center gap-2 text-[0.7rem] font-bold uppercase tracking-[0.2em] text-dorado-suave">
-            {isPrivacy ? <LockKeyhole className="size-4" /> : <FileText className="size-4" />}
-            {content.eyebrow}
-          </span>
-          <h1 className="mt-5 max-w-190 text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[0.98]">{content.title}</h1>
-          <p className="mt-6 max-w-155 text-[1.05rem] leading-[1.8] opacity-75">{content.intro}</p>
-          <div className="mt-10 text-[0.7rem] font-semibold uppercase tracking-[0.16em] opacity-60">Ezzeta · Última actualización · {content.updatedAt}</div>
-        </div>
-      </section>
-      <section className="mx-auto w-[min(1000px,92%)] py-10 sm:py-10">
-        <div className="overflow-hidden rounded-[28px] border border-vino/10 bg-blanco shadow-[0_25px_60px_-40px_rgba(76,21,38,0.5)]">
-          <div className="border-b border-vino/10 bg-vino-suave/20 px-6 py-7 sm:px-10">
-            <div className="flex items-center gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-vino text-crema">
-                <FileText className="size-5" />
-              </div>
-              <h2 className="text-[1.4rem] font-semibold text-vino-oscuro">{content.title}</h2>
+    <main className="min-h-screen bg-white text-black">
+      {/* Hero */}
+      <section
+        className={`relative overflow-hidden border-b border-zinc-800 px-5 py-12 sm:px-8 lg:px-12 ${
+          isPrivacy ? "bg-black text-white" : "bg-zinc-950 text-white"
+        }`}
+      >
+        <div className="mx-auto max-w-[1600px]">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-end">
+            <div>
+              <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-red-500">
+                {isPrivacy ? (
+                  <LockKeyhole className="size-4" />
+                ) : (
+                  <FileText className="size-4" />
+                )}
+                {content.eyebrow}
+              </span>
+
+              <h1 className="mt-5 max-w-5xl text-[clamp(2.5rem,6vw,6.5rem)] font-semibold leading-[0.92] tracking-[-0.06em]">
+                {content.title}
+              </h1>
+
+              <p className="mt-7 max-w-3xl text-sm leading-7 text-zinc-400 sm:text-base">
+                {content.intro}
+              </p>
+            </div>
+
+            <div className="border-l border-zinc-800 pl-5 lg:mb-1">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+                Ezzeta
+              </span>
+
+              <span className="mt-2 block text-sm font-medium text-zinc-300">
+                Última actualización
+              </span>
+
+              <span className="mt-1 block text-sm font-semibold text-white">
+                {content.updatedAt}
+              </span>
             </div>
           </div>
-          <div className="px-6 py-8 sm:px-10">
-            <div className="divide-y divide-vino/10">
-              {content.sections.map((section, index) => (
-                <article className="grid gap-5 py-7 first:pt-0 last:pb-0 sm:grid-cols-[55px_1fr]" key={`${section.title}-${index}`}>
-                  <span className="text-[1.1rem] font-semibold text-dorado">{String(index + 1).padStart(2, '0')}</span>
-                  <div>
-                    <h2 className="text-[1.3rem] font-semibold text-vino-oscuro">{section.title}</h2>
-                    <p className="mt-3 leading-[1.8] text-[#6b4750]">{section.text}</p>
+        </div>
+      </section>
+
+      {/* Content */}
+      <section className="px-5 py-8 sm:px-8 sm:py-12 lg:px-12">
+        <div className="mx-auto max-w-[1600px]">
+          <div className="grid gap-10 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)]">
+            {/* Sidebar */}
+            <aside className="hidden lg:block">
+              <div className="sticky top-8 border-t-2 border-black pt-4">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-red-600">
+                  Documento
+                </span>
+
+                <h2 className="mt-3 text-lg font-semibold leading-tight">
+                  {content.title}
+                </h2>
+
+                <div className="mt-6 h-px bg-zinc-200" />
+
+                <p className="mt-4 text-sm leading-6 text-zinc-500">
+                  Información importante sobre nuestras políticas y condiciones.
+                </p>
+              </div>
+            </aside>
+
+            {/* Main document */}
+            <div className="min-w-0 border-t-2 border-black">
+              <div className="flex items-center justify-between gap-4 border-b border-zinc-200 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-9 items-center justify-center bg-black text-white">
+                    <FileText className="size-4" />
                   </div>
-                </article>
-              ))}
+
+                  <h2 className="text-sm font-semibold uppercase tracking-[0.08em]">
+                    {content.title}
+                  </h2>
+                </div>
+
+                <span className="hidden text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-400 sm:block">
+                  {String(content.sections.length).padStart(2, "0")} secciones
+                </span>
+              </div>
+
+              <div className="divide-y divide-zinc-200">
+                {content.sections.map((section, index) => (
+                  <article
+                    className="grid gap-5 py-7 sm:grid-cols-[64px_minmax(0,1fr)] sm:gap-8 sm:py-9"
+                    key={`${section.title}-${index}`}
+                  >
+                    <span className="text-sm font-bold tracking-[0.12em] text-red-600">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+
+                    <div className="max-w-4xl">
+                      <h2 className="text-xl font-semibold leading-tight tracking-[-0.02em] sm:text-2xl">
+                        {section.title}
+                      </h2>
+
+                      <p className="mt-4 text-sm leading-7 text-zinc-600 sm:text-[15px] sm:leading-8">
+                        {section.text}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </div>
           </div>
         </div>

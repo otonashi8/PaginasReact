@@ -122,7 +122,7 @@ export const HomePage = () => {
             </h2>
             <p className="mt-2 text-sm text-black/70">¡EXPLORA NUESTRAS CATEGORÍAS!</p>
           </div>
-          <div className="grid w-full grid-cols-1 gap-6 px-4 md:grid-cols-2 xl:grid-cols-4 sm:px-6 lg:px-8">
+          <div className="grid w-full grid-cols-1 px-4 md:grid-cols-2 xl:grid-cols-4 sm:px-6 lg:px-8">
             {homeCategories.map((category) => (
               <Link
                 key={category.categoria}
@@ -257,7 +257,7 @@ export const HomePage = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="grid w-full grid-cols-1 gap-6 px-4 sm:grid-cols-2 sm:px-6 xl:grid-cols-4 lg:px-8"
+              className="grid w-full grid-cols-1 px-4 sm:grid-cols-2 sm:px-6 xl:grid-cols-4 lg:px-8"
             >{visibleCarouselProducts.map((product) => (
                 <ProductCard key={product.id} product={product} onQuickAdd={setSelectedProduct} />
               ))}

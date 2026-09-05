@@ -331,7 +331,7 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
           >
             <div className="flex items-center justify-between border-b border-black/10 bg-white px-5 py-5 sm:px-7 sm:py-6">
               <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-black/50">Carrito</p>
+                <p className="text-sm uppercase tracking-[0.28em] text-black/50">Carrito</p>
                 <h2 className="mt-1 text-2xl font-semibold text-black">Tu compra</h2>
               </div>
               <motion.button type="button" onClick={handleClose} whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }} className="rounded-full border border-black/10 p-2 text-black transition hover:border-black/30">
@@ -345,7 +345,7 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
                   <button
                     type="button"
                     onClick={() => setClearCartConfirm(true)}
-                    className="inline-flex items-center gap-2 text-xs font-semibold text-red-600 transition hover:text-red-700"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-red-600 transition hover:text-red-700"
                   >
                     <Trash2 size={14} />
                     Borrar todo
@@ -354,12 +354,12 @@ export const CartDrawer = ({ open, onOpenChange }: { open?: boolean; onOpenChang
               </div>
             ) : null}
 
-            <div className="min-h-0 flex-1 overflow-y-auto bg-white px-5 py-6 sm:px-7 sm:py-7">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-white px-5 py-4 sm:px-7 sm:py-5">
               {deletedCartItem ? (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm"
+                  className="mb-2 flex items-center justify-between gap-3 px-1 py-1 text-sm"
                 >
                   <p className="min-w-0 truncate text-black/70">Producto eliminado del carrito.</p>
                   <div className="flex shrink-0 items-center gap-2">

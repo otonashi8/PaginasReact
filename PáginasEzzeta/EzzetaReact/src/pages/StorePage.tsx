@@ -7,7 +7,7 @@ import type { Product } from '../types';
 import ProductCard from '../components/common/ProductCard';
 import QuickAddModal from '../components/common/QuickAddModal';
 
-type FilterSection = 'categories' | 'subcategories' | 'price' | 'sizes';
+type FilterSection = 'sort' | 'categories' | 'subcategories' | 'price' | 'sizes';
 
 const normalizeText = (value: string) =>
   value
@@ -25,7 +25,14 @@ const buildUniqueValues = (items: string[]) =>
     ).values()
   ).sort((a, b) => normalizeText(a).localeCompare(normalizeText(b)));
 
-type SortOption = 'ultimos' | 'popularidad' | 'vista';
+type SortOption = 'price-desc' | 'price-asc' | 'featured' | 'newest';
+
+const sortOptions: Array<{ value: SortOption; label: string }> = [
+  { value: 'price-desc', label: 'Precio: Mayor a menor' },
+  { value: 'price-asc', label: 'Precio: Menor a mayor' },
+  { value: 'featured', label: 'Destacados' },
+  { value: 'newest', label: 'Nuevos' },
+];
 
 const gridClassMap: Record<1 | 2 | 3 | 4, string> = {
   1: 'grid-cols-1',
@@ -38,22 +45,23 @@ export const StorePage = () => {
   const products = useProductsCatalog();
   const [searchParams] = useSearchParams();
   const search = searchParams.get('search') ?? '';
-  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
-  const [selectedSubcategory, setSelectedSubcategory] = useState('Todas');
-  const [draftCategory, setDraftCategory] = useState<string>('Todas');
-  const [draftSubcategory, setDraftSubcategory] = useState('Todas');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
+  const [draftCategories, setDraftCategories] = useState<string[]>([]);
+  const [draftSubcategories, setDraftSubcategories] = useState<string[]>([]);
   const [quickCartProduct, setQuickCartProduct] = useState<Product | null>(null);
   const [priceBounds, setPriceBounds] = useState<[number, number]>([0, 0]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<[number, number]>([0, 0]);
   const [draftPriceRange, setDraftPriceRange] = useState<[number, number]>([0, 0]);
-  const [selectedSize, setSelectedSize] = useState('Todas');
-  const [draftSize, setDraftSize] = useState('Todas');
-  const [sortBy] = useState<SortOption>('vista');
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [draftSizes, setDraftSizes] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [productsPerRow, setProductsPerRow] = useState<1 | 2 | 3 | 4>(4);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
   const [openSections, setOpenSections] = useState<Record<FilterSection, boolean>>({
+    sort: true,
     categories: false,
     subcategories: false,
     price: false,
@@ -71,16 +79,16 @@ export const StorePage = () => {
   );
 
   const subcategories = useMemo(() => {
-    if (draftCategory === 'Todas') {
+    if (draftCategories.length === 0) {
       return allSubcategories;
     }
 
     return buildUniqueValues(
       products
-        .filter((product) => normalizeText(product.category) === normalizeText(draftCategory))
+        .filter((product) => draftCategories.some((category) => normalizeText(product.category) === normalizeText(category)))
         .flatMap((product) => product.subcategory ? [product.subcategory] : [])
     );
-  }, [draftCategory, allSubcategories, products]);
+  }, [draftCategories, allSubcategories, products]);
 
   const sizeOptions = useMemo(
     () => buildUniqueValues(products.flatMap((product) => product.sizes)),
@@ -90,11 +98,7 @@ export const StorePage = () => {
   const sortedProducts = useMemo(() => {
     const source = [...products];
 
-    if (sortBy === 'ultimos') {
-      return source.sort((a, b) => b.id - a.id);
-    }
-
-    if (sortBy === 'popularidad') {
+    if (sortBy === 'featured') {
       return source.sort((a, b) => {
         const featuredA = a.featured ? 1 : 0;
         const featuredB = b.featured ? 1 : 0;
@@ -107,17 +111,25 @@ export const StorePage = () => {
       });
     }
 
-    return source.sort((a, b) => a.price - b.price);
+    if (sortBy === 'price-desc') {
+      return source.sort((a, b) => b.price - a.price);
+    }
+
+    if (sortBy === 'price-asc') {
+      return source.sort((a, b) => a.price - b.price);
+    }
+
+    return source.sort((a, b) => b.id - a.id);
   }, [products, sortBy]);
 
   const filteredProducts = useMemo(() => {
     return sortedProducts.filter((product) => {
       const matchesCategory =
-        selectedCategory === 'Todas' || normalizeText(product.category) === normalizeText(selectedCategory);
+        selectedCategories.length === 0 || selectedCategories.some((category) => normalizeText(product.category) === normalizeText(category));
       const matchesSubcategory =
-        selectedSubcategory === 'Todas' || normalizeText(product.subcategory) === normalizeText(selectedSubcategory);
+        selectedSubcategories.length === 0 || selectedSubcategories.some((subcategory) => normalizeText(product.subcategory) === normalizeText(subcategory));
       const matchesPrice = product.price >= selectedPriceRange[0] && product.price <= selectedPriceRange[1];
-      const matchesSize = selectedSize === 'Todas' || product.sizes.includes(selectedSize);
+      const matchesSize = selectedSizes.length === 0 || selectedSizes.some((size) => product.sizes.includes(size));
       const matchesSearch =
       !search ||
       product.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -128,7 +140,7 @@ export const StorePage = () => {
 
       return matchesCategory && matchesSubcategory && matchesPrice && matchesSize && matchesSearch;
     });
-  }, [sortedProducts, selectedCategory, selectedSubcategory, selectedPriceRange, selectedSize, search]);
+  }, [sortedProducts, selectedCategories, selectedSubcategories, selectedPriceRange, selectedSizes, search]);
 
   const pageCount = Math.max(Math.ceil(filteredProducts.length / pageSize), 1);
   const paginatedProducts = filteredProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -138,9 +150,9 @@ export const StorePage = () => {
   };
 
   const openFiltersModal = () => {
-    setDraftCategory(selectedCategory);
-    setDraftSubcategory(selectedSubcategory);
-    setDraftSize(selectedSize);
+    setDraftCategories(selectedCategories);
+    setDraftSubcategories(selectedSubcategories);
+    setDraftSizes(selectedSizes);
     setDraftPriceRange(selectedPriceRange);
     setIsFiltersModalOpen(true);
   };
@@ -148,21 +160,22 @@ export const StorePage = () => {
   const closeFiltersModal = () => setIsFiltersModalOpen(false);
 
   const applyFilters = () => {
-    setSelectedCategory(draftCategory);
-    setSelectedSubcategory(draftSubcategory);
-    setSelectedSize(draftSize);
+    setSelectedCategories(draftCategories);
+    setSelectedSubcategories(draftSubcategories);
+    setSelectedSizes(draftSizes);
     setSelectedPriceRange(draftPriceRange);
     closeFiltersModal();
   };
 
   const resetFilters = () => {
-    setSelectedCategory("Todas");
-    setSelectedSubcategory("Todas");
-    setSelectedSize("Todas");
+    setSelectedCategories([]);
+    setSelectedSubcategories([]);
+    setSelectedSizes([]);
     setSelectedPriceRange(priceBounds);
-    setDraftCategory("Todas");
-    setDraftSubcategory("Todas");
-    setDraftSize("Todas");
+    setSortBy('newest');
+    setDraftCategories([]);
+    setDraftSubcategories([]);
+    setDraftSizes([]);
     setDraftPriceRange(priceBounds);
   };
 
@@ -182,63 +195,74 @@ export const StorePage = () => {
       const categoryParam = searchParams.get('category');
       const subcategoryParam = searchParams.get('subcategory');
 
-      if (categoryParam) {
+        if (categoryParam) {
           const matchedCategory = categoryOptions.find((option) => normalizeText(option) === normalizeText(categoryParam));
-          setSelectedCategory(matchedCategory ?? 'Todas');
-          setDraftCategory(matchedCategory ?? 'Todas');
+          const nextCategories = matchedCategory ? [matchedCategory] : [];
+          setSelectedCategories(nextCategories);
+          setDraftCategories(nextCategories);
+        } else {
+          setSelectedCategories([]);
+          setDraftCategories([]);
       }
 
       if (subcategoryParam) {
           const matchedSubcategory = allSubcategories.find((option) => normalizeText(option) === normalizeText(subcategoryParam));
-          setSelectedSubcategory(matchedSubcategory ?? 'Todas');
-          setDraftSubcategory(matchedSubcategory ?? 'Todas');
+          const nextSubcategories = matchedSubcategory ? [matchedSubcategory] : [];
+          setSelectedSubcategories(nextSubcategories);
+          setDraftSubcategories(nextSubcategories);
       } else {
-          setSelectedSubcategory('Todas');
-          setDraftSubcategory('Todas');
+          setSelectedSubcategories([]);
+          setDraftSubcategories([]);
       }
   }, [searchParams, categoryOptions, allSubcategories]);
 
   useEffect(() => {
-    if (selectedSubcategory === 'Todas') {
+    if (selectedSubcategories.length === 0) {
       return;
     }
 
     const availableSubcategories =
-      selectedCategory === 'Todas'
+      selectedCategories.length === 0
         ? allSubcategories
         : buildUniqueValues(
             products
-              .filter((product) => normalizeText(product.category) === normalizeText(selectedCategory))
+              .filter((product) => selectedCategories.some((category) => normalizeText(product.category) === normalizeText(category)))
               .flatMap((product) => product.subcategory ? [product.subcategory] : [])
           );
 
-    if (!availableSubcategories.some((subcategory) => normalizeText(subcategory) === normalizeText(selectedSubcategory))) {
-      setSelectedSubcategory('Todas');
-    }
-  }, [products, selectedCategory, selectedSubcategory, allSubcategories]);
+    setSelectedSubcategories((current) => {
+      const next = current.filter((subcategory) =>
+        availableSubcategories.some((available) => normalizeText(available) === normalizeText(subcategory))
+      );
+      return next.length === current.length ? current : next;
+    });
+  }, [products, selectedCategories, selectedSubcategories, allSubcategories]);
 
   useEffect(() => {
-    if (draftSubcategory === 'Todas') {
+    if (draftSubcategories.length === 0) {
       return;
     }
 
     const availableSubcategories =
-      draftCategory === 'Todas'
+      draftCategories.length === 0
         ? allSubcategories
         : buildUniqueValues(
             products
-              .filter((product) => normalizeText(product.category) === normalizeText(draftCategory))
+              .filter((product) => draftCategories.some((category) => normalizeText(product.category) === normalizeText(category)))
               .flatMap((product) => product.subcategory ? [product.subcategory] : [])
           );
 
-    if (!availableSubcategories.some((subcategory) => normalizeText(subcategory) === normalizeText(draftSubcategory))) {
-      setDraftSubcategory('Todas');
-    }
-  }, [products, draftCategory, draftSubcategory, allSubcategories]);
+    setDraftSubcategories((current) => {
+      const next = current.filter((subcategory) =>
+        availableSubcategories.some((available) => normalizeText(available) === normalizeText(subcategory))
+      );
+      return next.length === current.length ? current : next;
+    });
+  }, [products, draftCategories, draftSubcategories, allSubcategories]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategory, selectedSubcategory, selectedPriceRange, selectedSize, sortBy, search]);
+  }, [selectedCategories, selectedSubcategories, selectedPriceRange, selectedSizes, sortBy, search]);
 
   useEffect(() => {
     if (currentPage > pageCount) {
@@ -258,12 +282,30 @@ export const StorePage = () => {
     setQuickCartProduct(product);
   };
 
+  const toggleDraftCategory = (category: string) => {
+    setDraftCategories((current) => current.includes(category)
+      ? current.filter((item) => item !== category)
+      : [...current, category]);
+  };
+
+  const toggleDraftSubcategory = (subcategory: string) => {
+    setDraftSubcategories((current) => current.includes(subcategory)
+      ? current.filter((item) => item !== subcategory)
+      : [...current, subcategory]);
+  };
+
+  const toggleDraftSize = (size: string) => {
+    setDraftSizes((current) => current.includes(size)
+      ? current.filter((item) => item !== size)
+      : [...current, size]);
+  };
+
   const closeQuickCart = () => setQuickCartProduct(null);
 
   return (
     <section className="relative overflow-hidden bg-white pb-8">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(circle_at_top,rgba(193,18,31,0.08),transparent_60%)]" />
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-9xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
           <motion.header
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -338,7 +380,7 @@ export const StorePage = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
-                  className={`grid gap-4 sm:gap-5 ${gridClassMap[productsPerRow]}`}
+                  className={`grid ${gridClassMap[productsPerRow]}`}
                 >
                   {paginatedProducts.map((product) => (
                     <ProductCard
@@ -399,11 +441,11 @@ export const StorePage = () => {
             className="fixed inset-0 z-[95] bg-black/45"
           >
             <motion.div
-              initial={{ x: -420, opacity: 0.85 }}
+              initial={{ x: "100%", opacity: 0.85 }}
               animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -420, opacity: 0.9 }}
+              exit={{ x: "100%", opacity: 0.9 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
-              className="relative flex h-full w-full max-w-md flex-col border-r border-black/10 bg-white shadow-[0_26px_70px_rgba(0,0,0,0.24)]"
+              className="relative ml-auto flex h-full w-full max-w-md flex-col border-l border-black/10 bg-white shadow-[0_26px_70px_rgba(0,0,0,0.24)]"
             >
               <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
                 <div>
@@ -422,10 +464,57 @@ export const StorePage = () => {
                 <div className="border-b border-black/10 py-4">
                   <motion.button
                     type="button"
+                    onClick={() => toggleSection("sort")}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex w-full items-center justify-between text-[15px] font-bold uppercase tracking-[0.2em] text-black transition hover:text-red-600"
+                  ><span>Ordenar por</span>
+                    <motion.span
+                      animate={{ rotate: openSections.sort ? 180 : 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="text-sm leading-none"
+                    >▾
+                    </motion.span>
+                  </motion.button>
+                  <AnimatePresence initial={false}>
+                    {openSections.sort ? (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden pt-3"
+                      >
+                        <div className="space-y-2">
+                          {sortOptions.map((option) => {
+                            const isSelected = sortBy === option.value;
+                            return (
+                              <button
+                                key={option.value}
+                                type="button"
+                                role="checkbox"
+                                aria-checked={isSelected}
+                                onClick={() => setSortBy(option.value)}
+                                className="flex w-full items-center gap-3 py-0.5 text-left text-sm text-black/70 transition hover:text-black"
+                              >
+                                <span className={`flex size-4 shrink-0 items-center justify-center border transition ${isSelected ? "border-black bg-black text-white" : "border-black/30 bg-white"}`}>
+                                  {isSelected ? "✓" : null}
+                                </span>
+                                <span>{option.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+                </div>
+                <div className="border-b border-black/10 py-4">
+                  <motion.button
+                    type="button"
                     onClick={() => toggleSection("categories")}
                     whileTap={{ scale: 0.98 }}
                     className="flex w-full items-center justify-between text-[15px] font-bold uppercase tracking-[0.2em] text-black transition hover:text-red-600"
-                  ><span>Categorías</span>
+                  ><span>Tipo de Producto</span>
                     <motion.span
                       animate={{
                         rotate: openSections.categories ? 180 : 0,
@@ -444,20 +533,22 @@ export const StorePage = () => {
                         transition={{ duration: 0.25 }}
                         className="overflow-hidden"
                       >
-                        <div className="flex flex-wrap gap-1.5 pt-3">
-                          {categoryOptions.map((category) => (
+                        <div className="space-y-2 pt-3">
+                          {categoryOptions.filter((category) => category !== 'Todas').map((category) => (
                             <button
                               key={category}
                               type="button"
-                              onClick={() => setDraftCategory(category)}
-                              className={`border px-3 py-2 text-[15px] font-medium uppercase tracking-[0.1em] transition ${
-                                draftCategory === category
-                                  ? "border-black bg-black text-white"
-                                  : "border-black/10 bg-white text-black/65 hover:border-black/40 hover:text-black"
-                              }`}
-                            >{category}
+                              role="checkbox"
+                              aria-checked={draftCategories.includes(category)}
+                              onClick={() => toggleDraftCategory(category)}
+                              className="flex w-full items-center gap-3 py-0.5 text-left text-sm text-black/70 transition hover:text-black"
+                            ><span className={`flex size-4 shrink-0 items-center justify-center border transition ${draftCategories.includes(category) ? "border-black bg-black text-white" : "border-black/30 bg-white"}`}>
+                                {draftCategories.includes(category) ? "✓" : null}
+                              </span>
+                              <span>{category}</span>
                             </button>
                           ))}
+                          <p className="pt-1 text-xs text-black/45">Sin selección: todos los tipos</p>
                         </div>
                       </motion.div>
                     ) : null}
@@ -470,7 +561,7 @@ export const StorePage = () => {
                     whileTap={{ scale: 0.98 }}
                     className="flex w-full items-center justify-between text-[15px] font-bold uppercase tracking-[0.2em] text-black transition hover:text-red-600"
                   >
-                    <span>Subcategorías</span>
+                    <span>Modelos</span>
                     <motion.span
                       animate={{
                         rotate: openSections.subcategories ? 180 : 0,
@@ -489,20 +580,22 @@ export const StorePage = () => {
                         transition={{ duration: 0.25 }}
                         className="overflow-hidden"
                       >
-                        <div className="flex flex-wrap gap-1.5 pt-3">
-                          {["Todas", ...subcategories].map((subcategory) => (
+                        <div className="space-y-2 pt-3">
+                          {subcategories.map((subcategory) => (
                             <button
                               key={subcategory}
                               type="button"
-                              onClick={() => setDraftSubcategory(subcategory)}
-                              className={`border px-3 py-2 text-[15px] font-medium uppercase tracking-[0.1em] transition ${
-                                draftSubcategory === subcategory
-                                  ? "border-black bg-black text-white"
-                                  : "border-black/10 bg-white text-black/65 hover:border-black/40 hover:text-black"
-                              }`}
-                            >{subcategory}
+                              role="checkbox"
+                              aria-checked={draftSubcategories.includes(subcategory)}
+                              onClick={() => toggleDraftSubcategory(subcategory)}
+                              className="flex w-full items-center gap-3 py-0.5 text-left text-sm text-black/70 transition hover:text-black"
+                            ><span className={`flex size-4 shrink-0 items-center justify-center border transition ${draftSubcategories.includes(subcategory) ? "border-black bg-black text-white" : "border-black/30 bg-white"}`}>
+                                {draftSubcategories.includes(subcategory) ? "✓" : null}
+                              </span>
+                              <span>{subcategory}</span>
                             </button>
                           ))}
+                          <p className="pt-1 text-xs text-black/45">Sin selección: todos los modelos</p>
                         </div>
                       </motion.div>
                     ) : null}
@@ -611,14 +704,14 @@ export const StorePage = () => {
                         transition={{ duration: 0.25 }}
                         className="overflow-hidden"
                       >
-                        <div className="grid grid-cols-4 gap-1.5 pt-3">
-                          {["Todas", ...sizeOptions].map((size) => (
+                        <div className="grid grid-cols-5 gap-1.5 pt-3">
+                          {sizeOptions.map((size) => (
                             <button
                               key={size}
                               type="button"
-                              onClick={() => setDraftSize(size)}
+                              onClick={() => toggleDraftSize(size)}
                               className={`h-9 border text-[15px] font-medium uppercase tracking-[0.1em] transition ${
-                                draftSize === size
+                                draftSizes.includes(size)
                                   ? "border-black bg-black text-white"
                                   : "border-black/10 bg-white text-black/65 hover:border-black/40 hover:text-black"
                               }`}
@@ -626,6 +719,7 @@ export const StorePage = () => {
                             </button>
                           ))}
                         </div>
+                        <p className="pt-2 text-xs text-black/45">Sin selección: todas las tallas</p>
                       </motion.div>
                     ) : null}
                   </AnimatePresence>

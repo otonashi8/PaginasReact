@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Producto } from '../TiposProductos';
 
 type Props = {
@@ -7,16 +7,25 @@ type Props = {
 };
 
 export const ColorEditor = ({ producto, actualizarCampo }: Props) => {
-    const [value, setValue] = useState('');
-    const [label, setLabel] = useState('');
+    const colorGuardado = producto.colores?.[0] ?? '';
+    const partesColor = colorGuardado.split('|');
+    const valorGuardado = partesColor.length > 1
+        ? partesColor.slice(1).join('|').trim()
+        : colorGuardado.trim();
+    const etiquetaGuardada = partesColor.length > 1 ? partesColor[0].trim() : '';
+    const [value, setValue] = useState(valorGuardado);
+    const [label, setLabel] = useState(etiquetaGuardada);
+
+    useEffect(() => {
+        setValue(valorGuardado);
+        setLabel(etiquetaGuardada);
+    }, [producto.id, colorGuardado]);
 
     const add = () => {
         const v = (value ?? '').trim();
         if (!v) return;
         const entry = label.trim() ? `${label.trim()}|${v}` : v;
-        actualizarCampo('colores', [...(producto.colores ?? []), entry]);
-        setValue('');
-        setLabel('');
+        actualizarCampo('colores', [entry]);
     };
 
     return (
@@ -63,7 +72,7 @@ export const ColorEditor = ({ producto, actualizarCampo }: Props) => {
             type="button"
             onClick={add}
             className="h-[38px] shrink-0 rounded-none bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-red-600"
-        >Agregar
+        >Guardar
         </button>
     </div>
 );

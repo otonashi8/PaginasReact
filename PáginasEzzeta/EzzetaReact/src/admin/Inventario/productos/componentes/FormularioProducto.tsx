@@ -5,10 +5,8 @@ import { estaTallaAgotada, generosDisponibles, inferirTipoTalla, obtenerSubcateg
 import { crearSlugProducto } from '../utils/productoMapper';
 import { ExtrasProducto } from './ExtrasProducto';
 import { SelectorCategorias } from './SelectorCategorias';
-import { SelectorRelacionados } from './SelectorRelacionados';
 import { SelectorTallas } from './SelectorTallas';
-import { ImagenPrincipal } from './ImagenPrincipal';
-import { CarruselMiniImagenes } from './CarruselMiniImagenes';
+import { GaleriaImagenes } from './GaleriaImagenes';
 import ColorEditor from './ColorEditor';
 
 type PropiedadesFormularioProducto = {
@@ -23,7 +21,6 @@ type PropiedadesFormularioProducto = {
 export const FormularioProducto = ({
     producto,
     setProducto,
-    productosExistentes,
     guardar,
     cerrar,
     modoEdicion,
@@ -168,69 +165,13 @@ export const FormularioProducto = ({
 
                         <label className="block md:col-span-2">
                             <span className="mb-2 block text-xs font-semibold text-zinc-800">
-                                Colores
+                                Color
                             </span>
 
-                            <div className="space-y-2">
-                                <div className="flex flex-wrap gap-2">
-                                    {(producto.colores ?? []).map((c, idx) => {
-                                        const parts = c.split("|");
-
-                                        const label =
-                                            parts.length > 1
-                                                ? parts[0].trim()
-                                                : undefined;
-
-                                        const value =
-                                            parts.length > 1
-                                                ? parts.slice(1).join("|").trim()
-                                                : parts[0].trim();
-
-                                        return (
-                                            <div
-                                                key={idx}
-                                                className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs"
-                                                title={label ?? value}
-                                            >
-                                                <span
-                                                    className="h-4 w-4 shrink-0 rounded-full border border-zinc-300"
-                                                    style={{
-                                                        backgroundColor: value,
-                                                    }}
-                                                />
-
-                                                <span className="font-medium text-zinc-800">
-                                                    {label ?? value}
-                                                </span>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        actualizarCampo(
-                                                            "colores",
-                                                            (
-                                                                producto.colores ??
-                                                                []
-                                                            ).filter(
-                                                                (_, i) =>
-                                                                    i !== idx
-                                                            )
-                                                        )
-                                                    }
-                                                    className="ml-1 text-zinc-500 transition hover:text-red-600"
-                                                >
-                                                    ×
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                <ColorEditor
-                                    producto={producto}
-                                    actualizarCampo={actualizarCampo}
-                                />
-                            </div>
+                            <ColorEditor
+                                producto={producto}
+                                actualizarCampo={actualizarCampo}
+                            />
                         </label>
                     </div>
                 </div>
@@ -417,17 +358,14 @@ export const FormularioProducto = ({
                     </div>
                 </div>
             </section>
-            <ImagenPrincipal
-                nombreProducto={producto.nombre}
-                imagen={producto.imagen}
-                actualizarImagen={(imagen) =>
-                    actualizarCampo("imagen", imagen)
-                }
-            />
-            <CarruselMiniImagenes
-                miniImagenes={producto.miniImagenes}
-                actualizarMiniImagenes={(miniImagenes) =>
-                    actualizarCampo("miniImagenes", miniImagenes)
+            <GaleriaImagenes
+                imagenes={[producto.imagen, ...producto.miniImagenes]}
+                actualizarImagenes={(imagenes) =>
+                    setProducto((productoActual) => ({
+                        ...productoActual,
+                        imagen: imagenes[0] ?? '',
+                        miniImagenes: imagenes.slice(1),
+                    }))
                 }
             />
             <section className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm">
@@ -513,14 +451,12 @@ export const FormularioProducto = ({
                     actualizarTallas={actualizarTallas}
                 />
             </section>
-            <SelectorRelacionados
-                productoActualId={producto.id}
-                relacionados={producto.relacionados}
-                productosExistentes={productosExistentes}
-                actualizarRelacionados={(relacionados) =>
-                    actualizarCampo("relacionados", relacionados)
-                }
-            />
+            <section className="rounded-none border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+                <h3 className="text-base font-semibold text-zinc-950">Productos relacionados</h3>
+                <p className="mt-1 text-sm text-zinc-500">
+                    Se mostrarán automáticamente hasta 3 productos activos de la categoría <strong>{producto.categoria || 'seleccionada'}</strong>.
+                </p>
+            </section>
             <ExtrasProducto
                 extras={producto.extras}
                 actualizarExtras={(extras) =>

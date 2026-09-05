@@ -60,8 +60,8 @@ export const validarProducto = (
 		errores.push('El stock por talla no puede contener valores negativos.');
 	}
 
-	if (producto.miniImagenes.length === 0) {
-		errores.push('Agregue al menos una mini imagen para el producto.');
+	if (!producto.imagen.trim() && producto.miniImagenes.length === 0) {
+		errores.push('Agregue al menos una imagen a la galeria del producto.');
 	}
 
 	if (!producto.tallas.length) {
@@ -69,11 +69,11 @@ export const validarProducto = (
 	}
 
 	if (producto.imagen.trim() && !esUrlValida(producto.imagen)) {
-		errores.push('La URL de la imagen principal no es valida.');
+		errores.push('La URL de la primera imagen de la galeria no es valida.');
 	}
 
 	if (producto.miniImagenes.some((miniImagen) => miniImagen.trim() && !esUrlValida(miniImagen))) {
-		errores.push('Una o mas mini imagenes tienen una URL invalida.');
+		errores.push('Una o mas imagenes de la galeria tienen una URL invalida.');
 	}
 
 	const slugNormalizado = producto.slug.trim().toLowerCase();

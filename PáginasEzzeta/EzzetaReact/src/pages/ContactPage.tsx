@@ -89,23 +89,23 @@ export const ContactPage = () => {
                 className="group border-r border-white/40 p-4 transition-colors hover:bg-red-600"
                 >
                 <Phone size={18} className="text-red-500 transition-colors group-hover:text-white"/>
-                <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/70 group-hover:text-white/70">Llámanos</p>
-                <p className="mt-1 text-xs text-white">Atención directa</p>
+                <p className="mt-5 text-md font-semibold uppercase tracking-[0.15em] text-white/70 group-hover:text-white/70">Llámanos</p>
+                <p className="mt-1 text-sm text-white">Atención directa</p>
                 </a>
                 <a
                 href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contacto.email)}`}
                 className="group p-4 transition-colors hover:bg-red-600"
                 >
                 <Mail size={18} className="text-red-500 transition-colors group-hover:text-white"/>
-                <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/70 group-hover:text-white/70">Escríbenos</p>
-                <p className="mt-1 truncate text-xs text-white">Responderemos pronto</p>
+                <p className="mt-5 text-md font-semibold uppercase tracking-[0.15em] text-white/70 group-hover:text-white/70">Escríbenos</p>
+                <p className="mt-1 truncate text-sm text-white">Responderemos pronto</p>
                 </a>
             </div>
             </div>
         </div>
         </section>
         {/* CONTENIDO PRINCIPAL */}
-        <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:py-12">
+        <section className="mx-auto max-w-9xl px-5 py-8 sm:px-8 lg:py-12">
         <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
             {/* FAQ */}
             <div className="border border-zinc-200 bg-white">
@@ -124,7 +124,7 @@ export const ContactPage = () => {
                     <span className="text-[11px] font-semibold text-red-500">01</span>
                     <div>
                     <p className="text-sm font-semibold text-zinc-950 transition-colors group-hover:text-white">¿Cuánto tarda el envío?</p>
-                    <p className="mt-2 text-xs leading-6 text-zinc-500 transition-colors group-hover:text-white/50">El tiempo estimado suele ser de 2 a 5 días hábiles.</p>
+                    <p className="mt-2 text-sm leading-6 text-zinc-500 transition-colors group-hover:text-white/70">El tiempo estimado suele ser de 2 a 5 días hábiles.</p>
                     </div>
                 </div>
                 </div>
@@ -133,7 +133,7 @@ export const ContactPage = () => {
                     <span className="text-[11px] font-semibold text-red-500">02</span>
                     <div>
                     <p className="text-sm font-semibold text-zinc-950 transition-colors group-hover:text-white">¿Puedo devolver una prenda?</p>
-                    <p className="mt-2 text-xs leading-6 text-zinc-500 transition-colors group-hover:text-white/50">Sí, puedes solicitar devolución dentro de los 14 días posteriores a la entrega.</p>
+                    <p className="mt-2 text-sm leading-6 text-zinc-500 transition-colors group-hover:text-white/70">Sí, puedes solicitar devolución dentro de los 14 días posteriores a la entrega.</p>
                     </div>
                 </div>
                 </div>
@@ -142,13 +142,13 @@ export const ContactPage = () => {
                     <span className="text-[11px] font-semibold text-red-500">03</span>
                     <div>
                     <p className="text-sm font-semibold text-zinc-950 transition-colors group-hover:text-white">¿Ofrecen asesoría personalizada?</p>
-                    <p className="mt-2 text-xs leading-6 text-zinc-500 transition-colors group-hover:text-white/50">Claro, nuestro equipo puede ayudarte con recomendaciones de estilo.</p>
+                    <p className="mt-2 text-sm leading-6 text-zinc-500 transition-colors group-hover:text-white/70">Claro, nuestro equipo puede ayudarte con recomendaciones de estilo.</p>
                     </div>
                 </div>
                 </div>
             </div>
             <div className="border-t border-zinc-200 bg-zinc-50 px-5 py-4 sm:px-6">
-                <p className="text-xs leading-5 text-zinc-500">¿No encuentras lo que buscas? Envíanos tu consulta y te ayudaremos personalmente.</p>
+                <p className="text-sm leading-5 text-zinc-500">¿No encuentras lo que buscas? Envíanos tu consulta y te ayudaremos personalmente.</p>
             </div>
             </div>
             {/* FORMULARIO */}
@@ -173,7 +173,7 @@ export const ContactPage = () => {
                     <button
                     type="button"
                     onClick={() => setEnviado(false)}
-                    className="mt-7 inline-flex h-10 items-center justify-center border border-zinc-950 bg-zinc-950 px-6 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600"
+                    className="mt-7 inline-flex h-10 items-center justify-center border border-zinc-950 bg-zinc-950 px-6 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600"
                     >Enviar otra solicitud
                     </button>
                 </div>
@@ -182,7 +182,7 @@ export const ContactPage = () => {
                 <div className="space-y-5 p-5 sm:p-6">
                 {/* MOTIVO */}
                 <label className="block">
-                    <span className="mb-2 block text-xs font-semibold text-zinc-800">Motivo de la solicitud
+                    <span className="mb-2 block text-sm font-semibold text-zinc-800">Motivo de la solicitud
                     <b className="ml-1 text-red-600">*</b>
                     </span>
                     <select
@@ -202,7 +202,7 @@ export const ContactPage = () => {
                 {/* NOMBRE + CORREO */}
                 <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block">
-                    <span className="mb-2 block text-xs font-semibold text-zinc-800">Nombre
+                    <span className="mb-2 block text-sm font-semibold text-zinc-800">Nombre
                         <b className="ml-1 text-red-600">*</b>
                     </span>
                     <input
@@ -213,7 +213,7 @@ export const ContactPage = () => {
                     />
                     </label>
                     <label className="block">
-                    <span className="mb-2 block text-xs font-semibold text-zinc-800">Correo
+                    <span className="mb-2 block text-sm font-semibold text-zinc-800">Correo
                         <b className="ml-1 text-red-600">*</b>
                     </span>
                     <input
@@ -228,7 +228,7 @@ export const ContactPage = () => {
                 {/* PEDIDO + TELÉFONO */}
                 <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block">
-                    <span className="mb-2 block text-xs font-semibold text-zinc-800">N.º de pedido</span>
+                    <span className="mb-2 block text-sm font-semibold text-zinc-800">N.º de pedido</span>
                     <input
                         value={pedido}
                         onChange={(event) => setPedido(event.target.value)}
@@ -237,7 +237,7 @@ export const ContactPage = () => {
                     />
                     </label>
                     <label className="block">
-                    <span className="mb-2 block text-xs font-semibold text-zinc-800">Teléfono
+                    <span className="mb-2 block text-sm font-semibold text-zinc-800">Teléfono
                         <b className="ml-1 text-red-600">*</b>
                     </span>
                     <input
@@ -251,7 +251,7 @@ export const ContactPage = () => {
                 </div>
                 {/* MENSAJE */}
                 <label className="block">
-                    <span className="mb-2 block text-xs font-semibold text-zinc-800">Describe tu problema o queja
+                    <span className="mb-2 block text-sm font-semibold text-zinc-800">Describe tu problema o queja
                     <b className="ml-1 text-red-600">*</b>
                     </span>
                     <textarea
@@ -263,7 +263,7 @@ export const ContactPage = () => {
                     />
                 </label>
                 {error && (
-                    <div className="flex items-start gap-2 border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
+                    <div className="flex items-start gap-2 border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
                     <span className="font-bold">!</span>
                     <span>{error}</span>
                     </div>
@@ -271,19 +271,19 @@ export const ContactPage = () => {
                 <button
                     type="button"
                     onClick={enviarSolicitud}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 border border-zinc-950 bg-zinc-950 px-5 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600"
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 border border-zinc-950 bg-zinc-950 px-5 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600"
                 ><Send size={15} />Enviar solicitud
                 </button>
 
                 <div className="grid gap-2 border-t border-zinc-100 pt-4 sm:grid-cols-2">
                     <a
                     href={`https://wa.me/${contacto.telefono.replace(/\D/g, '')}?text=${encodeURIComponent('Hola, necesito ayuda desde Ezzeta.')}`}
-                    className="inline-flex h-10 items-center justify-center gap-2 border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950"
+                    className="inline-flex h-10 items-center justify-center gap-2 border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950"
                     ><Phone size={15} />{contacto.telefono}
                     </a>
                     <a
                     href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contacto.email)}`}
-                    className="inline-flex h-10 items-center justify-center gap-2 border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950"
+                    className="inline-flex h-10 items-center justify-center gap-2 border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950"
                     ><Mail size={15} />{contacto.email}
                     </a>
                 </div>
@@ -293,13 +293,13 @@ export const ContactPage = () => {
         </div>
         </section>
         {/* BANNER COMUNIDAD */}
-        <section className="mx-auto max-w-7xl px-5 pb-10 sm:px-8 lg:pb-14">
+        <section className="mx-auto max-w-9xl px-5 pb-10 sm:px-8 lg:pb-14">
         <div className="grid overflow-hidden border border-zinc-200 bg-white lg:grid-cols-[1.05fr_0.95fr]">
             <div className="relative min-h-[300px] overflow-hidden bg-zinc-900 lg:min-h-[380px]">
             <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTU1agQ0JWH1FRSXAzg8c0EJ0q-w1lNc4P3IQQRrLw5lj_lD3Zl020i5S7A&s=10"
+                src="src/assets/crecenosotros.png"
                 alt="Emprende con nosotros"
-                className="absolute inset-0 h-full w-full object-cover opacity-80 transition-transform duration-700 hover:scale-105"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/20 to-black/50" />
             <div className="absolute left-6 top-6 flex items-center gap-3">
@@ -308,7 +308,7 @@ export const ContactPage = () => {
             </div>
             <div className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8">
                 <p className="max-w-sm text-2xl font-semibold uppercase leading-tight tracking-[0.04em] text-white sm:text-3xl">Crece con nosotros</p>
-                <p className="mt-3 text-xs uppercase tracking-[0.15em] text-white/50">Conecta · Aprende · Emprende</p>
+                <p className="mt-3 text-sm uppercase tracking-[0.15em] text-white/50">Conecta · Aprende · Emprende</p>
             </div>
             </div>
             <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-12">
@@ -322,7 +322,7 @@ export const ContactPage = () => {
                 href="https://pabloezzeta.pe/club/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-7 inline-flex h-11 w-full items-center justify-center gap-2 border border-zinc-950 bg-zinc-950 px-5 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600 sm:w-fit"
+                className="mt-7 inline-flex h-11 w-full items-center justify-center gap-2 border border-zinc-950 bg-zinc-950 px-5 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-red-600 hover:bg-red-600 sm:w-fit"
             >Conoce el Club<ArrowUpRight size={15} />
             </a>
             </div>

@@ -145,7 +145,7 @@ export const SubcategoriasCrudPanel = ({ access }: Props) => {
     <PaginacionClientes paginaActual={pagina} paginaTope={Math.max(1, Math.ceil(filas.length / porPagina))} onPaginaChange={setPagina} />
     {editando ? 
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/45 p-4">
-        <div className="my-4 w-full max-w-4xl bg-white shadow-2xl">
+        <div className="my-4 w-full max-w-5xl bg-white shadow-2xl">
             <header className="flex justify-between border-b border-zinc-200 p-5">
                 <div>
                     <h3 className="text-lg font-semibold">Editar {editando.nombre}</h3>
@@ -157,15 +157,20 @@ export const SubcategoriasCrudPanel = ({ access }: Props) => {
                 <div className="space-y-4">
                     <div className="border border-zinc-200 bg-zinc-50 p-4">
                         <h4 className="font-semibold">Guía de lavado</h4>
-                        <input 
-                        type="file" 
-                        accept="application/pdf" 
-                        onChange={(event) => { const file = event.target.files?.[0]; 
-                        if (!file) return; const reader = new FileReader(); 
-                        reader.onload = () => setLavado({ url: String(reader.result ?? ''), nombre: file.name });
-                        reader.readAsDataURL(file); }} className="mt-3 w-full text-sm" />{lavado.url ? 
-                        <a href={lavado.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-red-600">Ver PDF actual</a> 
-                        : null}
+                        <label className="mt-3 block text-xs font-medium text-zinc-600">PDF de la guía</label>
+                        <input
+                            type="file"
+                            accept="application/pdf"
+                            onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (!file) return;
+                                const reader = new FileReader();
+                                reader.onload = () => setLavado((actual) => ({ ...actual, url: String(reader.result ?? ''), nombre: file.name }));
+                                reader.readAsDataURL(file);
+                            }}
+                            className="mt-1 w-full text-sm"
+                        />
+                        {lavado.url ? <a href={lavado.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-red-600">Ver PDF actual</a> : null}
                     </div>
                     <div className="border border-zinc-200 bg-zinc-50 p-4">
                         <h4 className="font-semibold">Precio del producto</h4>
@@ -194,6 +199,28 @@ export const SubcategoriasCrudPanel = ({ access }: Props) => {
                 </div>
                 <div className="border border-zinc-200 bg-zinc-50 p-4">
                     <h4 className="font-semibold">Guía de tallas</h4>
+                        <label className="mt-3 block text-xs font-medium text-zinc-600">URL de imagen</label>
+                        <input
+                            type="url"
+                            value={tallas.imagenUrl ?? ''}
+                            onChange={(event) => setTallas((actual) => ({ ...actual, imagenUrl: event.target.value }))}
+                            placeholder="https://.../guia-tallas.jpg"
+                            className="mt-1 w-full border border-zinc-300 px-2 py-2 text-sm"
+                        />
+                        <label className="mt-3 block text-xs font-medium text-zinc-600">Imagen desde tu PC</label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (!file) return;
+                                const reader = new FileReader();
+                                reader.onload = () => setTallas((actual) => ({ ...actual, imagenUrl: String(reader.result ?? '') }));
+                                reader.readAsDataURL(file);
+                            }}
+                            className="mt-1 w-full text-sm"
+                        />
+                        {tallas.imagenUrl ? <img src={tallas.imagenUrl} alt="Vista previa de la guía de tallas" className="mt-3 max-h-40 w-full object-contain bg-white" /> : null}
                     <div className="mt-3 flex flex-wrap gap-2">
                         <input value={nuevaColumna} onChange={(event) => setNuevaColumna(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); agregarColumna(); } }} placeholder="Nueva columna" className="min-w-40 flex-1 border px-2 py-1.5 text-sm" />
                         <button type="button" onClick={agregarColumna} className="border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium hover:border-zinc-900">Agregar columna</button>

@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { Footer } from '../components/Footer';
 import { Header } from '../components/Header';
+import { AnnouncementBar } from '../components/layout/AnnouncementBar';
 import Chatbot from '../components/Chatbot/Chatbot';
 import { ScrollToTopButton } from '../components/ScrollToTopButton';
 import {
@@ -103,6 +104,7 @@ export const MainLayout = () => {
 
   return (
     <div className="min-h-screen bg-white text-black">
+      <AnnouncementBar />
       <Header />
       <AnimatePresence>
         {showPurchaseToast ? (
@@ -123,7 +125,7 @@ export const MainLayout = () => {
           </motion.div>
         ) : null}
       </AnimatePresence>
-      <main className={isHomePage ? 'min-h-[70vh] w-full py-0' : 'mx-auto min-h-[70vh] w-full max-w-7xl px-6 py-10 pt-15 lg:px-8'}>
+      <main className={isHomePage ? 'min-h-[70vh] w-full py-0' : 'mx-auto min-h-[70vh] w-full max-w-9xl px-6 py-10 pt-15 lg:px-8'}>
         <Outlet />
       </main>
       <Footer />

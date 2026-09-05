@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
-import { Trash2 } from 'lucide-react';
+import { Heart, Trash2 } from 'lucide-react';
 import { ImagePlaceholder } from '../ImagePlaceholder';
 import QuantityInput from '../QuantityInput';
 import { PermissionGate } from '../PermissionGate';
+import { useAuth } from '../../context/AuthContext';
+import { useWishlist } from '../../context/WishlistContext';
 import { PERMISSIONS } from '../../utils/permissionCodes';
 import type { Product } from '../../types';
 
@@ -19,6 +21,9 @@ export default function CartItemsList({
   updateQuantity: (id: number, size: string, q: number) => void;
   setDeleteConfirm: (payload: { productId: number; size: string } | null) => void;
 }) {
+    const { isAuthenticated } = useAuth();
+    const { isFavorite, toggleFavorite } = useWishlist();
+
   return (
       <div className="space-y-3">
           {items.map((item) => {
@@ -29,36 +34,48 @@ export default function CartItemsList({
                       key={`${item.id}-${item.size}`}
                       layout
                       whileHover={{ y: -1 }}
-                      className="grid grid-cols-1 gap-3 border border-zinc-200 bg-white p-3 transition hover:border-zinc-300 sm:grid-cols-3"
+                      className="grid grid-cols-1 gap-3 p-3 transition hover:border-zinc-300 sm:grid-cols-3"
                   >
                       <div className="sm:col-span-1">
                           <div className="h-56 w-full overflow-hidden border border-zinc-200 bg-zinc-50 sm:h-54">
-                              {item.image ? (
-                                  <img src={item.image} alt={item.name} className="h-full w-full object-cover"/>
-                              ) : (
-                                  <ImagePlaceholder label="Producto" className="h-full w-full"/>
+                              {item.image ? (<img src={item.image} alt={item.name} className="h-full w-full object-cover"/>
+                              ) : (<ImagePlaceholder label="Producto" className="h-full w-full"/>
                               )}
                           </div>
                       </div>
                       <div className="min-w-0 sm:col-span-2">
                           <div className="flex items-start justify-between gap-2">
                               <h3 className="break-words text-md font-semibold leading-5 text-zinc-900">{item.name}</h3>
-                              <PermissionGate permission={PERMISSIONS.salesDelete}>
-                                  <motion.button
-                                      type="button"
-                                      onClick={() =>
-                                          setDeleteConfirm({
-                                              productId: item.id,
-                                              size: item.size,
-                                          })
-                                      }
-                                      whileHover={{ scale: 1.04 }}
-                                      whileTap={{ scale: 0.96 }}
-                                      className="flex h-7 w-7 shrink-0 items-center justify-center border border-zinc-200 text-zinc-400 transition hover:border-red-300 hover:text-red-600"
-                                      aria-label="Eliminar producto"
-                                  ><Trash2 size={13} />
-                                  </motion.button>
-                              </PermissionGate>
+                              <div className="flex shrink-0 items-center gap-1">
+                                  {isAuthenticated ? (
+                                      <motion.button
+                                          type="button"
+                                          onClick={() => toggleFavorite(item.id)}
+                                          whileHover={{ scale: 1.04 }}
+                                          whileTap={{ scale: 0.96 }}
+                                          className={`flex h-7 w-7 items-center justify-center border border-zinc-200 transition ${isFavorite(item.id) ? 'text-red-500' : 'text-zinc-400 hover:border-red-300 hover:text-red-600'}`}
+                                          aria-label={isFavorite(item.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                                      >
+                                          <Heart size={13} className={isFavorite(item.id) ? 'fill-red-500' : undefined} />
+                                      </motion.button>
+                                  ) : null}
+                                  <PermissionGate permission={PERMISSIONS.salesDelete}>
+                                      <motion.button
+                                          type="button"
+                                          onClick={() =>
+                                              setDeleteConfirm({
+                                                  productId: item.id,
+                                                  size: item.size,
+                                              })
+                                          }
+                                          whileHover={{ scale: 1.04 }}
+                                          whileTap={{ scale: 0.96 }}
+                                          className="flex h-7 w-7 items-center justify-center border border-zinc-200 text-zinc-400 transition hover:border-red-300 hover:text-red-600"
+                                          aria-label="Eliminar producto"
+                                      ><Trash2 size={13} />
+                                      </motion.button>
+                                  </PermissionGate>
+                              </div>
                           </div>
                           <div className="mt-2 flex items-center justify-between gap-2 border-b border-zinc-100 pb-2">
                               <span className="text-[14px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Talla</span>

@@ -294,7 +294,7 @@ export const AdminDashboardPage = () => {
           </nav>
         </aside>
 
-        <main className="rounded-none border border-zinc-200 bg-white p-3 shadow-sm">
+        <main className="border border-zinc-200 bg-white p-3 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Modulo activo</p>

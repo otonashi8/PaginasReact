@@ -83,7 +83,7 @@ export const normalizarProducto = (producto: Producto): Producto => {
 		tallasStock,
 		relacionados: normalizarListaNumeros(producto.relacionados, producto.id),
 		extras: normalizarListaTexto(producto.extras),
-		colores: normalizarListaTexto(producto.colores ?? []),
+		colores: normalizarListaTexto(producto.colores ?? []).slice(0, 1),
 		fechaCreacion,
 		fechaActualizacion: fechaActual,
 	};

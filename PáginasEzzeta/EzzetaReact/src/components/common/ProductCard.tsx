@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import type { Product } from '../../types';
 import { resolveProductPrice } from '../../services/pricingService';
 import { PERMISSIONS } from '../../utils/permissionCodes';
+import { ProductSizeOptions } from './ProductSizeOptions';
 
 type ProductCardProps = {
   product: Product;
@@ -18,7 +19,7 @@ type ProductCardProps = {
 
 export const ProductCard = ({ product, onQuickAdd }: ProductCardProps) => {
   const navigate = useNavigate();
-  const { favorites, toggleFavorite } = useWishlist();
+  const { favorites, toggleFavorite, addToCart } = useWishlist();
   const { isAuthenticated } = useAuth();
   const isFavorite = favorites.includes(product.id);
   const resultadoPrecio = resolveProductPrice(product);
@@ -30,7 +31,7 @@ export const ProductCard = ({ product, onQuickAdd }: ProductCardProps) => {
   return (
     <motion.article
       whileHover={{ y: -4, scale: 1.01 }}
-      className="flex h-full flex-col border border-black/10 bg-white p-4 shadow-sm"
+      className="flex h-full flex-col bg-white p-2"
     >
       <div
         onClick={() => navigate(`/producto/${product.slug}`)}
@@ -47,7 +48,7 @@ export const ProductCard = ({ product, onQuickAdd }: ProductCardProps) => {
           <ImagePlaceholder label="Producto" className="h-full" />
         )}
         {discountPercentage > 0 ? (
-          <span className="absolute left-2 top-2 rounded-full bg-black px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
+          <span className="absolute left-2 top-2 bg-black px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
             -{discountPercentage}%
           </span>
         ) : null}
@@ -58,15 +59,19 @@ export const ProductCard = ({ product, onQuickAdd }: ProductCardProps) => {
               event.stopPropagation();
               toggleFavorite(product.id);
             }}
-            className={`absolute right-2 top-2 rounded-full border p-2 transition sm:right-3 sm:top-3 ${isFavorite ? 'border-red-600 bg-red-600 text-white' : 'border-black/10 bg-white/90 text-black hover:border-red-600 hover:text-red-600'}`}
+            className={`absolute right-2 top-2 rounded-full transition sm:right-3 sm:top-3 ${isFavorite ? 'text-red-500' : 'text-white hover:text-red-600'}`}
             aria-label={isFavorite ? 'Quitar de wishlist' : 'Agregar a wishlist'}
           >
-            <Heart size={16} />
+            <Heart size={22} className={`transition-all duration-200 ${isFavorite ? "fill-red-500 text-red-500" : "fill-transparent"}`} />
           </button>
         ) : null}
+        <ProductSizeOptions
+          product={product}
+          onSelect={(size) => addToCart(product.id, size)}
+        />
       </div>
       <div className="mt-4 flex flex-1 flex-col">
-        <p className="text-xs uppercase tracking-[0.2em] text-black/45">{product.category}</p>
+        <p className="text-sm uppercase tracking-[0.2em] text-black/45">{product.category}</p>
         <h3 className="mt-2 text-base font-semibold text-black">{product.name}</h3>
         <div className="mt-auto flex items-center justify-between gap-3 pt-4">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -82,10 +87,10 @@ export const ProductCard = ({ product, onQuickAdd }: ProductCardProps) => {
                 event.stopPropagation();
                 onQuickAdd?.(product);
               }}
-              className="inline-flex shrink-0 items-center justify-center rounded-full border border-black/10 bg-black p-2 text-white transition hover:bg-red-600"
+              className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-black transition"
               aria-label={`Agregar ${product.name} al carrito`}
             >
-              <ShoppingBag size={16} />
+              <ShoppingBag size={25} />
             </button>
           </PermissionGate>
         </div>

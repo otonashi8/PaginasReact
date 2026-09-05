@@ -25,6 +25,7 @@ export type GuiaTallasSubcategoria = {
     columnas: string[];
     filas: FilaGuiaTallas[];
     mensajeSecundario: string;
+    imagenUrl?: string;
 };
 
 export type NivelMayoristaSubcategoria = {
@@ -595,7 +596,7 @@ const mapearProductoCatalogo = (producto: ReturnType<typeof getProducts>[number]
         precio: Number(producto.price ?? 0),
         precioAnterior: Number(producto.previousPrice ?? 0),
         imagen: String(producto.image ?? ''),
-        miniImagenes: Array.isArray(producto['mini-image']) ? (producto['mini-image'] as string[]).filter(Boolean) : [],
+        miniImagenes: Array.isArray(producto['mini-image']) ? (producto['mini-image'] as string[]).filter(Boolean).slice(1) : [],
         stock: Number.isFinite(Number(producto.stock)) ? Number(producto.stock) : 0,
         tallas: Array.isArray(producto.sizes) ? (producto.sizes as string[]).filter(Boolean) : [],
         tallasStock: {},
@@ -637,8 +638,8 @@ export function obtenerProductos():Producto[]{
                 subcategoria: producto.subcategoria || productoBase.subcategoria,
                 precio: Number.isFinite(producto.precio) ? producto.precio : productoBase.precio,
                 precioAnterior: Number.isFinite(producto.precioAnterior) ? producto.precioAnterior : productoBase.precioAnterior,
-                imagen: producto.imagen || productoBase.imagen,
-                miniImagenes: producto.miniImagenes?.length ? producto.miniImagenes : productoBase.miniImagenes,
+                imagen: typeof producto.imagen === 'string' ? producto.imagen : productoBase.imagen,
+                miniImagenes: Array.isArray(producto.miniImagenes) ? producto.miniImagenes : productoBase.miniImagenes,
                 colores: producto.colores?.length ? producto.colores : productoBase.colores,
                 tallas: producto.tallas?.length ? producto.tallas : productoBase.tallas,
                 tallasStock: Object.keys(producto.tallasStock ?? {}).length ? producto.tallasStock : productoBase.tallasStock,
@@ -674,7 +675,6 @@ export function obtenerProductos():Producto[]{
             guardarProductos(productosFinal);
         }
     } catch {
-        // ignore migration errors
     }
 
     return productosFinal;
@@ -752,7 +752,7 @@ export function descontarStockPorTalla(productoId:number, talla:string, cantidad
             precioAnterior: productoPersistido.previousPrice ?? 0,
             imagen: productoPersistido.image,
             miniImagenes: [
-                ...(productoPersistido['mini-image'] ?? []),
+                ...(productoPersistido['mini-image'] ?? []).slice(1),
                 '',
                 '',
             ].slice(0, 3) as [string, string, string],

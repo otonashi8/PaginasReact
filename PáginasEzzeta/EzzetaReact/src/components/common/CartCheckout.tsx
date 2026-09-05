@@ -213,8 +213,7 @@ export default function CartCheckout({
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.98 }}
             className="flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-black/5"
-          >
-            Volver al carrito
+          >Volver al carrito
           </motion.button>
 
           <PermissionGate permission={PERMISSIONS.salesCreate}>
@@ -277,8 +276,7 @@ export default function CartCheckout({
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.98 }}
               className="flex-1 rounded-full bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-500"
-            >
-              Continuar al pago
+            >Continuar al pago
             </motion.button>
           </PermissionGate>
         </div>
